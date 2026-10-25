@@ -1,32 +1,7 @@
-# Render blueprint for the Phase 1 test environment (owner decision 2026-10-25 [test-env]).
+# Render blueprint for the Phase 1 test environment worker; the web app runs on Vercel Hobby (fra1) (owner decision 2026-10-25 [test-env]).
 # Blueprint Path in Render: deploy/render-test.yaml. Production stays on Cloud Run europe-west1.
 # Secrets (sync: false) are pasted in the Render dashboard, never committed.
 services:
-  - type: web
-    name: shoebox-web
-    runtime: node
-    region: frankfurt
-    plan: free
-    branch: phase/0
-    autoDeploy: true
-    buildCommand: npx --yes pnpm@10.28.0 install --frozen-lockfile && npx --yes pnpm@10.28.0 --filter @shoebox/web build
-    startCommand: npx --yes pnpm@10.28.0 --filter @shoebox/web start
-    healthCheckPath: /api/health
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: PORT
-        value: "3000"
-      - key: APP_ENV
-        value: test
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: APP_URL
-        sync: false
   - type: worker
     name: shoebox-worker
     runtime: node

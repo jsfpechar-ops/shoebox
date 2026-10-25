@@ -42,4 +42,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-25 [auth] reference-app-style login: passkey + e-mail link only (no password, Google, Apple); one firm per user; accountant access to several OSVČ in Phase 2; org switcher (0036b) deferred to then. Trimmed plan: storage (0037a/b) + auth change, then Phase 1. (owner)
 - 2026-10-25 [i18n] UI in English for now to save tokens; `en.json` defines the keys and is the default locale; `cs.json` kept dormant (partial, falls back to English) until Josef asks for Czech again. Brief 0050. (owner)
 - 2026-10-25 [onboarding] `/vitejte`: IČO, ARES fills the rest, ≤ 3 chip steps (0060–0064). (owner)
-- 2026-10-25 [test-env] Supabase + Render, both Frankfurt (`deploy/render-test.yaml`); `tsx` allowed in `@shoebox/worker`. Prod stays Cloud Run. (owner)
+- 2026-10-25 [test-env] Supabase Frankfurt; web on Vercel Hobby fra1, worker on Render Frankfurt (`deploy/render-test.yaml`, `tsx`). Prod: Cloud Run. (owner)
