@@ -12,7 +12,8 @@ Updated: 2026-10-25.
 
 - Prototype v3 merged (0041a–c, 0042a). Owner: set SHOEBOX_PROTO_ORG_ICO/_DIC and ANTHROPIC_API_KEY on Render, send the Anthropic ZDR form.
 - Design (07 rules 11–14) and tokens merged (#90, #91). Storage merged (#71). Auth = passkey + e-mail link only: 0044a (#93), 0044b offer (#94), 0044c passkey sign-in in review. `[verify]` Supabase passkeys GA before Phase 1 launch.
-- Phase 1 core loop runs in its own thread (migrations from 0009). e2e in the cloud container: Chromium projects only, `PLAYWRIGHT_BROWSERS_PATH` shim (see 0044b brief).
+- Test env (0054): worker `start` script + `deploy/render-test.yaml`; owner follows the setup guide (Supabase + Render Frankfurt). First real-Supabase run; risks: storage policies, pooler login for `app_worker`.
+- e2e in the cloud container: Chromium projects only, `PLAYWRIGHT_BROWSERS_PATH` shim (see 0044b brief).
 
 ## Blocked (owner)
 
