@@ -47,6 +47,7 @@ Phase run on `phase/0` (from `main` at 01750cd). Orchestrator: Opus 5.5. The own
 | P0-DB-06 | 0032a, 0032b | [#63](https://github.com/jsfpechar-ops/leonoperations/pull/63) (document detail tables) | **HIGH** |
 | P0-AUTH-01d | 0030d | [#64](https://github.com/jsfpechar-ops/leonoperations/pull/64) (login guard, logout) | **HIGH** |
 | P0-DB-07 | 0033a, 0033b | [#66](https://github.com/jsfpechar-ops/leonoperations/pull/66) (platform tables) | **HIGH** |
+| P1-EXT-02 (ISDOC only, trimmed) | 0075, 0076, 0077 | [#3](https://github.com/jsfpechar-ops/shoebox/pull/3) (ISDOC read without AI; public repo) | normal |
 
 ## HIGH-risk PRs (owner reads these files)
 

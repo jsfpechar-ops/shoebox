@@ -60,6 +60,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
         <>
           <Card className="flex flex-col gap-4 p-6">
             <h2 className="text-card-title">{t('doc.detail.read_title')}</h2>
+            {detail.readBy === 'isdoc' ? (
+              <p className="text-meta text-muted-foreground">{t('doc.detail.read_by_isdoc')}</p>
+            ) : null}
             <dl className="flex flex-col gap-3">
               {detail.fields.map((field) => {
                 const editKey = canFix ? editKeyOf(field.label) : null;

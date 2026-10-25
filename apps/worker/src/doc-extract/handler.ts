@@ -9,12 +9,16 @@ import { type Clock, createCzRules, parseLegalDate, pragueToday } from '@shoebox
 import {
   AnthropicHttpError,
   buildProtoRequest,
+  ISDOC_READER_VERSION,
+  type IsdocReading,
   isProtoMediaType,
   type LlmClient,
   type LlmResponse,
   PROTO_PROMPT_VERSION,
+  type ProtoExtraction,
   ProtoParseError,
   parseProtoExtraction,
+  readIsdoc,
 } from '@shoebox/extraction';
 import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
 import { runProtoChecks } from '@shoebox/validation';
@@ -55,6 +59,18 @@ function errorCode(error: unknown, fallback: 'error' | 'storage'): string {
   if (error instanceof AnthropicHttpError) return `http_${error.status}`;
   if (error instanceof ProtoParseError) return 'parse';
   return fallback;
+}
+
+/** Media types stored for .isdoc/.xml and .isdocx uploads: only their ISDOC data can be read. */
+const ISDOC_ONLY_TYPES: readonly string[] = ['application/xml', 'application/x-isdocx'];
+
+/** ISDOC data of the file, or null (none, or unreadable: the caller then uses the model). */
+function isdocOf(bytes: Uint8Array): IsdocReading | null {
+  try {
+    return readIsdoc(bytes);
+  } catch {
+    return null;
+  }
 }
 
 /** VAT rates in force at the document's date; falls back to today when the date is outside the rule tables. */
@@ -101,7 +117,9 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
     await store.setStatus(ctx.tx, doc.id, 'extracting');
 
     const mediaType = doc.mimeType;
-    if (!isProtoMediaType(mediaType)) {
+    const isdocOnly = ISDOC_ONLY_TYPES.includes(mediaType);
+    const modelType = isProtoMediaType(mediaType) ? mediaType : null;
+    if (modelType === null && !isdocOnly) {
       await store.fail(ctx.tx, { ...run, error: 'unsupported_type', final: true });
       return;
     }
@@ -113,18 +131,11 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       return onError(error, errorCode(error, 'storage'));
     }
 
-    let response: LlmResponse;
-    try {
-      response = await deps.llm.complete(
-        buildProtoRequest({ model: deps.model, file: { bytes, mediaType } }),
-      );
-    } catch (error) {
-      return onError(error, errorCode(error, 'error'));
-    }
-
-    let write: ReadingWrite;
-    try {
-      const extraction = parseProtoExtraction(response.json);
+    const toWrite = (
+      extraction: ProtoExtraction,
+      source: 'llm' | 'isdoc',
+      runRow: ReadingWrite['run'],
+    ): ReadingWrite => {
       const rates = ratesFor(
         extraction.dates.duzp ?? extraction.dates.issue_date ?? null,
         deps.clock,
@@ -136,15 +147,53 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
           : { ico: doc.orgIco, dic: doc.orgDic };
       const checks = runProtoChecks(extraction, org === undefined ? { today } : { today, org });
       const rows = validationRowsOf(checks);
-      write = {
+      return {
         orgId: doc.orgId,
         documentId: doc.id,
         status: statusAfterRead(extraction, rows),
         patch: documentPatchOf(extraction),
         vatSummary: vatSummaryOf(extraction, rates),
-        fields: fieldsOf(extraction),
+        fields: fieldsOf(extraction, source),
         validations: rows,
-        run: {
+        run: runRow,
+      };
+    };
+
+    let write: ReadingWrite;
+    // Step 1: exact data first. An ISDOC (plain, .isdocx or embedded in the PDF) is read without AI.
+    const isdoc = mediaType === 'application/pdf' || isdocOnly ? isdocOf(bytes) : null;
+    if (isdoc !== null) {
+      try {
+        write = toWrite(isdoc.extraction, 'isdoc', {
+          method: 'isdoc',
+          model: null,
+          promptVersion: ISDOC_READER_VERSION,
+          attempt: ctx.attempt,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          latencyMs: 0,
+        });
+      } catch (error) {
+        return onError(error, 'parse');
+      }
+    } else if (modelType === null) {
+      // An XML or .isdocx without readable ISDOC data: nothing a model could read either.
+      await store.fail(ctx.tx, { ...run, error: 'isdoc_unreadable', final: true });
+      return;
+    } else {
+      // Step 2: no ISDOC, so the model reads the page.
+      let response: LlmResponse;
+      try {
+        response = await deps.llm.complete(
+          buildProtoRequest({ model: deps.model, file: { bytes, mediaType: modelType } }),
+        );
+      } catch (error) {
+        return onError(error, errorCode(error, 'error'));
+      }
+      try {
+        write = toWrite(parseProtoExtraction(response.json), 'llm', {
           model: response.model,
           promptVersion: PROTO_PROMPT_VERSION,
           attempt: ctx.attempt,
@@ -153,11 +202,11 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
           cacheReadTokens: response.usage.cacheReadInputTokens,
           cacheWriteTokens: response.usage.cacheCreationInputTokens,
           latencyMs: response.latencyMs,
-        },
-      };
-    } catch (error) {
-      // Any throw after parsing (e.g. an invalid currency code) counts as a parse failure.
-      return onError(error, 'parse');
+        });
+      } catch (error) {
+        // Any throw after parsing (e.g. an invalid currency code) counts as a parse failure.
+        return onError(error, 'parse');
+      }
     }
 
     try {

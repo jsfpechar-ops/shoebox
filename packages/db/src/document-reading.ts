@@ -51,7 +51,7 @@ export interface ReadingWrite {
     base: string;
     vat: string;
   }[];
-  readonly fields: readonly { fieldKey: string; valueText: string; source: 'llm' }[];
+  readonly fields: readonly { fieldKey: string; valueText: string; source: 'llm' | 'isdoc' }[];
   readonly validations: readonly {
     ruleId: string;
     ruleVersion: number;
@@ -59,7 +59,9 @@ export interface ReadingWrite {
     params: Record<string, unknown>;
   }[];
   readonly run: {
-    readonly model: string;
+    /** How the values were read; default 'llm'. 'isdoc' = from the file's ISDOC data, no model call. */
+    readonly method?: 'llm' | 'isdoc';
+    readonly model: string | null;
     readonly promptVersion: string;
     readonly attempt: number;
     readonly inputTokens: number;
@@ -112,7 +114,7 @@ export async function saveDocumentReading(tx: TenantTx, write: ReadingWrite): Pr
       orgId,
       documentId,
       stage: 'extract',
-      method: 'llm',
+      method: run.method ?? 'llm',
       ok: true,
       model: run.model,
       promptVersion: run.promptVersion,
