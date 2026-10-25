@@ -5,6 +5,7 @@ import {
   UPLOAD_MAX_BYTES,
   type UploadDeps,
   uploadDocuments,
+  uploadMediaTypeOf,
 } from '../src/documents/upload';
 
 const ORG = '11111111-1111-4111-8111-111111111111';
@@ -107,6 +108,28 @@ describe('uploadDocuments', () => {
       'size',
     ]);
     expect(puts).toEqual([]);
+  });
+
+  it('accepts ISDOC files whatever type the browser sends, and stores the type by extension', async () => {
+    const { deps, sources } = fakeDeps();
+    const bytes = (text: string) => new TextEncoder().encode(text);
+    const items = await uploadDocuments(deps, { orgId: ORG, userId: USER }, [
+      { name: 'faktura.isdoc', type: '', bytes: bytes('<Invoice/>') },
+      { name: 'faktura.ISDOCX', type: 'application/octet-stream', bytes: bytes('PK') },
+      { name: 'data.xml', type: 'text/xml', bytes: bytes('<x/>') },
+      { name: 'archive.zip', type: 'application/zip', bytes: bytes('PK2') },
+    ]);
+    expect(items.map((i) => i.status)).toEqual(['accepted', 'accepted', 'accepted', 'rejected']);
+    expect([...sources.values()].map((s) => s.row.mimeType)).toEqual([
+      'application/xml',
+      'application/x-isdocx',
+      'application/xml',
+    ]);
+  });
+
+  it('keeps the type the browser sent for other files', () => {
+    expect(uploadMediaTypeOf('a.pdf', 'application/pdf')).toBe('application/pdf');
+    expect(uploadMediaTypeOf('noext', 'image/png')).toBe('image/png');
   });
 
   it('keeps the document when the queue is down', async () => {

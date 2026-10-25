@@ -94,6 +94,12 @@ describe('detailOf', () => {
     expect(detail?.checks[1]?.params.field).toBe('Due date');
   });
 
+  it('says when the values came from ISDOC data, from the latest run', () => {
+    expect(detailOf(doc, [], [], [{ method: 'isdoc' }])?.readBy).toBe('isdoc');
+    expect(detailOf(doc, [], [], [{ method: 'llm' }])?.readBy).toBe('model');
+    expect(detailOf(doc, [], [])?.readBy).toBeNull();
+  });
+
   it('returns null for a malformed document', () => {
     expect(detailOf(null, [], [])).toBeNull();
     expect(detailOf({ id: 3 }, [], [])).toBeNull();

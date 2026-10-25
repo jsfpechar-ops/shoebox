@@ -62,7 +62,7 @@ export interface VatSummaryRow {
 export interface FieldRow {
   readonly fieldKey: string;
   readonly valueText: string;
-  readonly source: 'llm';
+  readonly source: 'llm' | 'isdoc';
 }
 
 export type StatusAfterRead = 'ready' | 'needs_review' | 'supporting';
@@ -175,7 +175,7 @@ export function vatSummaryOf(x: ProtoExtraction, rates: VatRates): VatSummaryRow
   }));
 }
 
-export function fieldsOf(x: ProtoExtraction): FieldRow[] {
+export function fieldsOf(x: ProtoExtraction, source: FieldRow['source'] = 'llm'): FieldRow[] {
   const pairs: Array<[string, string | null]> = [
     ['supplier.name', x.supplier.name],
     ['supplier.ico', x.supplier.ico],
@@ -211,7 +211,7 @@ export function fieldsOf(x: ProtoExtraction): FieldRow[] {
   const rows: FieldRow[] = [];
   for (const [fieldKey, value] of pairs) {
     if (value !== null) {
-      rows.push({ fieldKey, valueText: value, source: 'llm' });
+      rows.push({ fieldKey, valueText: value, source });
     }
   }
   return rows;
