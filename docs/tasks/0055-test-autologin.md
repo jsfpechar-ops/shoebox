@@ -1,6 +1,6 @@
 # 0055: Test environment signs in by itself
 
-Status: todo
+Status: review
 Ticket: Phase 1 test environment (owner request 2026-10-25) | Depends on: 0054 | Base commit: see branch | Branch: claude/project-thread-2s0mp2 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
