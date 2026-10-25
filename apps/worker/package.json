@@ -12,7 +12,8 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node --import tsx src/main.ts"
   },
   "devDependencies": {
     "typescript": "catalog:",
@@ -26,6 +27,7 @@
     "@shoebox/platform": "workspace:*",
     "@shoebox/validation": "workspace:*",
     "pg-boss": "12.35.1",
+    "tsx": "4.23.15",
     "zod": "4.6.5"
   }
 }
