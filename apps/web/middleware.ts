@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { decide } from './src/auth/guard';
 import { touchLastSeen } from './src/auth/last-seen';
 import { AUTH_COOKIE_OPTIONS, LAST_SEEN_COOKIE } from './src/auth/session';
+import { testAutoLogin } from './src/auth/test-autologin';
 import { createNonce, NONCE_HEADER, securityHeaders } from './src/security/headers';
 import { supabaseEnv } from './src/supabase/env';
 
@@ -47,6 +48,25 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       hasUser = (await supabase.auth.getUser()).data.user !== null;
     } catch {
       hasUser = false;
+    }
+  }
+
+  // Test environment only (owner 2026-10-25): no login screen, sign in as the configured test user,
+  // then load the same address again so the page sees the new session cookies.
+  const autoLogin = testAutoLogin(process.env);
+  if (!hasUser && autoLogin && request.method === 'GET') {
+    let signedIn = false;
+    try {
+      signedIn = (await supabase.auth.signInWithPassword(autoLogin)).error === null;
+    } catch {
+      signedIn = false;
+    }
+    if (signedIn) {
+      const again = NextResponse.redirect(request.nextUrl, 303);
+      for (const cookie of response.cookies.getAll()) again.cookies.set(cookie);
+      touchLastSeen(again.cookies);
+      for (const [name, value] of Object.entries(headers)) again.headers.set(name, value);
+      return again;
     }
   }
 
