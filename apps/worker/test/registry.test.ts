@@ -188,6 +188,35 @@ describe('start and handlers', () => {
     expect(JSON.stringify(logger.warn.mock.calls)).not.toContain('secret');
   });
 
+  it('a failing provider call also logs its HTTP status', async () => {
+    const { registry, workers, logger } = fakes();
+    class AnthropicHttpError extends Error {
+      readonly status = 401;
+      constructor() {
+        super('secret detail');
+        this.name = 'AnthropicHttpError';
+      }
+    }
+    registry.registerTenant(split, async () => {
+      throw new AnthropicHttpError();
+    });
+    await registry.start();
+    await expect(
+      workers.get('doc.split')?.([job({ orgId: ORG, documentId: DOC })]),
+    ).rejects.toThrow();
+    expect(logger.warn).toHaveBeenCalledWith(
+      {
+        jobName: 'doc.split',
+        jobId: 'job-1',
+        orgId: ORG,
+        errorCode: 'AnthropicHttpError',
+        httpStatus: 401,
+      },
+      'job failed',
+    );
+    expect(JSON.stringify(logger.warn.mock.calls)).not.toContain('secret');
+  });
+
   it('a system cron is scheduled in Europe/Prague and its handler runs without a tenant', async () => {
     const { registry, boss, workers, tenantCalls } = fakes();
     const tick = vi.fn(async () => undefined);
