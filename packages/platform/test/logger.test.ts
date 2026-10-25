@@ -141,6 +141,7 @@ describe('pickAllowed', () => {
       'durationMs',
       'errorCode',
       'httpStatus',
+      'errorReason',
     ]);
   });
 

@@ -192,6 +192,7 @@ describe('start and handlers', () => {
     const { registry, workers, logger } = fakes();
     class AnthropicHttpError extends Error {
       readonly status = 401;
+      readonly reason = 'credit_balance';
       constructor() {
         super('secret detail');
         this.name = 'AnthropicHttpError';
@@ -211,6 +212,7 @@ describe('start and handlers', () => {
         orgId: ORG,
         errorCode: 'AnthropicHttpError',
         httpStatus: 401,
+        errorReason: 'credit_balance',
       },
       'job failed',
     );
