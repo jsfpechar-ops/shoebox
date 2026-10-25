@@ -40,3 +40,8 @@ services:
         sync: false
       - key: APP_URL
         sync: false
+      # Test only: sign in as this Supabase user without a login screen (brief 0055).
+      - key: SHOEBOX_TEST_AUTOLOGIN_EMAIL
+        sync: false
+      - key: SHOEBOX_TEST_AUTOLOGIN_PASSWORD
+        sync: false
