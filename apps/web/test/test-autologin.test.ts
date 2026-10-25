@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { testAutoLogin } from '../src/auth/test-autologin';
 
-const creds = { SHOEBOX_TEST_AUTOLOGIN_EMAIL: 'test@example.com', SHOEBOX_TEST_AUTOLOGIN_PASSWORD: 'pw' };
+const creds = {
+  SHOEBOX_TEST_AUTOLOGIN_EMAIL: 'test@example.com',
+  SHOEBOX_TEST_AUTOLOGIN_PASSWORD: 'pw',
+};
 
 describe('testAutoLogin', () => {
   it('is off outside the test environment', () => {
@@ -10,7 +13,9 @@ describe('testAutoLogin', () => {
   });
 
   it('is off when a variable is missing', () => {
-    expect(testAutoLogin({ APP_ENV: 'test', SHOEBOX_TEST_AUTOLOGIN_EMAIL: 'test@example.com' })).toBeNull();
+    expect(
+      testAutoLogin({ APP_ENV: 'test', SHOEBOX_TEST_AUTOLOGIN_EMAIL: 'test@example.com' }),
+    ).toBeNull();
   });
 
   it('returns the credentials in the test environment', () => {
