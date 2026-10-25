@@ -16,6 +16,7 @@ export const LOG_FIELD_ALLOWLIST = [
   'stage',
   'durationMs',
   'errorCode',
+  'httpStatus',
 ] as const;
 
 export type LogField = (typeof LOG_FIELD_ALLOWLIST)[number];
