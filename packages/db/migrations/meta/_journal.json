@@ -1,0 +1,57 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    { "idx": 0, "version": "7", "when": 1760745600000, "tag": "0001_enums", "breakpoints": true },
+    { "idx": 1, "version": "7", "when": 1760745600001, "tag": "0002_tenancy", "breakpoints": true },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760745600002,
+      "tag": "0003_app_worker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760745600003,
+      "tag": "0004_partners_registries",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760745600004,
+      "tag": "0005_documents_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1760745600005,
+      "tag": "0006_documents_detail",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1760745600006,
+      "tag": "0007_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1760745600007,
+      "tag": "0008_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1760745600008,
+      "tag": "0015_onboarding",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@shoebox/validation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Rule catalog (M03): each rule a pure function plus metadata.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@shoebox/domain": "workspace:*",
+    "@shoebox/i18n": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

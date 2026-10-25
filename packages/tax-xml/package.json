@@ -1,0 +1,21 @@
+{
+  "name": "@shoebox/tax-xml",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "EPO XML builders (DPHDP3, DPHKH1, DPHSHV, DPFDP7 partial), vendored XSD validator.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

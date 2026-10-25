@@ -1,0 +1,35 @@
+{
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "timezone": "Europe/Prague",
+  "schedule": ["before 6am on monday"],
+  "minimumReleaseAge": "14 days",
+  "rangeStrategy": "pin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": "0 days",
+    "schedule": ["at any time"],
+    "labels": ["security"]
+  },
+  "packageRules": [
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dev deps",
+      "automerge": true
+    },
+    {
+      "matchPackageNames": ["next", "react", "react-dom", "@types/react"],
+      "groupName": "next+react"
+    },
+    { "matchPackagePatterns": ["^@supabase/", "^supabase$", "^drizzle"], "groupName": "db stack" },
+    {
+      "matchPackagePatterns": ["^vitest", "^@vitest/", "^@playwright/", "^@axe-core/"],
+      "groupName": "test stack",
+      "automerge": true
+    },
+    { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true }
+  ]
+}

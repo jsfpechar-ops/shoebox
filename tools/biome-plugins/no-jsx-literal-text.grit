@@ -1,0 +1,18 @@
+// no-jsx-literal-text (M12 §4.1 rule 1): JSX text and aria-label|title|placeholder|alt string
+// literals are errors in apps/web and packages/ui. Use t('key') from @shoebox/i18n.
+language js
+
+or {
+  jsx_text() as $m where { $m <: not r"^\s*$" },
+  jsx_attribute(name=$n) as $m where {
+    $n <: or {
+      `aria-label`,
+      `title`,
+      `placeholder`,
+      `alt`
+    },
+    $m <: r"(?s)^[\w-]+\s*=\s*[\"'].*"
+  }
+} where {
+  register_diagnostic(span=$m, message="no-jsx-literal-text: user-facing text goes through packages/i18n, use t('key').", severity="error")
+}

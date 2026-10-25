@@ -1,0 +1,79 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!docs", "!research", "!testdata", "!.cursor", "!pnpm-lock.yaml"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": "error"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error"
+      },
+      "style": {
+        "useImportType": "error",
+        "noNonNullAssertion": "error"
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/**", "packages/ui/**"],
+      "plugins": ["./tools/biome-plugins/no-jsx-literal-text.grit"]
+    },
+    {
+      "includes": ["packages/domain/**"],
+      "plugins": ["./tools/biome-plugins/no-date-now-in-domain.grit"]
+    },
+    {
+      "includes": ["packages/domain/**", "packages/tax-xml/**", "packages/exports/**"],
+      "plugins": ["./tools/biome-plugins/no-number-money.grit"]
+    },
+    {
+      "includes": ["**", "!packages/db/**"],
+      "plugins": ["./tools/biome-plugins/no-raw-sql-outside-db.grit"]
+    }
+  ]
+}

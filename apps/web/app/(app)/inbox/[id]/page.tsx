@@ -1,0 +1,141 @@
+import type { LegalDate } from '@shoebox/domain';
+import { t } from '@shoebox/i18n';
+import { Badge, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
+import Link from 'next/link';
+import { requireActiveRole } from '../../../../src/auth/org-context';
+import { AutoRefresh } from '../../../../src/documents/auto-refresh';
+import { EDITABLE, editKeyOf } from '../../../../src/documents/correction';
+import { loadDocumentDetail } from '../../../../src/documents/detail-data';
+import { FixField } from '../../../../src/documents/fix-field';
+import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
+import { createSupabaseServerClient } from '../../../../src/supabase/server';
+
+export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const auth = await requireActiveRole(['owner', 'member', 'accountant', 'viewer']);
+  const supabase = await createSupabaseServerClient();
+  const detail = auth.ok ? await loadDocumentDetail(supabase, auth.orgId, id) : null;
+
+  if (detail === null) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Link href="/inbox" className="text-body underline">
+          {t('doc.detail.back')}
+        </Link>
+        <p className="text-body">{t('doc.detail.not_found')}</p>
+      </div>
+    );
+  }
+
+  const processing = PROCESSING_STATUSES.includes(detail.status);
+  const canFix =
+    auth.ok &&
+    (auth.role === 'owner' || auth.role === 'member') &&
+    (detail.status === 'ready' || detail.status === 'needs_review');
+  const signed = detail.file
+    ? await supabase.storage.from('org-files').createSignedUrl(detail.file.path, 300)
+    : null;
+  const fileUrl = signed && !signed.error ? (signed.data?.signedUrl ?? null) : null;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Link href="/inbox" className="text-body underline">
+        {t('doc.detail.back')}
+      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-title">{detail.title ?? t('inbox.row.unknown_supplier')}</h1>
+        <StatusBadge
+          status={detail.status}
+          cls={detail.cls}
+          {...(processing ? { processingSince: detail.createdAt } : {})}
+        />
+      </div>
+
+      {processing ? (
+        <>
+          <p className="text-body">{t('doc.detail.reading')}</p>
+          <AutoRefresh active />
+        </>
+      ) : (
+        <>
+          <Card className="flex flex-col gap-4 p-6">
+            <h2 className="text-card-title">{t('doc.detail.read_title')}</h2>
+            <dl className="flex flex-col gap-3">
+              {detail.fields.map((field) => {
+                const editKey = canFix ? editKeyOf(field.label) : null;
+                return (
+                  <div key={field.label} className="flex flex-wrap justify-between gap-2">
+                    <dt className="text-body text-foreground">{t(field.label)}</dt>
+                    <dd className="text-body">
+                      {field.kind === 'money' ? (
+                        <MoneyText value={field.value} currency={detail.currency} />
+                      ) : field.kind === 'date' ? (
+                        <LegalDateText date={field.value as LegalDate} />
+                      ) : (
+                        field.value
+                      )}
+                    </dd>
+                    {editKey ? (
+                      <FixField
+                        documentId={detail.id}
+                        editKey={editKey}
+                        kind={EDITABLE[editKey].kind}
+                        label={field.label}
+                        current={field.value}
+                      />
+                    ) : null}
+                  </div>
+                );
+              })}
+              {detail.vatLines.map((line) => (
+                <p key={`${line.rate}-${line.base}`} className="text-body">
+                  {t('doc.detail.vat_line', { rate: line.rate, base: line.base, vat: line.vat })}
+                </p>
+              ))}
+            </dl>
+          </Card>
+
+          {detail.checks.length > 0 ? (
+            <Card className="flex flex-col gap-4 p-6">
+              <h2 className="text-card-title">{t('doc.detail.attention_title')}</h2>
+              <ul className="flex flex-col gap-3">
+                {detail.checks.map((check) => (
+                  <li
+                    key={`${check.key}-${JSON.stringify(check.params)}`}
+                    className="flex flex-wrap items-center gap-2 text-body"
+                  >
+                    {check.severity === 'blocking' ? (
+                      <Badge tone="warning">{t('status.badge.needs_review')}</Badge>
+                    ) : null}
+                    <span>{t(check.key, check.params)}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : (
+            <p className="text-body">{t('doc.detail.all_good')}</p>
+          )}
+        </>
+      )}
+
+      {detail.file && fileUrl ? (
+        detail.file.mimeType.startsWith('image/') ? (
+          <img
+            src={fileUrl}
+            alt={t('doc.detail.preview_alt')}
+            className="max-w-full rounded-control border border-border"
+          />
+        ) : (
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-body underline"
+          >
+            {t('doc.detail.open_file')}
+          </a>
+        )
+      ) : null}
+    </div>
+  );
+}

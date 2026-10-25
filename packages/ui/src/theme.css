@@ -1,0 +1,87 @@
+/* packages/ui/src/theme.css: maps tokens.css into the Tailwind 4 theme (07 §3–§5). No raw colors here. */
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* dark: matches the manual switch, or the system setting unless the user chose light (07 §3). */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-link: var(--link);
+  --color-ring: var(--ring);
+  --color-focus: var(--focus);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-info: var(--info);
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* reference: rounded-control/-card read var(--radius-*) from tokens.css (these values are only the fallback). */
+@theme reference {
+  --radius-*: initial;
+  --radius-control: 6px;
+  --radius-card: 8px;
+}
+
+@theme {
+  --spacing: 0.25rem;
+
+  --text-*: initial;
+  --text-title: 1.875rem;
+  --text-title--line-height: 2.25rem;
+  --text-title--font-weight: 600;
+  --text-section: 1.25rem;
+  --text-section--line-height: 1.75rem;
+  --text-section--font-weight: 600;
+  --text-card-title: 1.125rem;
+  --text-card-title--line-height: 1.625rem;
+  --text-card-title--font-weight: 500;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5rem;
+  --text-body--font-weight: 400;
+  --text-meta: 0.875rem;
+  --text-meta--line-height: 1.25rem;
+  --text-meta--font-weight: 500;
+  --text-kpi: 2.25rem;
+  --text-kpi--line-height: 2.5rem;
+  --text-kpi--font-weight: 600;
+
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --breakpoint-*: initial;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 90rem;
+
+  --container-content: 75rem;
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

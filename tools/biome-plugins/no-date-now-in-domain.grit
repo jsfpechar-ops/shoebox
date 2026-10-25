@@ -1,0 +1,9 @@
+// no-date-now-in-domain (M12 §4.1 rule 2): packages/domain is pure, it takes a Clock.
+language js
+
+or {
+  `Date.now()`,
+  `new Date()`
+} as $m where {
+  register_diagnostic(span=$m, message="no-date-now-in-domain: packages/domain takes a Clock, never reads the wall clock.", severity="error")
+}

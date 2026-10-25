@@ -1,0 +1,9 @@
+// no-number-money (M12 §4.1 rule 3, ADR-007): no parseFloat/Number() in domain, tax-xml, exports.
+language js
+
+or {
+  `parseFloat($_)`,
+  `Number($_)`
+} as $m where {
+  register_diagnostic(span=$m, message="no-number-money: money is never a float, parse amounts with Money (ADR-007).", severity="error")
+}

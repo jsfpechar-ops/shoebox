@@ -1,0 +1,21 @@
+{
+  "name": "@shoebox/exports",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Accountant package, Pohoda, ISDOC writer, CSV/XLSX, ZIP.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

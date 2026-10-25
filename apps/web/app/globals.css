@@ -1,0 +1,5 @@
+/* apps/web/app/globals.css: tokens and Tailwind theme come from @shoebox/ui (07 §3). No raw colors here. */
+@import "@shoebox/ui/theme.css";
+
+/* Tailwind scans apps/web by default; the shared components live in packages/ui. */
+@source "../../../packages/ui/src";

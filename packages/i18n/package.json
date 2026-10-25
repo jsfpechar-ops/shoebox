@@ -1,0 +1,21 @@
+{
+  "name": "@shoebox/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Message catalogs: cs (source of truth) and en, ICU.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

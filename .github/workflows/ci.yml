@@ -1,0 +1,232 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, 'phase/**']
+  push:
+    branches: [main, 'phase/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  setup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+
+  lint:
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Biome
+        run: pnpm lint
+
+  typecheck:
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Typecheck
+        run: pnpm typecheck
+
+  unit:
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Unit and ui tests with coverage gates
+        run: pnpm test:unit
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Install gitleaks (checksum-pinned)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tgz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: No .env file is tracked
+        run: |
+          if git ls-files | grep -E '(^|/)\.env(\..+)?$' | grep -vE '(^|/)\.env\.example$'; then
+            echo '::error::.env file committed; only .env.example (names only) is allowed'
+            exit 1
+          fi
+      - name: Config self-test (a fake Supabase service key must be flagged)
+        run: bash scripts/gitleaks_selftest.sh
+      - name: gitleaks on the commits of this PR or push
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            range="$PR_BASE..$PR_HEAD"
+          elif [ -n "$PUSH_BEFORE" ] && git cat-file -e "${PUSH_BEFORE}^{commit}" 2>/dev/null; then
+            range="$PUSH_BEFORE..$SHA"
+          else
+            range="$SHA"
+          fi
+          gitleaks git --no-banner --redact --config .gitleaks.toml --log-opts="--no-merges $range" .
+
+  pii:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: PII guard self-test
+        run: python3 scripts/test/test_pii_guard.py
+      - name: Czech PII guard on the added lines of this PR or push
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            range="$PR_BASE...$PR_HEAD"
+          elif [ -n "$PUSH_BEFORE" ] && git cat-file -e "${PUSH_BEFORE}^{commit}" 2>/dev/null; then
+            range="$PUSH_BEFORE..$SHA"
+          elif git cat-file -e "${SHA}~1^{commit}" 2>/dev/null; then
+            range="${SHA}~1..$SHA"
+          else
+            echo 'first commit, nothing to compare'; exit 0
+          fi
+          python3 scripts/pii_guard.py --diff "$range"
+
+  context-lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Agent context lint
+        run: python3 scripts/context_lint.py
+
+  depcruise:
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Import boundaries (dependency-cruiser)
+        run: pnpm depcruise
+
+  db:
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      # Local Supabase defaults (supabase/config.toml [db] port 54322); same URL as drizzle.config.ts.
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      # Throwaway password for the ephemeral CI database only (set in the step below).
+      WORKER_DATABASE_URL: postgresql://app_worker:ci-local-only@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Start local Supabase (Postgres 17 and auth only; API, Studio and mail containers are not needed)
+        run: >
+          pnpm exec supabase start
+          -x realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Migrate from scratch (drizzle-kit, packages/db/migrations)
+        run: pnpm db:migrate
+      - name: Give app_worker a CI-only password (local Supabase uses scram, app_worker has none)
+        run: psql "$DATABASE_URL" -c "alter role app_worker password 'ci-local-only'"
+      - name: Migrate again (forward-only ledger, must be a no-op)
+        run: pnpm db:migrate
+      - name: DB suite (migration smoke, RLS, withTenant)
+        run: pnpm test:db
+      - name: Every journal entry is applied exactly once
+        run: |
+          expected=$(python3 -c 'import json; print(len(json.load(open("packages/db/migrations/meta/_journal.json"))["entries"]))')
+          applied=$(psql "$DATABASE_URL" -tAc 'select count(*) from drizzle.__drizzle_migrations')
+          echo "journal entries: $expected, applied: $applied"
+          test "$applied" = "$expected"
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup
+
+  migration-lint:
+    needs: setup
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - name: Migration journal is consistent (drizzle-kit check)
+        run: pnpm --filter @shoebox/db exec drizzle-kit check
+      - name: Forward-only lint on the migrations added or changed by this PR or push
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            range="$PR_BASE...$PR_HEAD"
+          elif [ -n "$PUSH_BEFORE" ] && git cat-file -e "${PUSH_BEFORE}^{commit}" 2>/dev/null; then
+            range="$PUSH_BEFORE..$SHA"
+          elif git cat-file -e "${SHA}~1^{commit}" 2>/dev/null; then
+            range="${SHA}~1..$SHA"
+          else
+            echo 'first commit, nothing to compare'; exit 0
+          fi
+          files=$(git diff --name-only --diff-filter=AMR "$range" -- 'packages/db/migrations/*.sql')
+          if [ -z "$files" ]; then
+            echo 'no migration added or changed'; exit 0
+          fi
+          echo "$files"
+          # shellcheck disable=SC2086
+          node scripts/migration-lint.ts $files

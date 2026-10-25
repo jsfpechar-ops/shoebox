@@ -1,0 +1,24 @@
+{
+  "name": "@shoebox/platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Logger, telemetry, signed webhooks, file admission, LLM budget wiring, eval CLI (M12).",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "pino": "10.4.0"
+  }
+}

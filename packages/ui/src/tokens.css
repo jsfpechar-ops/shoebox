@@ -1,0 +1,61 @@
+/* packages/ui/src/tokens.css: the only place raw colors may appear (07 §3). */
+:root {
+  --background: #ffffff;
+  --foreground: #37352f;
+  --card: #ffffff;
+  --muted: #f7f7f5;
+  --muted-foreground: #5f5e5b;
+  --border: #e9e9e7;
+  --input: #8f8e8a;
+  --primary: #0b6bcb;
+  --primary-foreground: #ffffff;
+  --link: #0b6bcb;
+  --ring: #0b0c0c;
+  --focus: #ffdd00;
+  --success: #047857;
+  --warning: #92400e;
+  --destructive: #b91c1c;
+  --info: #5f5e5b;
+  --radius-control: 6px;
+  --radius-card: 8px;
+}
+
+:root[data-theme="dark"] {
+  --background: #0b1220;
+  --foreground: #e2e8f0;
+  --card: #111a2e;
+  --muted: #172036;
+  --muted-foreground: #94a3b8;
+  --border: #1f2a40;
+  --input: #64748b;
+  --primary: #93c5fd;
+  --primary-foreground: #0b1220;
+  --link: #93c5fd;
+  --ring: #ffdd00;
+  --focus: #ffdd00;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --destructive: #f87171;
+  --info: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #0b1220;
+    --foreground: #e2e8f0;
+    --card: #111a2e;
+    --muted: #172036;
+    --muted-foreground: #94a3b8;
+    --border: #1f2a40;
+    --input: #64748b;
+    --primary: #93c5fd;
+    --primary-foreground: #0b1220;
+    --link: #93c5fd;
+    --ring: #ffdd00;
+    --focus: #ffdd00;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --destructive: #f87171;
+    --info: #94a3b8;
+  }
+}

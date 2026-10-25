@@ -1,0 +1,206 @@
+import type { DocumentForRead, ReadingWrite, TenantTx } from '@shoebox/db';
+import { fixedClock } from '@shoebox/domain';
+import { AnthropicHttpError, type LlmClient, type LlmRequest } from '@shoebox/extraction';
+import { describe, expect, it } from 'vitest';
+import { createDocExtractHandler, type ReadingStore } from '../src/doc-extract/handler';
+
+const ORG = '11111111-1111-4111-8111-111111111111';
+const DOC = '22222222-2222-4222-8222-222222222222';
+
+function wire(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    kind_hint: 'tax_invoice',
+    supplier: {
+      name: 'Synthetic s.r.o.',
+      ico: '27082440',
+      dic: 'CZ27082440',
+      vat_id: '',
+      country: 'CZ',
+    },
+    buyer: { name: '', ico: '', dic: '' },
+    document: { number: 'SYN-1', variable_symbol: '1' },
+    dates: { issue_date: '2026-09-12', duzp: '2026-09-12', due_date: '2026-09-26' },
+    currency: 'CZK',
+    vat_recap: [{ rate_pct: '21', base: '100.00', vat: '21.00' }],
+    totals: { net: '100.00', vat: '21.00', gross: '121.00' },
+    payment: { account_number: '123', bank_code: '0100', iban: '', method: 'bank_transfer' },
+    flags: {
+      not_tax_document_text: false,
+      non_vat_payer_text: false,
+      reverse_charge_text: false,
+      paid_text: false,
+    },
+    ...overrides,
+  };
+}
+
+function fakeStore(doc: Partial<DocumentForRead> | null = {}) {
+  const calls: string[] = [];
+  const saved: ReadingWrite[] = [];
+  const failures: Array<{ error: string; final: boolean }> = [];
+  const store: ReadingStore = {
+    load: async () =>
+      doc === null
+        ? null
+        : {
+            id: DOC,
+            orgId: ORG,
+            status: 'received',
+            storagePath: `org/${ORG}/files/x`,
+            mimeType: 'application/pdf',
+            orgIco: null,
+            orgDic: null,
+            ...doc,
+          },
+    setStatus: async (_tx, _id, status) => {
+      calls.push(`status:${status}`);
+    },
+    save: async (_tx, write) => {
+      saved.push(write);
+      return 'run-1';
+    },
+    fail: async (_tx, f) => {
+      failures.push({ error: f.error, final: f.final });
+    },
+  };
+  return { store, calls, saved, failures };
+}
+
+function llmReturning(json: unknown | Error): LlmClient & { requests: LlmRequest[] } {
+  const requests: LlmRequest[] = [];
+  return {
+    requests,
+    async complete(request) {
+      requests.push(request);
+      if (json instanceof Error) throw json;
+      return {
+        model: 'claude-haiku-5-5',
+        stopReason: 'end_turn',
+        text: JSON.stringify(json),
+        json,
+        latencyMs: 900,
+        usage: {
+          inputTokens: 1500,
+          outputTokens: 300,
+          cacheReadInputTokens: 0,
+          cacheCreationInputTokens: 0,
+        },
+      };
+    },
+  };
+}
+
+const blobs = { get: async () => new Uint8Array([37, 80, 68, 70]) };
+const clock = fixedClock('2026-10-25T10:00:00Z');
+const tx = {} as TenantTx;
+const ctx = (attempt = 1) => ({
+  tx,
+  attempt,
+  jobId: 'job-1',
+  signal: new AbortController().signal,
+});
+
+describe('doc.extract handler', () => {
+  it('reads, checks and saves a clean invoice as ready', async () => {
+    const { store, calls, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({ llm, blobs, model: 'claude-haiku-5-5', clock, store })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    expect(calls).toEqual(['status:extracting']);
+    expect(llm.requests[0]?.model).toBe('claude-haiku-5-5');
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).toMatchObject({
+      orgId: ORG,
+      documentId: DOC,
+      status: 'ready',
+      patch: {
+        class: 'received_invoice',
+        totalGross: '121.00',
+        partnerSnapshot: { ico: '27082440' },
+      },
+      vatSummary: [{ vatRateType: 'standard', vatRatePct: '21', base: '100', vat: '21' }],
+      run: {
+        model: 'claude-haiku-5-5',
+        promptVersion: 'm02-proto-v3',
+        attempt: 1,
+        inputTokens: 1500,
+        outputTokens: 300,
+        latencyMs: 900,
+      },
+    });
+  });
+
+  it('sends a document with wrong VAT math to review', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(
+      wire({
+        vat_recap: [{ rate_pct: '21', base: '100.00', vat: '30.00' }],
+        totals: { net: '100.00', vat: '30.00', gross: '130.00' },
+      }),
+    );
+    await createDocExtractHandler({ llm, blobs, model: 'm', clock, store })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    expect(saved[0]?.status).toBe('needs_review');
+    expect(saved[0]?.validations.some((v) => v.severity === 'blocking')).toBe(true);
+  });
+
+  it('skips a document that was already read', async () => {
+    const { store, calls, saved } = fakeStore({ status: 'ready' });
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({ llm, blobs, model: 'm', clock, store })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    expect(calls).toEqual([]);
+    expect(saved).toEqual([]);
+    expect(llm.requests).toEqual([]);
+  });
+
+  it('does nothing for a missing document', async () => {
+    const { store, saved } = fakeStore(null);
+    await createDocExtractHandler({ llm: llmReturning(wire()), blobs, model: 'm', clock, store })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    expect(saved).toEqual([]);
+  });
+
+  it('re-throws a model error before the last attempt, records it on the last', async () => {
+    const error = new AnthropicHttpError(529, '');
+    const first = fakeStore();
+    await expect(
+      createDocExtractHandler({
+        llm: llmReturning(error),
+        blobs,
+        model: 'm',
+        clock,
+        store: first.store,
+      })({ orgId: ORG, documentId: DOC }, ctx(1)),
+    ).rejects.toBe(error);
+    expect(first.failures).toEqual([]);
+    const last = fakeStore();
+    await createDocExtractHandler({
+      llm: llmReturning(error),
+      blobs,
+      model: 'm',
+      clock,
+      store: last.store,
+    })({ orgId: ORG, documentId: DOC }, ctx(99));
+    expect(last.failures).toEqual([{ error: 'http_529', final: true }]);
+  });
+
+  it('fails an unsupported file type at once', async () => {
+    const { store, failures } = fakeStore({ mimeType: 'text/plain' });
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({ llm, blobs, model: 'm', clock, store })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    expect(failures).toEqual([{ error: 'unsupported_type', final: true }]);
+    expect(llm.requests).toEqual([]);
+  });
+});

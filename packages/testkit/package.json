@@ -1,0 +1,27 @@
+{
+  "name": "@shoebox/testkit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Factories, golden-set loader, fake registries.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@shoebox/domain": "workspace:*",
+    "@shoebox/extraction": "workspace:*",
+    "@shoebox/registries": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

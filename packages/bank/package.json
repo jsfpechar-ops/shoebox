@@ -1,0 +1,21 @@
+{
+  "name": "@shoebox/bank",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bank statement parsers (GPC/ABO, CAMT.053, MT940, CSV), notice parsers, matcher.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

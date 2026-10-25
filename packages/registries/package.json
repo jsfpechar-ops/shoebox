@@ -1,0 +1,21 @@
+{
+  "name": "@shoebox/registries",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ARES, CRPDPH, VIES and CNB clients with caching and rate limits.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

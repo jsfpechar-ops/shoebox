@@ -1,0 +1,111 @@
+import { createHash } from 'node:crypto';
+import { filePath } from '@shoebox/platform';
+
+export const UPLOAD_MEDIA_TYPES: readonly string[] = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+export const UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
+export const UPLOAD_MAX_FILES = 50;
+
+export interface UploadFile {
+  readonly name: string;
+  readonly type: string;
+  readonly bytes: Uint8Array;
+}
+
+export interface SourceFileInsert {
+  readonly orgId: string;
+  readonly sha256: string;
+  readonly storagePath: string;
+  readonly mimeType: string;
+  readonly byteSize: number;
+  readonly originalFilename: string;
+  readonly filenameNfc: string;
+  readonly uploadedBy: string;
+}
+
+export interface UploadDeps {
+  putFile(path: string, bytes: Uint8Array, contentType: string): Promise<void>; // an existing object is not an error
+  insertSourceFile(row: SourceFileInsert): Promise<{ id: string; created: boolean }>; // created false = same org+sha256 existed
+  findDocumentBySource(sourceFileId: string): Promise<string | null>;
+  insertDocument(row: {
+    orgId: string;
+    sourceFileId: string;
+    receivedDate: string;
+  }): Promise<string>;
+  enqueueRead(orgId: string, documentId: string): Promise<void>;
+  today(): string; // Prague date YYYY-MM-DD
+}
+
+export type UploadItem =
+  | {
+      readonly fileName: string;
+      readonly status: 'accepted' | 'duplicate';
+      readonly documentId: string;
+    }
+  | {
+      readonly fileName: string;
+      readonly status: 'rejected';
+      readonly reason: 'type' | 'size' | 'empty';
+    };
+
+export function sha256Hex(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+export async function uploadDocuments(
+  deps: UploadDeps,
+  ctx: { orgId: string; userId: string },
+  files: readonly UploadFile[],
+): Promise<UploadItem[]> {
+  const items: UploadItem[] = [];
+  for (const file of files) {
+    if (file.bytes.byteLength === 0) {
+      items.push({ fileName: file.name, status: 'rejected', reason: 'empty' });
+      continue;
+    }
+    if (!UPLOAD_MEDIA_TYPES.includes(file.type)) {
+      items.push({ fileName: file.name, status: 'rejected', reason: 'type' });
+      continue;
+    }
+    if (file.bytes.byteLength > UPLOAD_MAX_BYTES) {
+      items.push({ fileName: file.name, status: 'rejected', reason: 'size' });
+      continue;
+    }
+    const sha256 = sha256Hex(file.bytes);
+    const storagePath = filePath(ctx.orgId, sha256);
+    await deps.putFile(storagePath, file.bytes, file.type);
+    const source = await deps.insertSourceFile({
+      orgId: ctx.orgId,
+      sha256,
+      storagePath,
+      mimeType: file.type,
+      byteSize: file.bytes.byteLength,
+      originalFilename: file.name,
+      filenameNfc: file.name.normalize('NFC'),
+      uploadedBy: ctx.userId,
+    });
+    if (!source.created) {
+      const existing = await deps.findDocumentBySource(source.id);
+      if (existing !== null) {
+        items.push({ fileName: file.name, status: 'duplicate', documentId: existing });
+        continue;
+      }
+    }
+    const documentId = await deps.insertDocument({
+      orgId: ctx.orgId,
+      sourceFileId: source.id,
+      receivedDate: deps.today(),
+    });
+    try {
+      await deps.enqueueRead(ctx.orgId, documentId);
+    } catch {
+      // The queue is down: the document stays `received` and is still accepted.
+    }
+    items.push({ fileName: file.name, status: 'accepted', documentId });
+  }
+  return items;
+}

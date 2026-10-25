@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{proto.page.title}}</title>
+<link rel="stylesheet" href="/tokens.css">
+<style>
+  /* Prototype page: tokens from packages/ui/src/tokens.css only, no raw colors (07 §3).
+     TODO(P1-UI): the real screen is M11 in apps/web; this page is throwaway. */
+  * { box-sizing: border-box; }
+  /* biome-ignore lint/complexity/noImportantStyles: hidden must beat every display rule */
+  [hidden] { display: none !important; }
+  body { margin: 0; padding: 16px; background: var(--background); color: var(--foreground);
+    font: 15px/1.5 Inter, system-ui, sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: 22px; margin: 8px 0 0; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  p { margin: 0; }
+  .muted { color: var(--muted-foreground); }
+  .small { font-size: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 16px; }
+  .warning { border-color: var(--warning); color: var(--warning); }
+  .error { color: var(--destructive); }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .drop { border: 2px dashed var(--input); border-radius: var(--radius-card); padding: 24px 16px; text-align: center; }
+  .drop.over { border-color: var(--primary); background: var(--muted); }
+  .drop label { color: var(--link); text-decoration: underline; cursor: pointer; }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  button { font: inherit; color: var(--foreground); background: var(--card); border: 1px solid var(--input);
+    border-radius: var(--radius-control); padding: 8px 12px; cursor: pointer; }
+  button.primary { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+  .layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  .queue { display: grid; gap: 8px; align-content: start; }
+  .queue ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; max-height: 40vh; overflow: auto; }
+  .queue li { display: block; }
+  .item { width: 100%; text-align: left; display: grid; gap: 2px; padding: 6px 8px; }
+  .item[aria-current="true"] { border-color: var(--primary); background: var(--muted); }
+  .item .name { overflow-wrap: anywhere; }
+  .item .st { font-size: 12px; color: var(--muted-foreground); }
+  .item .st.labeled { color: var(--success); }
+  .item .st.error { color: var(--destructive); }
+  .work { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-content: start; }
+  .preview { min-height: 240px; }
+  .preview iframe { width: 100%; height: 70vh; min-height: 360px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--card); }
+  .preview img { max-width: 100%; height: auto; display: block; border-radius: var(--radius-control); }
+  .form { display: grid; gap: 10px; align-content: start; }
+  .field { display: grid; gap: 2px; }
+  .field label { font-weight: 500; color: var(--muted-foreground); font-size: 13px; }
+  .field input[type="text"], .field select, .field textarea { width: 100%; font: inherit; color: var(--foreground);
+    background: var(--card); border: 1px solid var(--input); border-radius: var(--radius-control); padding: 6px 8px; }
+  .field.changed input[type="text"], .field.changed select { border-color: var(--warning); border-width: 2px; }
+  .field.check { grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  ul.checks { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+  ul.checks li { display: grid; grid-template-columns: 56px 1fr; gap: 8px; }
+  .sev { font-weight: 600; font-size: 12px; text-transform: uppercase; padding-top: 2px; }
+  .sev.pass { color: var(--success); }
+  .sev.warn { color: var(--warning); }
+  .sev.fail { color: var(--destructive); }
+  .drop input:focus-visible + label { outline: 2px solid var(--ring); outline-offset: 2px; }
+  @media (min-width: 1024px) {
+    .layout { grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+    .queue ul { max-height: 75vh; }
+    .work { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>{{proto.page.title}}</h1>
+  <p class="muted">{{proto.page.subtitle}}</p>
+  <p class="card warning">{{proto.page.warning}}</p>
+  <div class="card drop" id="drop">
+    <span>{{proto.page.drop}}</span>
+    <input id="file" type="file" multiple accept="application/pdf,image/png,image/jpeg">
+    <label for="file">{{proto.page.pick}}</label>
+  </div>
+  <p id="error" class="error" role="alert" hidden></p>
+  <p id="storage" class="error" role="alert" hidden></p>
+  <p id="nag" class="card warning" role="status" hidden></p>
+  <div class="layout" id="layout" hidden>
+    <section class="card queue" aria-labelledby="queue-title">
+      <h2 id="queue-title">{{proto.review.queue}}</h2>
+      <p id="progress" class="muted"></p>
+      <ul id="queue"></ul>
+      <div class="actions">
+        <button type="button" id="download">{{proto.review.download}}</button>
+        <button type="button" id="clear">{{proto.review.clear}}</button>
+      </div>
+    </section>
+    <div class="work" id="work" hidden>
+      <section class="card preview" id="preview"></section>
+      <section class="card form" id="review" aria-live="polite"></section>
+    </div>
+  </div>
+</main>
+<script id="labels" type="application/json">"__LABELS__"</script>
+<script>
+(() => {
+  const L = JSON.parse(document.getElementById('labels').textContent);
+  const t = (key, params = {}) =>
+    (L[key] || key).replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? ''));
+  const $ = (id) => document.getElementById(id);
+  const show = (el, text) => { el.textContent = text; el.hidden = false; };
+
+  // Field and class ids are data, not copy; the labels come from the catalogs.
+  const FIELDS = ['supplier_name', 'supplier_ico', 'supplier_dic', 'document_number', 'variable_symbol',
+    'issue_date', 'duzp', 'due_date', 'currency', 'total_gross', 'vat_lines', 'not_tax_document'];
+  const CLASSES = ['received_invoice', 'received_receipt', 'non_document', 'unreadable',
+    'received_credit_note',
+    'received_proforma', 'received_advance_tax_doc', 'order_confirmation', 'settlement_statement',
+    'government_filing', 'unknown'];
+  const MEDIA = ['application/pdf', 'image/png', 'image/jpeg'];
+  const SCHEMA = 'proto-results-v2';
+  const NAG_EVERY = 10;
+  const DOWNLOAD_KEY = 'shoebox-proto-last-download';
+
+  // ---- state (the IndexedDB stores are the durable copy; these are the working copy) ----
+  const docs = new Map();      // doc_id -> { doc_id, name, type, size, blob, state, message }
+  let runs = [];               // ProtoRunRecord, in stored order
+  let labels = [];             // ProtoLabelRecord, in stored order
+  const checkTexts = new Map(); // run_id -> [{id, severity, message}] (display only, not exported)
+  const pending = [];          // reading queue: { doc, batch, force }
+  let reading = false;
+  let current = null;          // doc_id open in the review panel
+  let dirty = false;
+  let known = null;            // { prompt_version, model_requested } of the latest server answer
+  let previewUrl = null;
+  let lastDownload = '';
+  let db = null;
+
+  // ---- IndexedDB, plain, every call guarded ----
+  function openDb() {
+    return new Promise((resolve) => {
+      try {
+        const req = indexedDB.open('shoebox-proto', 1);
+        req.onupgradeneeded = () => {
+          const d = req.result;
+          d.createObjectStore('files', { keyPath: 'doc_id' });
+          d.createObjectStore('runs', { keyPath: 'run_id' }).createIndex('doc_id', 'doc_id');
+          d.createObjectStore('labels', { keyPath: 'label_id' }).createIndex('doc_id', 'doc_id');
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+        req.onblocked = () => resolve(null);
+      } catch (err) {
+        resolve(null);
+      }
+    });
+  }
+  function store(name, mode, run) {
+    return new Promise((resolve) => {
+      if (!db) { resolve(null); return; }
+      try {
+        const tx = db.transaction(name, mode);
+        const result = run(tx.objectStore(name));
+        tx.oncomplete = () => resolve(result && 'result' in result ? result.result : true);
+        tx.onerror = () => { storageFailed(); resolve(null); };
+        tx.onabort = () => { storageFailed(); resolve(null); };
+      } catch (err) {
+        storageFailed();
+        resolve(null);
+      }
+    });
+  }
+  const put = (name, value) => store(name, 'readwrite', (s) => { s.put(value); });
+  const getAll = (name) => store(name, 'readonly', (s) => s.getAll());
+  async function clearAll() {
+    for (const name of ['files', 'runs', 'labels']) await store(name, 'readwrite', (s) => { s.clear(); });
+  }
+  function storageFailed() { show($('storage'), t('proto.review.storage_error')); }
+
+  // ---- helpers ----
+  const uuid = () => crypto.randomUUID();
+  async function sha256Hex(blob) {
+    const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  const runsOf = (id) => runs.filter((r) => r.doc_id === id);
+  const labelsOf = (id) => labels.filter((l) => l.doc_id === id);
+  const latestOk = (id) => runsOf(id).filter((r) => r.ok).at(-1) || null;
+  const latestLabel = (id) => labelsOf(id).reduce((a, l) => (!a || l.rev > a.rev ? l : a), null);
+  const runValue = (run, key) => {
+    const hit = run?.fields.find((f) => f.key === key);
+    return hit?.value !== null && hit?.value !== undefined ? String(hit.value) : '';
+  };
+  // Possible duplicate (M01 semantic key, prototype subset): same supplier IČO, number and total.
+  const dupKey = (run) => {
+    const parts = ['supplier_ico', 'document_number', 'total_gross'].map((k) => runValue(run, k));
+    return parts.every((p) => p !== '') ? parts.join('|') : '';
+  };
+  function duplicateOf(docId, run) {
+    const key = dupKey(run);
+    if (key === '') return null;
+    for (const other of docs.values()) {
+      if (other.doc_id === docId) continue;
+      const otherRun = latestOk(other.doc_id);
+      if (otherRun && dupKey(otherRun) === key) return other;
+    }
+    return null;
+  }
+  function statusOf(doc) {
+    if (pending.some((p) => p.doc === doc) && !doc.reading) return 'waiting';
+    if (doc.reading) return 'reading';
+    if (latestLabel(doc.doc_id)) return 'labeled';
+    if (latestOk(doc.doc_id)) return 'ready';
+    if (doc.message || runsOf(doc.doc_id).length > 0) return 'error';
+    return 'waiting';
+  }
+  const unsavedCount = () => labels.filter((l) => l.labeled_at > lastDownload).length;
+
+  // ---- reading ----
+  function enqueue(doc, batch, force) {
+    if (pending.some((p) => p.doc === doc)) return;
+    if (!force && known) {
+      const hit = runsOf(doc.doc_id).some((r) => r.ok
+        && r.prompt_version === known.prompt_version && r.model_requested === known.model_requested);
+      if (hit) return;
+    }
+    pending.push({ doc, batch, force });
+    drain();
+  }
+  async function drain() {
+    if (reading) return;
+    reading = true;
+    while (pending.length > 0) {
+      const job = pending[0];
+      job.doc.reading = true;
+      job.doc.message = '';
+      renderQueue();
+      await readOne(job.doc, job.batch);
+      job.doc.reading = false;
+      pending.shift();
+      renderQueue();
+      if (current === job.doc.doc_id && !dirty) renderReview();
+    }
+    reading = false;
+  }
+  async function readOne(doc, batch) {
+    try {
+      const res = await fetch('/api/extract', {
+        method: 'POST',
+        headers: { 'content-type': doc.type || 'application/octet-stream' },
+        body: doc.blob,
+      });
+      const data = await res.json();
+      if (data.run) {
+        const record = {
+          schema: SCHEMA, kind: 'run', doc_id: doc.doc_id, batch_id: batch, file_name: doc.name,
+          media_type: doc.type, size_bytes: doc.size, channel: 'upload', page_count: null,
+          has_text_layer: null, ...data.run,
+        };
+        runs.push(record);
+        if (data.checks) checkTexts.set(record.run_id, data.checks);
+        await put('runs', record);
+        if (record.ok) {
+          known = { prompt_version: record.prompt_version, model_requested: record.model_requested };
+        }
+      }
+      if (!res.ok) doc.message = data.error || res.statusText;
+    } catch (err) {
+      doc.message = t('proto.page.error_llm', { detail: String(err) });
+    }
+  }
+
+  // ---- adding files ----
+  async function addFiles(fileList) {
+    $('error').hidden = true;
+    const batch = uuid();
+    for (const file of Array.from(fileList)) {
+      if (!MEDIA.includes(file.type)) { show($('error'), t('proto.page.error_type')); continue; }
+      let id;
+      try { id = await sha256Hex(file); } catch (err) { show($('error'), String(err)); continue; }
+      let doc = docs.get(id);
+      if (!doc) {
+        doc = { doc_id: id, name: file.name, type: file.type, size: file.size, blob: file,
+          reading: false, message: '' };
+        docs.set(id, doc);
+        await put('files', { doc_id: id, name: file.name, type: file.type, size: file.size, blob: file, added_at: Date.now() + docs.size / 1000 });
+      }
+      $('layout').hidden = false;
+      renderQueue();
+      enqueue(doc, batch, false);
+      if (current === null) openDoc(id);
+    }
+    renderQueue();
+  }
+
+  // ---- queue ----
+  function renderQueue() {
+    $('layout').hidden = docs.size === 0;
+    const ul = $('queue');
+    ul.replaceChildren();
+    let done = 0;
+    for (const doc of docs.values()) {
+      const status = statusOf(doc);
+      if (status === 'labeled') done += 1;
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'item';
+      btn.setAttribute('aria-current', String(doc.doc_id === current));
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = doc.name;
+      const st = document.createElement('span');
+      st.className = `st ${status}`;
+      st.textContent = t(`proto.review.status_${status}`);
+      btn.append(name, st);
+      btn.addEventListener('click', () => openDoc(doc.doc_id));
+      li.append(btn);
+      ul.append(li);
+    }
+    $('progress').textContent = t('proto.review.progress', { labeled: done, total: docs.size });
+  }
+
+  // ---- review panel ----
+  function openDoc(id) {
+    current = id;
+    dirty = false;
+    renderQueue();
+    renderPreview();
+    renderReview();
+  }
+  function renderPreview() {
+    const box = $('preview');
+    box.replaceChildren();
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+    const doc = docs.get(current);
+    $('work').hidden = !doc;
+    if (!doc) return;
+    try { previewUrl = URL.createObjectURL(doc.blob); } catch (err) { previewUrl = null; }
+    if (previewUrl && doc.type === 'application/pdf') {
+      const frame = document.createElement('iframe');
+      frame.src = previewUrl;
+      frame.title = doc.name;
+      box.append(frame);
+    } else if (previewUrl && doc.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = previewUrl;
+      img.alt = doc.name;
+      box.append(img);
+    } else {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = t('proto.review.preview_none');
+      box.append(p);
+    }
+  }
+  function fieldBox(id, labelText, control, modelText) {
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = labelText;
+    wrap.append(label, control);
+    const hint = document.createElement('span');
+    hint.className = 'muted small';
+    hint.hidden = true;
+    hint.textContent = modelText;
+    wrap.append(hint);
+    return { wrap, hint };
+  }
+  function renderReview() {
+    const box = $('review');
+    box.replaceChildren();
+    const doc = docs.get(current);
+    if (!doc) return;
+    const run = latestOk(doc.doc_id);
+    const label = latestLabel(doc.doc_id);
+    if (!run) {
+      const p = document.createElement('p');
+      p.className = 'error';
+      const failed = runsOf(doc.doc_id).filter((r) => !r.ok).at(-1);
+      p.textContent = doc.message || failed?.error || t(`proto.review.status_${statusOf(doc)}`);
+      box.append(p, rereadButton(doc));
+      return;
+    }
+    const prefill = (key) => {
+      if (label) {
+        const hit = label.fields.find((f) => f.key === key);
+        if (hit) return hit.value;
+      }
+      return runValue(run, key);
+    };
+    const inputs = [];
+    const track = (key, getValue, wrap, hint, modelValue, modelText) => {
+      const update = () => {
+        const changed = getValue() !== modelValue;
+        wrap.classList.toggle('changed', changed);
+        hint.hidden = !changed;
+        hint.textContent = modelText;
+      };
+      inputs.push({ key, getValue });
+      update();
+      return () => { dirty = true; update(); };
+    };
+
+    // class
+    const select = document.createElement('select');
+    select.id = 'f-class';
+    const modelClass = runValue(run, 'class');
+    const classIds = CLASSES.includes(modelClass) || modelClass === '' ? CLASSES : [...CLASSES, modelClass];
+    for (const id of classIds) {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = CLASSES.includes(id) ? t(`proto.class.${id}`) : id;
+      select.append(opt);
+    }
+    select.value = prefill('class') || modelClass || 'unknown';
+    const cls = fieldBox('f-class', t('proto.field.class'), select,
+      CLASSES.includes(modelClass) ? t(`proto.class.${modelClass}`) : modelClass || t('proto.page.empty'));
+    select.addEventListener('change', track('class', () => select.value, cls.wrap, cls.hint,
+      modelClass, CLASSES.includes(modelClass) ? t(`proto.class.${modelClass}`) : modelClass));
+    box.append(cls.wrap);
+
+    // text fields and the checkbox
+    for (const key of FIELDS) {
+      const id = `f-${key}`;
+      const modelValue = runValue(run, key);
+      if (key === 'not_tax_document') {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = id;
+        checkbox.checked = prefill(key) === 'true';
+        const wrap = document.createElement('div');
+        wrap.className = 'field check';
+        const lab = document.createElement('label');
+        lab.htmlFor = id;
+        lab.textContent = t('proto.field.not_tax_document');
+        const hint = document.createElement('span');
+        hint.className = 'muted small';
+        hint.hidden = true;
+        wrap.append(checkbox, lab, hint);
+        const modelBool = modelValue === 'true' ? 'true' : 'false';
+        const getValue = () => (checkbox.checked ? 'true' : 'false');
+        const onChange = track(key, getValue, wrap, hint, modelBool, t(modelBool === 'true' ? 'proto.page.yes' : 'proto.page.no'));
+        checkbox.addEventListener('change', onChange);
+        box.append(wrap);
+        continue;
+      }
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = id;
+      input.value = prefill(key);
+      input.autocomplete = 'off';
+      const f = fieldBox(id, t(`proto.field.${key}`), input, modelValue || t('proto.page.empty'));
+      input.addEventListener('input', track(key, () => input.value.trim(), f.wrap, f.hint,
+        modelValue, modelValue || t('proto.page.empty')));
+      box.append(f.wrap);
+    }
+
+    const hintLine = document.createElement('p');
+    hintLine.className = 'muted small';
+    hintLine.textContent = t('proto.review.empty_hint');
+    box.append(hintLine);
+
+    const noteArea = document.createElement('textarea');
+    noteArea.id = 'f-note';
+    noteArea.rows = 3;
+    noteArea.value = label ? label.note : '';
+    noteArea.addEventListener('input', () => { dirty = true; });
+    const note = fieldBox('f-note', t('proto.review.note'), noteArea, '');
+    box.append(note.wrap);
+
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'primary';
+    save.textContent = t('proto.review.save');
+    save.addEventListener('click', () => saveLabel(doc, run, inputs, noteArea.value));
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.append(save, rereadButton(doc));
+    box.append(actions);
+
+    const checksTitle = document.createElement('h2');
+    checksTitle.textContent = t('proto.page.checks');
+    const ul = document.createElement('ul');
+    ul.className = 'checks';
+    const checks = checkTexts.get(run.run_id) || run.checks.map((c) => ({ ...c, message: c.id }));
+    if (checks.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = t('proto.page.no_checks');
+      ul.append(li);
+    }
+    for (const c of checks) {
+      const li = document.createElement('li');
+      const sev = document.createElement('span');
+      sev.className = `sev ${c.severity}`;
+      sev.textContent = c.severity;
+      const msg = document.createElement('span');
+      msg.textContent = c.message;
+      li.append(sev, msg);
+      ul.append(li);
+    }
+    const dupe = duplicateOf(doc.doc_id, run);
+    if (dupe) {
+      const li = document.createElement('li');
+      const sev = document.createElement('span');
+      sev.className = 'sev warn';
+      sev.textContent = 'warn';
+      const msg = document.createElement('span');
+      msg.textContent = t('proto.review.duplicate', { name: dupe.name });
+      li.append(sev, msg);
+      ul.append(li);
+    }
+    const usage = document.createElement('p');
+    usage.className = 'muted small';
+    usage.textContent = t('proto.page.usage', {
+      model: run.model, prompt: run.prompt_version, input: run.input_tokens,
+      output: run.output_tokens, latency: run.latency_ms, cost: run.cost_usd,
+    });
+    box.append(checksTitle, ul, usage);
+  }
+  function rereadButton(doc) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = t('proto.review.reread');
+    btn.addEventListener('click', () => { enqueue(doc, uuid(), true); renderQueue(); });
+    return btn;
+  }
+
+  // ---- saving a label revision ----
+  async function saveLabel(doc, run, inputs, noteText) {
+    const previous = latestLabel(doc.doc_id);
+    const values = new Map(inputs.map((i) => [i.key, i.getValue()]));
+    const record = {
+      schema: SCHEMA, kind: 'label', label_id: uuid(), doc_id: doc.doc_id,
+      rev: previous ? previous.rev + 1 : 1,
+      supersedes: previous ? previous.label_id : null,
+      basis_run_id: run.run_id, labeled_by: 'owner', labeled_at: new Date().toISOString(),
+      fields: ['class', ...FIELDS].map((key) => ({ key, value: values.get(key) || '' })),
+      note: noteText,
+    };
+    labels.push(record);
+    await put('labels', record);
+    dirty = false;
+    const count = unsavedCount();
+    if (count > 0 && count % NAG_EVERY === 0) showNag(count);
+    const ids = Array.from(docs.keys());
+    const start = ids.indexOf(doc.doc_id);
+    const next = [...ids.slice(start + 1), ...ids.slice(0, start)]
+      .find((id) => statusOf(docs.get(id)) !== 'labeled');
+    if (next) openDoc(next); else { renderQueue(); renderReview(); }
+  }
+  function showNag(count) { show($('nag'), t('proto.review.download_nag', { count })); }
+
+  // ---- download and clear ----
+  function download() {
+    const lines = [...runs, ...labels].map((r) => JSON.stringify(r)).join('\n');
+    const blob = new Blob([lines ? `${lines}\n` : ''], { type: 'application/x-ndjson' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shoebox-results-${new Date().toISOString().slice(0, 10)}.jsonl`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    lastDownload = new Date().toISOString();
+    try { localStorage.setItem(DOWNLOAD_KEY, lastDownload); } catch (err) { /* memory only */ }
+    $('nag').hidden = true;
+  }
+  async function clearEverything() {
+    const count = unsavedCount();
+    if (count > 0) showNag(count);
+    if (!confirm(t('proto.review.clear_confirm'))) return;
+    await clearAll();
+    docs.clear();
+    runs = [];
+    labels = [];
+    checkTexts.clear();
+    pending.length = 0;
+    current = null;
+    dirty = false;
+    known = null;
+    lastDownload = '';
+    try { localStorage.removeItem(DOWNLOAD_KEY); } catch (err) { /* nothing stored */ }
+    $('nag').hidden = true;
+    renderPreview();
+    renderQueue();
+    $('review').replaceChildren();
+  }
+
+  // ---- start ----
+  async function init() {
+    try { lastDownload = localStorage.getItem(DOWNLOAD_KEY) || ''; } catch (err) { lastDownload = ''; }
+    db = await openDb();
+    if (!db) { storageFailed(); return; }
+    const [files, savedRuns, savedLabels] = await Promise.all([getAll('files'), getAll('runs'), getAll('labels')]);
+    runs = (savedRuns || []).sort((a, b) => (a.extracted_at < b.extracted_at ? -1 : 1));
+    labels = (savedLabels || []).sort((a, b) => (a.labeled_at < b.labeled_at ? -1 : 1));
+    for (const f of (files || []).sort((a, b) => (a.added_at || 0) - (b.added_at || 0))) docs.set(f.doc_id, { ...f, reading: false, message: '' });
+    const lastOk = runs.filter((r) => r.ok).at(-1);
+    if (lastOk) known = { prompt_version: lastOk.prompt_version, model_requested: lastOk.model_requested };
+    renderQueue();
+    const batch = uuid();
+    for (const doc of docs.values()) if (runsOf(doc.doc_id).length === 0) enqueue(doc, batch, false);
+    const first = Array.from(docs.values()).find((d) => statusOf(d) !== 'labeled') || docs.values().next().value;
+    if (first) openDoc(first.doc_id);
+  }
+
+  const drop = $('drop');
+  $('file').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('over');
+    addFiles(e.dataTransfer.files);
+  });
+  $('download').addEventListener('click', download);
+  $('clear').addEventListener('click', clearEverything);
+  init();
+})();
+</script>
+</body>
+</html>

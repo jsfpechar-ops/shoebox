@@ -1,0 +1,33 @@
+{
+  "name": "@shoebox/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Drizzle schema, migrations, seeds, RLS policies, typed queries.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./health": {
+      "types": "./src/health.ts",
+      "default": "./src/health.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@shoebox/domain": "workspace:*",
+    "drizzle-orm": "0.45.3",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@shoebox/testkit": "workspace:*",
+    "drizzle-kit": "0.31.11",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "ico": "27082440",
+  "obchodniJmeno": "Alza.cz  a.s.",
+  "sidlo": {
+    "kodStatu": "CZ",
+    "nazevObce": "Praha",
+    "nazevCastiObce": "Holešovice",
+    "nazevUlice": "Jankovcova",
+    "cisloDomovni": 1522,
+    "cisloOrientacni": 53,
+    "psc": 17000,
+    "textovaAdresa": "Jankovcova 1522/53, Holešovice, 17000 Praha 7"
+  },
+  "pravniForma": "121",
+  "financniUrad": "013",
+  "datumVzniku": "2003-08-26",
+  "dic": "CZ27082440",
+  "czNace2008": ["532", "26110", "26300"],
+  "seznamRegistraci": { "stavZdrojeDph": "AKTIVNI", "stavZdrojeRzp": "AKTIVNI" }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "shoebox",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "supabase start && turbo run dev --filter=@shoebox/web --filter=@shoebox/worker",
+    "db:start": "supabase start",
+    "db:migrate": "pnpm --filter @shoebox/db migrate",
+    "db:reset": "supabase db reset && pnpm db:migrate",
+    "typecheck": "turbo run typecheck",
+    "lint": "biome ci . && pnpm check:i18n && pnpm check:tenant-sql",
+    "format": "biome format --write .",
+    "test": "turbo run test",
+    "test:unit": "vitest run --project unit --project ui --coverage",
+    "test:db": "vitest run --project db",
+    "e2e": "turbo run e2e",
+    "eval": "node scripts/eval.mjs",
+    "proto:score": "node scripts/proto-score.mjs",
+    "proto:report": "node scripts/proto-report.mjs",
+    "proto:serve": "node scripts/proto-serve.mjs",
+    "depcruise": "depcruise --config .dependency-cruiser.cjs apps packages",
+    "check:bundle": "echo 'TODO(P0-WEB): check:bundle' && exit 1",
+    "check:tenant-sql": "node scripts/check-tenant-sql.ts",
+    "check:i18n": "pnpm --filter @shoebox/i18n test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@biomejs/biome": "catalog:",
+    "@playwright/test": "1.56.1",
+    "supabase": "2.119.0",
+    "dependency-cruiser": "18.5.0",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "happy-dom": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

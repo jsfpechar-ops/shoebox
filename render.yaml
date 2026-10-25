@@ -1,0 +1,29 @@
+# Render blueprint for the hosted prototype page only (decisions 2026-10-18 [proto]).
+# Production stays on Cloud Run europe-west1. Secrets are entered in the Render dashboard.
+services:
+  - type: web
+    name: shoebox-proto
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: phase/0
+    autoDeploy: true
+    buildCommand: npx --yes pnpm@10.28.0 install --frozen-lockfile
+    startCommand: node scripts/proto-serve.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SHOEBOX_LLM_PROVIDER
+        value: anthropic
+      - key: SHOEBOX_LLM_MODEL
+        value: claude-haiku-5-5
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PROTO_PASSWORD
+        sync: false
+      - key: SHOEBOX_PROTO_ORG_ICO
+        sync: false
+      - key: SHOEBOX_PROTO_ORG_DIC
+        sync: false

@@ -1,0 +1,72 @@
+# Shoebox secret scanning (M12 §4.13). gitleaks 8.30.1, owner-approved (decisions 2026-10-18).
+title = "Shoebox gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret API key (sb_secret_...)"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "supabase-service-role-key"
+description = "Value assigned to SUPABASE_SERVICE_ROLE_KEY"
+regex = '''SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*["']?([A-Za-z0-9._-]{20,})'''
+secretGroup = 1
+keywords = ["supabase_service_role_key"]
+
+[[allowlists]]
+description = "Supabase CLI local-dev demo keys (public, issuer supabase-demo)"
+regexTarget = "match"
+regexes = ['''eyJpc3MiOiJzdXBhYmFzZS1kZW1vIi''']
+
+[[allowlists]]
+description = "Obviously fake HMAC test secrets (brief 0009 tests)"
+regexTarget = "match"
+regexes = ['''-secret-of-at-least-32-characters-''']
+
+# Czech PII, shape only (P0-PII-02, brief 0012b). Checksums live in scripts/pii_guard.py.
+# Rule-level allowlists: the files that hold synthetic vectors by design, and the M06 test RC.
+[[rules]]
+id = "cz-rodne-cislo"
+description = "Czech birth number YYMMDD/XXX(X) with a plausible month and day"
+regex = '''\b\d{2}(?:0[1-9]|1[0-2]|2[1-9]|3[0-2]|5[1-9]|6[0-2]|7[1-9]|8[0-2])(?:0[1-9]|[12]\d|3[01])/\d{3,4}\b'''
+[[rules.allowlists]]
+condition = "OR"
+paths = ['''^scripts/test/test_pii_guard\.py$''', '''^testdata/pii-allowlist\.txt$''', '''^docs/tasks/''']
+regexTarget = "match"
+regexes = ['''780101/1229''']
+
+[[rules]]
+id = "cz-bank-account"
+description = "Czech bank account number with a known bank code"
+regex = '''\b(?:\d{1,6}-)?\d{6,10}/(?:0100|0300|0600|0710|0800|2010|2020|2060|2070|2100|2200|2220|2250|2260|2275|2600|2700|3030|3050|3060|3500|4000|4300|5500|5800|6000|6100|6200|6210|6300|6363|6700|6800|7910|7950|7960|7970|7990|8030|8040|8060|8090|8150|8190|8198|8199|8200|8215|8220|8230|8240|8250|8255|8265|8270|8280|8293|8299|8500)\b'''
+[[rules.allowlists]]
+paths = ['''^scripts/test/test_pii_guard\.py$''', '''^testdata/pii-allowlist\.txt$''', '''^docs/tasks/''']
+
+[[rules]]
+id = "cz-iban"
+description = "Czech IBAN (CZ + 22 digits, spaces allowed)"
+regex = '''\bCZ\d{2}(?:\s?\d{4}){5}\b'''
+[[rules.allowlists]]
+condition = "OR"
+paths = ['''^scripts/test/test_pii_guard\.py$''', '''^testdata/pii-allowlist\.txt$''', '''^docs/tasks/''']
+regexTarget = "match"
+regexes = ['''CZ6508000000192000145399''']
+
+[[rules]]
+id = "cz-dic-natural-person"
+description = "Czech DIC of a natural person (CZ + birth-number shape)"
+regex = '''\bCZ\d{2}(?:0[1-9]|1[0-2]|2[1-9]|3[0-2]|5[1-9]|6[0-2]|7[1-9]|8[0-2])(?:0[1-9]|[12]\d|3[01])\d{3,4}\b'''
+[[rules.allowlists]]
+condition = "OR"
+paths = ['''^scripts/test/test_pii_guard\.py$''', '''^testdata/pii-allowlist\.txt$''', '''^docs/tasks/''']
+regexTarget = "match"
+regexes = ['''7801011229''']
+
+[[allowlists]]
+description = "Synthetic or textbook vectors in specs and golden labels (owner-confirmed synthetic, decisions 2026-10-18 [privacy])"
+regexTarget = "match"
+regexes = ['''19-2000145399/0800''', '''123457/0100''', '''1234567890/0800''', '''2400123456/2010''', '''CZ7001000000000000123457''', '''CZ5855000000001265098001''', '''CZ8203142695''']

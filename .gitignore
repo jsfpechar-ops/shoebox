@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.next/
+next-env.d.ts
+playwright-report/
+test-results/
+.turbo/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+eval-report.json
+eval-report.md
+supabase/.temp/
+.cache/
+
+# proto eval exports hold real document values (hard rule 4)
+shoebox-results-*.jsonl

@@ -1,0 +1,26 @@
+{
+  "name": "@shoebox/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure TS: Money, dates, rules engine, taxonomy, VAT routing, KH routing, ledgers. No I/O.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "fast-check": "4.10.2"
+  },
+  "dependencies": {
+    "decimal.js": "10.6.0",
+    "zod": "4.6.5"
+  }
+}

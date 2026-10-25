@@ -1,0 +1,42 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "agentGuidance": false,
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "test/**", "tsconfig.json", "package.json", "../../tsconfig.base.json"]
+    },
+    "lint": {
+      "inputs": ["src/**", "test/**", "package.json", "../../biome.json"]
+    },
+    "test": {
+      "inputs": ["src/**", "test/**", "package.json", "tsconfig.json", "vitest.config.ts"]
+    },
+    "test:db": {
+      "cache": false
+    },
+    "e2e": {
+      "cache": false,
+      "passThroughEnv": [
+        "CI",
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "DATABASE_URL",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "INBOX_URL"
+      ]
+    },
+    "eval": {
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

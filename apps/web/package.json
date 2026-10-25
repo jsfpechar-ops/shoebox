@@ -1,0 +1,48 @@
+{
+  "name": "@shoebox/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Next.js app: App Router, RSC, Server Actions; REST /api/v1.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "e2e": "playwright test --config ../../playwright.config.ts"
+  },
+  "dependencies": {
+    "@shoebox/db": "workspace:*",
+    "@shoebox/domain": "workspace:*",
+    "@shoebox/i18n": "workspace:*",
+    "@shoebox/pipeline": "workspace:*",
+    "@shoebox/platform": "workspace:*",
+    "@shoebox/registries": "workspace:*",
+    "@shoebox/ui": "workspace:*",
+    "@shoebox/validation": "workspace:*",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.2",
+    "lucide-react": "1.51.0",
+    "next": "15.5.27",
+    "pg-boss": "12.35.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "catalog:",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

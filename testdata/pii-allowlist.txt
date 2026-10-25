@@ -1,0 +1,12 @@
+# Czech PII guard allowlist (scripts/pii_guard.py). One value per line: value;reason;source
+# Accepted only under testdata/, packages/*/test/, packages/*/fixtures/, docs/ and .gitleaks.toml. Never a real person.
+7801011229;synthetic test RC for the DPFDP7 partial XML tests;docs/v3/modules/M06 section 9 item 5
+27074358;ICO mod-11 test vector (company id, public);docs/v3/modules/M03 section 4.2 icoValid
+CZ6508000000192000145399;public sample IBAN (bank documentation example), used in logger redaction tests;packages/platform/test/logger.test.ts, decisions 2026-10-18 [privacy]
+CZ8203142695;synthetic DIČ of the fictional property manager;testdata/golden-v1/labels.json
+8203142695;synthetic birth number behind the fictional property manager DIČ;testdata/golden-v1/labels.json
+19-2000145399/0800;textbook account example, isValidCzAccount test vector;docs/v3/modules/M02-extraction.md
+123457/0100;synthetic account test vector;docs/v3/modules/M02-extraction.md, M07
+1234567890/0800;synthetic invalid account test vector;docs/v3/modules/M02-extraction.md
+CZ7001000000000000123457;synthetic IBAN test vector;docs/v3/modules/M02-extraction.md
+123/0100;format example (counterparty_account field);docs/v3/modules/M07-bank-and-payments.md

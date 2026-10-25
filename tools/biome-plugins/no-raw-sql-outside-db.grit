@@ -1,0 +1,7 @@
+// no-raw-sql-outside-db (M12 §4.1 rule 4): sql`` template tags only inside packages/db.
+language js
+
+`$x` as $m where {
+  $m <: r"(?s)^sql\s*`.*`$",
+  register_diagnostic(span=$m, message="no-raw-sql-outside-db: sql`` tags only inside packages/db, every query is org-scoped there.", severity="error")
+}

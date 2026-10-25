@@ -1,0 +1,958 @@
+{
+  "version": "golden-v1",
+  "taxpayer": {
+    "name": "Martin Havránek",
+    "legal_form": "fyzicka_osoba",
+    "ico": "21737959",
+    "dic": "CZ7801011229",
+    "vat_status": "identifikovana_osoba",
+    "accounting_regime": "danova_evidence",
+    "address": {
+      "street": "Severova 2718/40",
+      "city": "Praha 3 - Žižkov",
+      "zip": "13000",
+      "country": "CZ"
+    },
+    "foreign_service_dppd_policy": "issue_date",
+    "tourist_fee_municipality": "praha3",
+    "today": "2026-10-18"
+  },
+  "documents": [
+    {
+      "file": "Faktura_2026091_Havranek M.pdf",
+      "sha256": "91797d54bea7c0bee449566043f6a6c81c1a2da17901f31a8606b379ccbca4b7",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "not_tax_document",
+      "partner": {
+        "name": "Čistý Dům servis s.r.o.",
+        "ico": "23945125",
+        "dic": null,
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": "2026091",
+      "variable_symbol": "2026091",
+      "issue_date": "2026-09-07",
+      "duzp": null,
+      "due_date": "2026-09-21",
+      "service_period_from": "2026-08-01",
+      "service_period_to": "2026-08-31",
+      "currency": "CZK",
+      "totals": {
+        "net": "11600.00",
+        "vat": null,
+        "gross": "11600.00"
+      },
+      "vat_summary": [],
+      "lines": [
+        {
+          "description": "Běžný úklid (1-6 hostů)",
+          "gross": "4000.00",
+          "line_type": "item"
+        },
+        {
+          "description": "Běžný úklid (7-8 hostů)",
+          "gross": "1100.00",
+          "line_type": "item"
+        },
+        {
+          "description": "Služby prádelny",
+          "gross": "6000.00",
+          "line_type": "item"
+        },
+        {
+          "description": "Dopravné prádelna",
+          "gross": "500.00",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_cleaning",
+      "vat_treatment": "rcv_domestic_no_vat",
+      "business_flag": "business",
+      "notes": "Non-VAT-payer supplier (s.r.o.). No DUZP printed. ISDOC PaidAmount must not set is_paid. Service period from the text \"za měsíc srpen 2026\". Linen 60 kg x 100.00.",
+      "embedded_isdoc": "faktura_2026091.isdoc",
+      "period": "2026-08",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "Faktura_2026098_Havranek M.pdf",
+      "sha256": "ad169de763b4ab1bfda030e1f2da28f5d72a92df07ca7fe2290f6dc95dbd9d38",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "not_tax_document",
+      "partner": {
+        "name": "Čistý Dům servis s.r.o.",
+        "ico": "23945125",
+        "dic": null,
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": "2026098",
+      "variable_symbol": "2026098",
+      "issue_date": "2026-10-09",
+      "duzp": null,
+      "due_date": "2026-10-23",
+      "service_period_from": "2026-09-01",
+      "service_period_to": "2026-09-30",
+      "currency": "CZK",
+      "totals": {
+        "net": "8150.00",
+        "vat": null,
+        "gross": "8150.00"
+      },
+      "vat_summary": [],
+      "lines": [
+        {
+          "description": "Běžný úklid (1-6 hostů)",
+          "gross": "4000.00",
+          "line_type": "item"
+        },
+        {
+          "description": "Služby prádelny",
+          "gross": "3650.00",
+          "line_type": "item"
+        },
+        {
+          "description": "Dopravné prádelna",
+          "gross": "500.00",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_cleaning",
+      "vat_treatment": "rcv_domestic_no_vat",
+      "business_flag": "business",
+      "notes": "Non-VAT-payer supplier. No DUZP printed, although the QR Platba+F payload carries a DUZP of 20260927 (QR value must not be copied into duzp). Linen 36.5 kg x 100.00.",
+      "embedded_isdoc": "faktura_2026098.isdoc",
+      "period": "2026-09",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "Faktura_260807.pdf",
+      "sha256": "e0c0fa1565e453768697ed5c33f82059942388a1e414ffa2b39f64e51db5c6e8",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "full_tax_document",
+      "partner": {
+        "name": "Radek Soukup",
+        "ico": "20861176",
+        "dic": "CZ8203142695",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": "260807",
+      "variable_symbol": "260807",
+      "issue_date": "2026-09-12",
+      "duzp": "2026-08-31",
+      "due_date": "2026-09-26",
+      "service_period_from": null,
+      "service_period_to": null,
+      "currency": "CZK",
+      "totals": {
+        "net": "10711.44",
+        "vat": "2249.40",
+        "gross": "12960.84"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 21,
+          "base": "10711.44",
+          "vat": "2249.40"
+        }
+      ],
+      "lines": [
+        {
+          "description": "Správa krátkodobého pronájmu – 08/2026",
+          "gross": "12960.84",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_property_management",
+      "vat_treatment": "rcv_domestic_vat",
+      "business_flag": "business",
+      "expected_validations": [],
+      "embedded_isdoc": "faktura_260807.isdoc",
+      "links": [
+        {
+          "type": "same_period_reconciles",
+          "target": "26_08_S17_Vyuctovani.pdf",
+          "note": "statement column \"20% správce\" equals this invoice total incl. VAT"
+        }
+      ],
+      "notes": "DUZP differs from issue date by design. Settled by netting against the platform payout (offset). Line amount is the gross of the single line (base + 21 % VAT).",
+      "period": "2026-08",
+      "duplicate_of": null,
+      "expected_questions": []
+    },
+    {
+      "file": "Faktura_260907.pdf",
+      "sha256": "b871f0b8dba357a0c0b192e0be11820aa54f7f307b83760998576df7cfb40231",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "full_tax_document",
+      "partner": {
+        "name": "Radek Soukup",
+        "ico": "20861176",
+        "dic": "CZ8203142695",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": "260907",
+      "variable_symbol": "260907",
+      "issue_date": "2026-10-04",
+      "duzp": "2026-09-30",
+      "due_date": "2026-10-18",
+      "service_period_from": null,
+      "service_period_to": null,
+      "currency": "CZK",
+      "totals": {
+        "net": "8057.39",
+        "vat": "1692.05",
+        "gross": "9749.44"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 21,
+          "base": "8057.39",
+          "vat": "1692.05"
+        }
+      ],
+      "lines": [
+        {
+          "description": "Správa krátkodobého pronájmu – 09/2026",
+          "gross": "9749.44",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_property_management",
+      "vat_treatment": "rcv_domestic_vat",
+      "business_flag": "business",
+      "expected_validations": [],
+      "embedded_isdoc": "faktura_260907.isdoc",
+      "links": [
+        {
+          "type": "same_period_reconciles",
+          "target": "26_09_S17_Vyuctovani.pdf",
+          "note": "statement column \"20% správce\" equals this invoice total incl. VAT"
+        }
+      ],
+      "notes": "DUZP differs from issue date by design. Settled by netting against the platform payout (offset). Line amount is the gross of the single line (base + 21 % VAT).",
+      "period": "2026-09",
+      "duplicate_of": null,
+      "expected_questions": []
+    },
+    {
+      "file": "26_08_Faktura_Provize Booking.pdf",
+      "sha256": "e53a74dda3b9776d22ba4075cbc171fbe54a5d5c6aa8cf5829303ac7f96a41b2",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "foreign_document",
+      "partner": {
+        "name": "Booking.com B.V.",
+        "ico": null,
+        "dic": null,
+        "vat_id": "NL805734958B01",
+        "country": "NL"
+      },
+      "document_number": "1634188207",
+      "variable_symbol": null,
+      "issue_date": "2026-08-03",
+      "duzp": null,
+      "due_date": "2026-08-16",
+      "service_period_from": "2026-07-01",
+      "service_period_to": "2026-07-31",
+      "currency": "CZK",
+      "totals": {
+        "net": "13699.77",
+        "vat": "0.00",
+        "gross": "13699.77"
+      },
+      "vat_summary": [],
+      "lines": [
+        {
+          "description": "Provize",
+          "gross": "12371.98",
+          "line_type": "item"
+        },
+        {
+          "description": "Poplatek za platební služby",
+          "gross": "1327.79",
+          "line_type": "fee"
+        }
+      ],
+      "category_code": "exp_platform_commission",
+      "vat_treatment": "rcv_eu_service_reverse_charge",
+      "business_flag": "business",
+      "buyer_dic": null,
+      "reference_amounts": [
+        "82480.08"
+      ],
+      "expected_validations": [
+        {
+          "rule_id": "TAXDOC_RC_BUYER_VAT_ID_MISSING",
+          "severity": "info"
+        }
+      ],
+      "links": [
+        {
+          "type": "reported_in",
+          "target": "DPHDP3-7801011229-20260920-141836.pdf",
+          "note": "self-assessed in the filed August 2026 return (issue_date policy): row 5 13 700 / 2 877"
+        }
+      ],
+      "notes": "Invoice for the July service period, issued in August. Buyer DIČ is not printed. Room sales 82 480.08 is a reference amount only (not a line or total). Page-2 footnote carries the reverse-charge text. Payment: netted from the payout. Supplier IČO is not printed (null).",
+      "duplicate_of": null,
+      "expected_questions": []
+    },
+    {
+      "file": "26_09_Faktura_Provize Booking.pdf",
+      "sha256": "ee3ebc9a856c7cfc5e7cc9c1b11227b5cc05db161fc762c31b5d1830790b26cf",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "foreign_document",
+      "partner": {
+        "name": "Booking.com B.V.",
+        "ico": null,
+        "dic": null,
+        "vat_id": "NL805734958B01",
+        "country": "NL"
+      },
+      "document_number": "1637922054",
+      "variable_symbol": null,
+      "issue_date": "2026-09-03",
+      "duzp": null,
+      "due_date": "2026-09-16",
+      "service_period_from": "2026-08-01",
+      "service_period_to": "2026-08-31",
+      "currency": "CZK",
+      "totals": {
+        "net": "11549.94",
+        "vat": "0.00",
+        "gross": "11549.94"
+      },
+      "vat_summary": [],
+      "lines": [
+        {
+          "description": "Provize",
+          "gross": "10421.17",
+          "line_type": "item"
+        },
+        {
+          "description": "Poplatek za platební služby",
+          "gross": "1128.77",
+          "line_type": "fee"
+        }
+      ],
+      "category_code": "exp_platform_commission",
+      "vat_treatment": "rcv_eu_service_reverse_charge",
+      "business_flag": "business",
+      "buyer_dic": "CZ7801011229",
+      "reference_amounts": [
+        "69474.61"
+      ],
+      "expected_validations": [],
+      "links": [],
+      "notes": "Invoice for the August service period, issued in September. Buyer DIČ is printed. Room sales 69 474.61 is a reference amount only. Under the issue_date policy it belongs to the September return (row 5 base 11 550 / tax 2 425).",
+      "duplicate_of": null,
+      "expected_questions": []
+    },
+    {
+      "file": "5b2e41c7-8d03-4a9f-b7e6-1c40f93a52d8.pdf",
+      "sha256": "02de5e7e239b29154681b4620b8f4494febd16132fb0402e8e6e8d7e9bd6ca88",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "foreign_document",
+      "partner": {
+        "name": "Cloudflare, Inc.",
+        "ico": null,
+        "dic": null,
+        "vat_id": null,
+        "country": "US"
+      },
+      "document_number": "IN-73615204",
+      "variable_symbol": null,
+      "issue_date": "2026-09-13",
+      "duzp": null,
+      "due_date": "2026-09-13",
+      "service_period_from": "2026-09-13",
+      "service_period_to": "2027-09-12",
+      "currency": "USD",
+      "totals": {
+        "net": "10.46",
+        "vat": "0.00",
+        "gross": "10.46"
+      },
+      "vat_summary": [],
+      "lines": [
+        {
+          "description": "Registrar Registration Fee (1 yr)",
+          "gross": "10.46",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_hosting_domains",
+      "vat_treatment": "rcv_non_eu_service_reverse_charge",
+      "business_flag": "business",
+      "other_tax_id": "27-0805829",
+      "notes": "US supplier, EIN 27-0805829 is not a VAT ID (vat_id null). \"VAT-Code: CZSL000D\" must not land in any identifier field. File name is a UUID. No reverse-charge text.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "Invoice-4D2A91C7-3518204.pdf",
+      "sha256": "769a907b190b5ac1a9a0f768200db5a945ca953abe5bc48852a9f16422dd74a8",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "foreign_document",
+      "partner": {
+        "name": "Anthropic Ireland, Limited",
+        "ico": null,
+        "dic": null,
+        "vat_id": "IE4276970QH",
+        "country": "IE"
+      },
+      "document_number": "4D2A91C7-3518204",
+      "variable_symbol": null,
+      "issue_date": "2026-10-17",
+      "duzp": null,
+      "due_date": "2026-10-17",
+      "service_period_from": "2026-10-17",
+      "service_period_to": "2026-11-17",
+      "currency": "EUR",
+      "totals": {
+        "net": "90.00",
+        "vat": "0.00",
+        "gross": "90.00"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 0,
+          "base": "90.00",
+          "vat": "0.00"
+        }
+      ],
+      "lines": [
+        {
+          "description": "Max plan - 5x",
+          "gross": "90.00",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_software_saas",
+      "vat_treatment": "rcv_eu_service_reverse_charge",
+      "business_flag": "business",
+      "buyer_dic": "CZ7801011229",
+      "notes": "Reverse-charge text (Article 196). Buyer CZ VAT ID printed. Rate 0 %, vat_rate_type none.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "UA30417938.pdf",
+      "sha256": "0bfea1065a7513de959cc07be79035b2bcbd00793cea3037b27a6e414e94abce",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "full_tax_document",
+      "partner": {
+        "name": "Apple Distribution International Ltd.",
+        "ico": null,
+        "dic": "CZ682980583",
+        "vat_id": null,
+        "country": "IE"
+      },
+      "document_number": "UA30417938",
+      "variable_symbol": null,
+      "issue_date": "2026-03-19",
+      "duzp": null,
+      "due_date": "2026-03-19",
+      "currency": "CZK",
+      "totals": {
+        "net": "22305.79",
+        "vat": "4684.21",
+        "gross": "26990.00"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 21,
+          "base": "22305.79",
+          "vat": "4684.21"
+        }
+      ],
+      "lines": [
+        {
+          "description": "MBA 13.6 MDN/8C GPU/16GB/512GB-CZK",
+          "gross": "26990.00",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_small_assets",
+      "vat_treatment": "rcv_domestic_vat",
+      "business_flag": "business",
+      "buyer_ico": null,
+      "buyer_dic": null,
+      "expected_validations": [
+        {
+          "rule_id": "ID_BUYER_CONSUMER_NO_ICO",
+          "severity": "warning"
+        },
+        {
+          "rule_id": "ID_BUYER_ADDRESS_MISMATCH",
+          "severity": "info"
+        }
+      ],
+      "notes": "Buyer block carries the buyer name without IČO/DIČ and a different (synthetic) address than the profile address. Decimal separators use a point as thousands mark (\"22.305,79\"). Recycle fee line \"12,00\" is included in the price. Paid by card.",
+      "duplicate_of": null,
+      "expected_questions": []
+    },
+    {
+      "file": "Účtenka20261009004080520062.pdf",
+      "sha256": "48cdd3ac20e99a6830872dab7916e391cc82bf87d0c90072d80801f677acaead",
+      "bookable": true,
+      "class": "received_receipt",
+      "tax_doc_status": "simplified_tax_document",
+      "partner": {
+        "name": "IKEA Česká republika, s.r.o.",
+        "ico": "27081052",
+        "dic": "CZ27081052",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": null,
+      "variable_symbol": null,
+      "issue_date": "2026-10-09",
+      "duzp": "2026-10-09",
+      "due_date": null,
+      "currency": "CZK",
+      "totals": {
+        "net": "990.09",
+        "vat": "207.91",
+        "gross": "1198.00"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 21,
+          "base": "990.09",
+          "vat": "207.91"
+        }
+      ],
+      "lines": [
+        {
+          "description": "SOTNÄTFJÄRIL neprop.",
+          "gross": "699.00",
+          "line_type": "item"
+        },
+        {
+          "description": "SOTNÄTFJÄRIL neprop.",
+          "gross": "499.00",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "exp_material",
+      "vat_treatment": "rcv_domestic_vat",
+      "business_flag": "business",
+      "card_last4": "3359",
+      "notes": "Card receipt. Original arrival name uses NFC; the second arrival is the NFD variant with identical bytes.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "Účtenka20261009004080520062.pdf",
+      "sha256": "48cdd3ac20e99a6830872dab7916e391cc82bf87d0c90072d80801f677acaead",
+      "bookable": false,
+      "class": "received_receipt",
+      "duplicate_of": "Účtenka20261009004080520062.pdf",
+      "expected_validations": [
+        {
+          "rule_id": "DUP_EXACT_FILE",
+          "severity": "info"
+        }
+      ],
+      "notes": "NFD-named arrival; byte-identical to the NFC-named file. Status duplicate, no extraction.",
+      "expected_questions": []
+    },
+    {
+      "file": "Receipt075703091020261525191184207.png",
+      "sha256": "dd177aa5ff32fedef5b87b17d002ffe25405a6d1247487188be85a9fb13f0d05",
+      "bookable": true,
+      "class": "received_receipt",
+      "tax_doc_status": "simplified_tax_document",
+      "partner": {
+        "name": "Decasport s.r.o.",
+        "ico": "28972350",
+        "dic": "CZ28972350",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": null,
+      "variable_symbol": null,
+      "issue_date": "2026-10-09",
+      "duzp": "2026-10-09",
+      "due_date": null,
+      "currency": "CZK",
+      "totals": {
+        "net": "205.79",
+        "vat": "43.21",
+        "gross": "249.00"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 21,
+          "base": "205.79",
+          "vat": "43.21"
+        }
+      ],
+      "lines": [
+        {
+          "description": "FBAS 15 L BACKPACK BLACK 15 LITRŮ",
+          "gross": "249.00",
+          "line_type": "item"
+        }
+      ],
+      "category_code": "private_expense",
+      "vat_treatment": "rcv_domestic_vat",
+      "business_flag": "personal",
+      "card_last4": "4081",
+      "expected_validations": [
+        {
+          "rule_id": "PERSONAL_LOOKING_PURCHASE",
+          "severity": "info"
+        }
+      ],
+      "expected_questions": [
+        "business_or_personal"
+      ],
+      "notes": "Photo-like PNG without a text layer. Touchless business_flag is unknown until the question is answered; the labelled truth answer is personal (private_expense, business_share_pct 0).",
+      "duplicate_of": null
+    },
+    {
+      "file": "Receipt075703091020261525191184207 (1).png",
+      "sha256": "dd177aa5ff32fedef5b87b17d002ffe25405a6d1247487188be85a9fb13f0d05",
+      "bookable": false,
+      "class": "received_receipt",
+      "duplicate_of": "Receipt075703091020261525191184207.png",
+      "expected_validations": [
+        {
+          "rule_id": "DUP_EXACT_FILE",
+          "severity": "info"
+        }
+      ],
+      "notes": "Second download named \" (1)\"; byte-identical PNG.",
+      "expected_questions": []
+    },
+    {
+      "file": "4021738955.pdf",
+      "sha256": "335015874239cb243b6411aabc603f194ad945bf7bcca7a89acaa09e3726ba05",
+      "bookable": true,
+      "class": "received_invoice",
+      "tax_doc_status": "not_tax_document",
+      "partner": {
+        "name": "Alza.cz a.s.",
+        "ico": "27082440",
+        "dic": "CZ27082440",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": "4021738955",
+      "variable_symbol": "1498265331",
+      "issue_date": "2026-10-09",
+      "duzp": "2026-10-09",
+      "due_date": "2026-10-09",
+      "currency": "CZK",
+      "totals": {
+        "net": "96.66",
+        "vat": "20.29",
+        "gross": "117.00"
+      },
+      "vat_summary": [
+        {
+          "rate_pct": 21,
+          "base": "96.66",
+          "vat": "20.29"
+        }
+      ],
+      "lines": [
+        {
+          "description": "Sítový kabel AlzaPower Patch CAT6 UTP 5m šedý",
+          "gross": "129.95",
+          "line_type": "item"
+        },
+        {
+          "description": "Sleva 10% k položce",
+          "gross": "-13.00",
+          "line_type": "discount"
+        },
+        {
+          "description": "Doprava - AlzaBox",
+          "gross": "69.00",
+          "line_type": "shipping"
+        },
+        {
+          "description": "Sleva na dopravné - AlzaPlus+",
+          "gross": "-69.00",
+          "line_type": "discount"
+        },
+        {
+          "description": "Zaokrouhlení",
+          "gross": "0.05",
+          "line_type": "rounding"
+        }
+      ],
+      "category_code": "exp_office_supplies",
+      "vat_treatment": "rcv_domestic_no_vat",
+      "business_flag": "business",
+      "expected_validations": [
+        {
+          "rule_id": "TAXDOC_NOT_TAX_DOCUMENT",
+          "severity": "info"
+        },
+        {
+          "rule_id": "MATH_ROUNDING",
+          "severity": "info"
+        }
+      ],
+      "links": [],
+      "links_absent": [
+        {
+          "type": "fulfills",
+          "source": "1049528146.pdf",
+          "note": "the 2 105.00 order confirmation is NOT the order of this invoice"
+        }
+      ],
+      "notes": "Titled \"Faktura\" but printed \"Toto není daňový doklad\", \"Nehraďte, zaplaceno kartou\". Sum of lines 116.95; rounding 0.05; printed total 117.00 (gross = printed total). Discount lines are negative.",
+      "duplicate_of": null,
+      "expected_questions": []
+    },
+    {
+      "file": "1049528146.pdf",
+      "sha256": "d0040c890abcb3da0a55aa022d3bfa1c4f8a8da3ddb167d6cb7eed436e802732",
+      "bookable": false,
+      "class": "order_confirmation",
+      "partner": {
+        "name": "Alza.cz a.s.",
+        "ico": "27082440",
+        "dic": "CZ27082440",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "document_number": "1049528146",
+      "issue_date": "2026-10-15",
+      "due_date": "2026-10-22",
+      "currency": "CZK",
+      "totals": {
+        "net": "1739.64",
+        "vat": "365.32",
+        "gross": "2105.00"
+      },
+      "expected_open_expected_documents": 1,
+      "notes": "Decoy: \"Tento doklad nemá náležitosti daňového dokladu\". Profile lite, no lines. Must not be booked and must not link to the 117 CZK invoice. Opens an expected-invoice row.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "26_08_S17_Vyuctovani.pdf",
+      "sha256": "9715281e341212466b62068dab86d6c64d58bca7052597d327dafd34ebbbe7d2",
+      "bookable": false,
+      "class": "settlement_statement",
+      "partner": {
+        "name": "Radek Soukup",
+        "ico": "20861176",
+        "dic": "CZ8203142695",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "currency": "CZK",
+      "statement": {
+        "period": "2026-08",
+        "gross": "63707.21",
+        "cleaning": "6000.00",
+        "net": "53557.21",
+        "manager_20pct": "12960.84",
+        "owner_80pct": "40596.37",
+        "tourist_fee": "4150.00",
+        "bed_nights": 113
+      },
+      "links": [
+        {
+          "type": "same_period_reconciles",
+          "target": "Faktura_260807.pdf",
+          "note": "manager column equals invoice total incl. VAT"
+        }
+      ],
+      "notes": "Decoy: property-manager statement (printed header \"AirBnb\"). Contributes nothing to income. Tourist fee is a pass-through (pt_tourist_fee).",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "26_09_S17_Vyuctovani.pdf",
+      "sha256": "e67617b70215b6c192f166aef412b8b2943cc7e77bb7e6e636708f6ac963c22a",
+      "bookable": false,
+      "class": "settlement_statement",
+      "partner": {
+        "name": "Radek Soukup",
+        "ico": "20861176",
+        "dic": "CZ8203142695",
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "currency": "CZK",
+      "statement": {
+        "period": "2026-09",
+        "gross": "48786.94",
+        "cleaning": "5000.00",
+        "net": "40286.94",
+        "manager_20pct": "9749.44",
+        "owner_80pct": "30537.50",
+        "tourist_fee": "3500.00",
+        "bed_nights": 70
+      },
+      "links": [
+        {
+          "type": "same_period_reconciles",
+          "target": "Faktura_260907.pdf",
+          "note": "manager column equals invoice total incl. VAT"
+        }
+      ],
+      "notes": "Decoy: property-manager statement (printed header \"AirBnb\"). Contributes nothing to income. Tourist fee is a pass-through (pt_tourist_fee).",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "S17_08_26_Mesicni_hlaseni_k_mistnimu_poplatku_z_pobytu.pdf",
+      "sha256": "6bfb7ba0735b6fb615fc505b27cc95cc21113f677323f795bf084b9bc95a6baf",
+      "bookable": false,
+      "class": "government_filing",
+      "partner": {
+        "name": "Městská část Praha 3",
+        "ico": null,
+        "dic": null,
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "issue_date": "2026-09-12",
+      "filing": {
+        "form_code": "MUNICIPAL_TOURIST_FEE",
+        "period_start": "2026-08-01",
+        "fee_total": "4150.00",
+        "bed_nights_taxable": 83,
+        "bed_nights_exempt": 30,
+        "variable_symbol": "1387100265"
+      },
+      "links": [
+        {
+          "type": "same_period_reconciles",
+          "target": "26_08_S17_Vyuctovani.pdf",
+          "note": "tourist fee equals the statement tourist-fee column"
+        }
+      ],
+      "notes": "Decoy: municipal monthly tourist-fee report. Never booked; never appears in income.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "S17_09_26_Mesicni_hlaseni_k_mistnimu_poplatku_z_pobytu.pdf",
+      "sha256": "128d2a6af582657a2895fe9a0a15b3f7ca4487438b0286b681c987e9bf9f342c",
+      "bookable": false,
+      "class": "government_filing",
+      "partner": {
+        "name": "Městská část Praha 3",
+        "ico": null,
+        "dic": null,
+        "vat_id": null,
+        "country": "CZ"
+      },
+      "issue_date": "2026-10-04",
+      "filing": {
+        "form_code": "MUNICIPAL_TOURIST_FEE",
+        "period_start": "2026-09-01",
+        "fee_total": "3500.00",
+        "bed_nights_taxable": 70,
+        "bed_nights_exempt": 0,
+        "variable_symbol": "1387100265"
+      },
+      "links": [
+        {
+          "type": "same_period_reconciles",
+          "target": "26_09_S17_Vyuctovani.pdf",
+          "note": "tourist fee equals the statement tourist-fee column"
+        }
+      ],
+      "notes": "Decoy: municipal monthly tourist-fee report. Never booked; never appears in income.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    },
+    {
+      "file": "DPHDP3-7801011229-20260920-141836.pdf",
+      "sha256": "706ab1339244dd05fd3a0cd6c76c003cba0f616e76933667a91e75dbe4a9f46c",
+      "bookable": false,
+      "class": "government_filing",
+      "issue_date": "2026-09-20",
+      "filing": {
+        "type": "DPHDP3",
+        "period": "2026-08",
+        "filed_on": "2026-09-20",
+        "taxpayer_type": "identified_person",
+        "rows": {
+          "5": {
+            "base": 13700,
+            "tax": 2877
+          },
+          "62": {
+            "tax": 2877
+          },
+          "64": {
+            "tax": 2877
+          }
+        }
+      },
+      "links": [
+        {
+          "type": "reported_in",
+          "source": "26_08_Faktura_Provize Booking.pdf",
+          "note": "Booking invoice 1634188207 (13 699.77 CZK -> 13 700 / 2 877)"
+        }
+      ],
+      "notes": "Decoy: own filed return, original text layer with comb fields. Taxpayer identifiers are synthetic. XDOC_FILED_RETURN_MISMATCH passes with policy issue_date and fails (policy_hint issue_date) with service_period_end.",
+      "duplicate_of": null,
+      "expected_validations": [],
+      "expected_questions": []
+    }
+  ],
+  "periods": [
+    {
+      "period": "2026-08",
+      "dphdp3": {
+        "5": {
+          "base": 13700,
+          "tax": 2877
+        }
+      },
+      "note": "IO, issue_date policy; equals the filed DPHDP3 decoy; rows 62 and 64 tax 2877"
+    },
+    {
+      "period": "2026-09",
+      "dphdp3": {
+        "5": {
+          "base": 11550,
+          "tax": 2425
+        }
+      },
+      "note": "Booking invoice 1637922054 (11 549.94 x 21 % = 2 425.49); row 12 (Cloudflare) depends on the recorded ČNB rate and is not labelled"
+    }
+  ],
+  "changed_values": [],
+  "expected_totals": {
+    "expenses_czk_documents_sum": "96014.99",
+    "note": "11 600 + 8 150 + 12 960.84 + 9 749.44 + 13 699.77 + 11 549.94 + 26 990 + 1 198 + 117; Cloudflare, Anthropic and Decathlon excluded"
+  }
+}
