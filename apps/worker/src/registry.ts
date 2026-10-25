@@ -83,10 +83,13 @@ function errorCode(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown';
 }
 
-/** HTTP status of a provider error (a number, never content), so a failed call can be diagnosed. */
-function errorStatus(error: unknown): { httpStatus: number } | Record<string, never> {
-  const status = (error as { status?: unknown } | null)?.status;
-  return typeof status === 'number' ? { httpStatus: status } : {};
+/** HTTP status and reason code of a provider error (never content), so a failed call can be diagnosed. */
+function errorStatus(error: unknown): { httpStatus?: number; errorReason?: string } {
+  const source = (error as { status?: unknown; reason?: unknown } | null) ?? {};
+  return {
+    ...(typeof source.status === 'number' ? { httpStatus: source.status } : {}),
+    ...(typeof source.reason === 'string' ? { errorReason: source.reason } : {}),
+  };
 }
 
 export function createJobRegistry(options: RegistryOptions): JobRegistry {

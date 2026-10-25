@@ -21,14 +21,39 @@ export const ANTHROPIC_DEFAULT_MAX_ATTEMPTS = 4;
 export const ANTHROPIC_DEFAULT_RETRY_DELAY_MS = 5_000;
 export const ANTHROPIC_DEFAULT_TIMEOUT_MS = 180_000;
 
+/**
+ * A fixed code for a provider error message, or the request parameter path it names, so the
+ * reason can be logged without the message itself (hard rule 4). Exported for tests.
+ */
+export function anthropicErrorReason(detail: string): string {
+  const text = detail.toLowerCase();
+  if (text.includes('credit balance')) return 'credit_balance';
+  if (text.includes('password')) return 'pdf_password';
+  if (text.includes('max_tokens')) return 'max_tokens';
+  if (text.includes('page') && text.includes('pdf')) return 'pdf_pages';
+  if (text.includes('too large') || text.includes('too long') || text.includes('exceed')) {
+    return 'too_large';
+  }
+  const param = /^([a-z_][a-z0-9_.]*)\s*:/i.exec(detail);
+  if (param?.[1] !== undefined) return `param:${param[1].slice(0, 60)}`;
+  if (text.includes('model')) return 'model';
+  if (text.includes('schema') || text.includes('output_config') || text.includes('output_format')) {
+    return 'output_schema';
+  }
+  return detail === '' ? 'none' : 'other';
+}
+
 export class AnthropicHttpError extends Error {
   readonly provider = 'anthropic';
   readonly status: number;
+  /** Safe to log: a fixed code or a parameter path, never the message (see anthropicErrorReason). */
+  readonly reason: string;
 
   constructor(status: number, detail: string) {
     super(`anthropic: HTTP ${status}${detail === '' ? '' : `: ${detail}`}`);
     this.name = 'AnthropicHttpError';
     this.status = status;
+    this.reason = anthropicErrorReason(detail);
   }
 }
 
