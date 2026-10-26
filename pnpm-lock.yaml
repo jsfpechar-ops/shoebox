@@ -366,6 +366,9 @@ importers:
         specifier: workspace:*
         version: link:../domain
     devDependencies:
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
