@@ -61,6 +61,11 @@ jobs:
         if: steps.check.outputs.ready == 'true' && env.SUPABASE_URL != ''
         run: |
           set -euo pipefail
+          # Creates the private bucket on first use (no-op when it exists; migration 0051 does the same).
+          curl --silent --output /dev/null -X POST "$SUPABASE_URL/storage/v1/bucket" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            --data '{"id":"backups","name":"backups","public":false}' || true
           name="db-$(date -u +%a).dump.gpg"
           curl --fail --silent --show-error -X POST \
             "$SUPABASE_URL/storage/v1/object/backups/$name" \
