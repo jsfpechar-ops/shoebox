@@ -50,7 +50,13 @@ export async function refreshReserve(
   const { store } = deps;
   const today = pragueDateOf(deps.now().getTime());
   const year = Number.parseInt(today.slice(0, 4), 10);
-  const rows = await store.readRows(tx, orgId, year, BigInt(LEDGER_ALGO_VERSION));
+  const rows = await store.readRows(
+    tx,
+    orgId,
+    year,
+    BigInt(LEDGER_ALGO_VERSION),
+    deps.rules.at(today).get('fx.max_lookback_days'),
+  );
   const segment = covering(rows.profiles, today);
   if (segment === null) {
     deps.logger.info(

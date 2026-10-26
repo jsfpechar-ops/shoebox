@@ -497,6 +497,7 @@ interface DocMetaDbRow {
   readonly duzp: string | null;
   readonly vat_point_date: string | null;
   readonly partner: { name: string | null; country: string | null } | null;
+  readonly lines: ReadonlyArray<{ rc_commodity_code: string | null }> | null;
 }
 
 export interface PreviewInputs {
@@ -546,7 +547,9 @@ export async function loadPreviewInputs(
   for (let i = 0; i < ids.length; i += ID_CHUNK) {
     const res = await supabase
       .from('documents')
-      .select('id,document_number,duzp,vat_point_date,partner:partners(name,country)')
+      .select(
+        'id,document_number,duzp,vat_point_date,partner:partners(name,country),lines:document_lines(rc_commodity_code)',
+      )
       .eq('org_id', orgId)
       .in('id', ids.slice(i, i + ID_CHUNK));
     if (res.error) throw new Error('document_load_failed');
@@ -597,6 +600,11 @@ export function computePreview(
     return {
       duzp: date === null ? null : legalDate(date, 'documents.duzp'),
       partnerCountry: d.partner?.country ?? null,
+      rcCommodityCodes: [
+        ...new Set(
+          (d.lines ?? []).map((l) => l.rc_commodity_code).filter((c): c is string => c !== null),
+        ),
+      ],
     };
   };
   const payer = input.status === 'platce';
