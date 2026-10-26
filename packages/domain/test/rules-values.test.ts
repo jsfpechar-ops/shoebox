@@ -326,10 +326,14 @@ describe('EPO row map and KH routing (brief 0310)', () => {
   });
 
   it('the seeded entries carry a primary-source URL and the 2026-10-26 verification', () => {
-    for (const entry of CZ_RULE_ENTRIES.filter((e) => e.key === 'epo.dphdp3_row_map' || e.key === 'epo.kh_routing')) {
+    for (const entry of CZ_RULE_ENTRIES.filter(
+      (e) => e.key === 'epo.dphdp3_row_map' || e.key === 'epo.kh_routing',
+    )) {
       expect(entry.layer).toBe('base');
       expect(entry.verified_at).toBe('2026-10-26');
-      expect(['adisspr.mfcr.cz', 'financnisprava.gov.cz']).toContain(new URL(entry.source).hostname);
+      expect(['adisspr.mfcr.cz', 'financnisprava.gov.cz']).toContain(
+        new URL(entry.source).hostname,
+      );
     }
   });
 });
