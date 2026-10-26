@@ -1,6 +1,6 @@
 # 0119: Payment card on the document page (confirm or reject a found payment)
 
-Status: open
+Status: todo
 Ticket: P2-BANK-06 (UI half, M07 US9) | Depends on: 0118 | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 
