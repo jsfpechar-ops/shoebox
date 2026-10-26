@@ -6,7 +6,10 @@ const scan = (text: string | null, qrTexts: string[] = []): DocumentScan => ({
   textGood: text !== null,
   qrTexts,
 });
-const check = (text: string | null, more: { pageCount?: number | null; bytes?: number; qr?: string[] } = {}) =>
+const check = (
+  text: string | null,
+  more: { pageCount?: number | null; bytes?: number; qr?: string[] } = {},
+) =>
   precheckDocument({
     byteLength: more.bytes ?? 50_000,
     pageCount: more.pageCount ?? 1,
@@ -15,7 +18,9 @@ const check = (text: string | null, more: { pageCount?: number | null; bytes?: n
 
 describe('precheckDocument', () => {
   it('reads an invoice', () => {
-    expect(check('FAKTURA - DAŇOVÝ DOKLAD č. 2026001 Celkem 1 210,00 Kč')).toEqual({ kind: 'read' });
+    expect(check('FAKTURA - DAŇOVÝ DOKLAD č. 2026001 Celkem 1 210,00 Kč')).toEqual({
+      kind: 'read',
+    });
   });
 
   it('skips a bank statement, even when a line says faktura', () => {
@@ -31,7 +36,9 @@ describe('precheckDocument', () => {
   });
 
   it('skips a local fee report', () => {
-    expect(check('Měsíční hlášení k místnímu poplatku z pobytu za období Leden 2026')).toMatchObject({
+    expect(
+      check('Měsíční hlášení k místnímu poplatku z pobytu za období Leden 2026'),
+    ).toMatchObject({
       kind: 'skip',
       reason: 'government_filing',
       status: 'supporting',
@@ -47,7 +54,9 @@ describe('precheckDocument', () => {
   });
 
   it('reads whenever a payment QR code is found', () => {
-    expect(check('VÝPIS Z ÚČTU', { qr: ['SPD*1.0*ACC:CZ0000000000000000000000'] })).toEqual({ kind: 'read' });
+    expect(check('VÝPIS Z ÚČTU', { qr: ['SPD*1.0*ACC:CZ0000000000000000000000'] })).toEqual({
+      kind: 'read',
+    });
   });
 
   it('reads images and scans without a text layer (the model decides)', () => {
@@ -59,8 +68,13 @@ describe('precheckDocument', () => {
   });
 
   it('skips too many pages and too large files', () => {
-    expect(check('Faktura', { pageCount: 21 })).toMatchObject({ reason: 'too_many_pages', status: 'needs_review' });
+    expect(check('Faktura', { pageCount: 21 })).toMatchObject({
+      reason: 'too_many_pages',
+      status: 'needs_review',
+    });
     expect(check('Faktura', { pageCount: 20 })).toEqual({ kind: 'read' });
-    expect(check('Faktura', { bytes: PRECHECK_MAX_BYTES + 1 })).toMatchObject({ reason: 'too_large' });
+    expect(check('Faktura', { bytes: PRECHECK_MAX_BYTES + 1 })).toMatchObject({
+      reason: 'too_large',
+    });
   });
 });
