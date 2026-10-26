@@ -57,6 +57,7 @@ Specs: `03-architecture.md`, `05-data-model.md`, `modules/M12-platform-ops-secur
    - Identified-person alert, deadline calendar, review count.
 9. **Simple accountant export (Phase-1 level):** a ZIP of documents named consistently plus a CSV/XLSX register.
 10. **Manual entry** ("Přidat ručně") and substitute documents (náhradní doklad), always available (04 §2.2a).
+11. **Trust basics (owner 2026-10-26):** the app installs to the phone home screen (web app manifest, M01 §4.1.1) and every manual change to a document value writes an `audit_log` row (M11 §13.1).
 
 **Deliberately not in Phase 1** (moved during the 2026-10-18 consistency review to keep Phase 1 the minimal "scanner and organizer works" test):
 - Phase 2: cash/document basis toggle and payables ageing on Přehled (need bank data); bulk "Označit jako zaplacené" in the register (creates transactions, so it belongs to M07); spreadsheet import (already Phase 2).
@@ -127,7 +128,7 @@ Outputs: a PDF summary and XLSX for the accountant or for MOJE daně, for every 
 
 ## Later (not specified in detail)
 
-Issued invoicing, Fio/MONETA token sync (after legal opinion L-01; ADR-009), REST API + webhooks + MCP server (+ OAuth/PATs), PWA offline capture, accountant multi-client portal, Money S3 export, competitor import (Competitors C, D and E), subscriptions/billing, marketing site, EET 2.0 (from 1 Jan 2027, only for users with in-person cash or card sales), PSD2 aggregator, full DPFDP7 + přehledy with a tax-advisor partner, Batch API re-processing (M02 §4.10), cross-tenant vendor priors (M04 §4.7), support-access grants (M12 §4.9), ⌘K command palette, QR separator sheets, Factur-X/ZUGFeRD and Pay by Square parsing.
+Issued invoicing, Fio/MONETA token sync (after legal opinion L-01; ADR-009; owner 2026-10-26: not ordered yet), ABRA Flexi export (only if a pilot accountant uses it), REST API + webhooks + MCP server (+ OAuth/PATs), PWA offline capture, accountant multi-client portal, Money S3 export, competitor import (Competitors C, D and E), subscriptions/billing, marketing site, EET 2.0 (from 1 Jan 2027, only for users with in-person cash or card sales), PSD2 aggregator (owner 2026-10-26: not planned, too expensive), full DPFDP7 + přehledy with a tax-advisor partner, Batch API re-processing (M02 §4.10), cross-tenant vendor priors (M04 §4.7), support-access grants (M12 §4.9), ⌘K command palette, QR separator sheets, Factur-X/ZUGFeRD and Pay by Square parsing.
 
 ---
 
