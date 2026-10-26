@@ -21,6 +21,7 @@ function fakeDeps(options: { failEnqueue?: boolean; failedDocs?: string[] } = {}
   const sources = new Map<string, { id: string; row: SourceFileInsert }>();
   const docs = new Map<string, string>();
   const enqueued: string[] = [];
+  const statements: string[] = [];
   let batches = 0;
   const inserted: { sourceFileId: string; uploadBatchId: string }[] = [];
   let n = 0;
@@ -51,10 +52,13 @@ function fakeDeps(options: { failEnqueue?: boolean; failedDocs?: string[] } = {}
       if (options.failEnqueue) throw new Error('down');
       enqueued.push(batchId);
     },
+    async enqueueStatement(_org, sourceFileId) {
+      statements.push(sourceFileId);
+    },
     newBatchId: () => `batch-${++batches}`,
     today: () => '2026-10-25',
   };
-  return { deps, puts, sources, enqueued, inserted };
+  return { deps, puts, sources, enqueued, inserted, statements };
 }
 
 describe('sha256Hex', () => {
@@ -167,5 +171,45 @@ describe('uploadDocuments', () => {
     await uploadDocuments(deps, { orgId: ORG, userId: USER }, [pdf('a')]);
     await uploadDocuments(deps, { orgId: ORG, userId: USER }, [pdf('a')]);
     expect(enqueued).toHaveLength(1);
+  });
+});
+
+describe('bank statements in the upload', () => {
+  const gpc = `074${'0'.repeat(6)}2400123455${'SYSEL TEST'.padEnd(20)}${'0'.repeat(89)}`;
+  const file = (name: string, text: string, type = '') => ({ name, type, bytes: new TextEncoder().encode(text) });
+
+  it('sends a GPC or MT940 file to bank import instead of making a document', async () => {
+    const f = fakeDeps();
+    const sta = ':20:S\n:25:2400123455/2010\n:61:260915C5,00NTRF//R1\n';
+    const items = await uploadDocuments(f.deps, { orgId: ORG, userId: USER }, [
+      file('vypis.gpc', gpc),
+      file('vypis.sta', sta, 'application/octet-stream'),
+    ]);
+    expect(items).toEqual([
+      { fileName: 'vypis.gpc', status: 'statement' },
+      { fileName: 'vypis.sta', status: 'statement' },
+    ]);
+    expect(f.statements).toEqual(['sf-1', 'sf-2']);
+    expect(f.inserted).toEqual([]);
+    expect(f.enqueued).toEqual([]);
+  });
+
+  it('sends a CAMT.053 XML to bank import but keeps ISDOC XML a document', async () => {
+    const f = fakeDeps();
+    const camt =
+      '<?xml version="1.0"?><Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt/></Document>';
+    const items = await uploadDocuments(f.deps, { orgId: ORG, userId: USER }, [
+      file('vypis.xml', camt, 'text/xml'),
+      file('faktura.isdoc', '<Invoice xmlns="http://isdoc.cz/namespace/2013"/>'),
+    ]);
+    expect(items.map((i) => i.status)).toEqual(['statement', 'accepted']);
+    expect(f.statements).toHaveLength(1);
+    expect(f.inserted).toHaveLength(1);
+  });
+
+  it('rejects a text file that is not a statement', async () => {
+    const f = fakeDeps();
+    const items = await uploadDocuments(f.deps, { orgId: ORG, userId: USER }, [file('notes.gpc', 'hello')]);
+    expect(items).toEqual([{ fileName: 'notes.gpc', status: 'rejected', reason: 'type' }]);
   });
 });
