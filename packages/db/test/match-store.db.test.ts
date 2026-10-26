@@ -51,7 +51,8 @@ describe.skipIf(DATABASE_URL === undefined)('match store', () => {
     sql = postgres(serviceUrl, { max: 1, onnotice: () => undefined });
     await runMigrations(serviceUrl);
     await sql`delete from organizations where id = ${ORG}`;
-    await sql`insert into organizations (id, name) values (${ORG}, 'Match Org')`;
+    await sql`insert into organizations (id, name, inbound_email_slug, inbound_email_secret)
+      values (${ORG}, 'Match Org', 'match-org-0117', 'EF56GH78')`;
     await sql`insert into categories (code, direction, tax_effect, label_cs, label_en, explanation_cs, sort)
       values ('exp_bank_fees', 'in', 'deductible_expense', 'Bank fees', 'Bank fees', 'Bank fees.', 900)
       on conflict (code) do nothing`;
