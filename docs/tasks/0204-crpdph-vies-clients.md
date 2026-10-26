@@ -1,6 +1,6 @@
 # 0204: CRPDPH and VIES clients
 
-Status: todo
+Status: review
 Ticket: P1-REG-02 | Depends on: none | Base commit: 496b1e9 | Branch: task/0204-crpdph-vies | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0204-report.md
