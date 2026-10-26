@@ -46,3 +46,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-26 [bank] Matcher: no deps; overpay = partial; FÚ 705/2866/721 verified.
 - 2026-10-26 [auth] No download re-confirm (no TOTP); P3-VAT-12 aal2 dropped. (coord.)
 - 2026-10-26 [test-env] Supabase + Google Cloud sysel0123 free tiers (deploy/gcp; Render dropped); auto sign-in, no login (0055). (owner)
+- 2026-10-26 [analytics] pipeline_events: codes-only log of reads, failures, status changes and user fixes, for failure analytics (0520). (owner)

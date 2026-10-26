@@ -418,6 +418,25 @@ create table extraction_runs (
   created_at timestamptz not null default now()
 );
 create index on extraction_runs (org_id, document_id);
+create table pipeline_events (
+  id bigserial primary key,
+  org_id uuid not null references organizations(id) on delete cascade,
+  document_id uuid not null references documents(id) on delete cascade,
+  at timestamptz not null default now(),
+  kind text not null check (kind in ('status','read','read_failed','user_edit','user_trash',
+                                     'user_restore','user_manual','user_answer')),
+  code text,                -- status: new status; read: outcome status; read_failed: error code; user_edit: filled|changed
+  detail text,              -- read: pre-check reason when skipped; read_failed: final|retry
+  from_status text,         -- status: the status before (null on insert)
+  field_key text,           -- user_edit: the field the user changed
+  extraction_run_id uuid references extraction_runs(id) on delete set null,
+  method text, model text, prompt_version text, attempt smallint,
+  blocking text[] not null default '{}',   -- read: rule ids of blocking checks
+  warnings text[] not null default '{}'    -- read: rule ids of warnings
+);
+create index on pipeline_events (org_id, at);
+create index on pipeline_events (document_id, at);
+create index on pipeline_events (kind, at);
 
 create table validation_results (
   id uuid primary key default gen_random_uuid(),
@@ -463,6 +482,8 @@ create table expected_documents (                                   -- expected-
 );
 create index on expected_documents (org_id, state, expected_by);
 ```
+
+**pipeline_events (0063, brief 0520).** One row per step of a document's life, as codes only (never values): `status` from the trigger `app.log_document_status()` on every insert and status change, `read` and `read_failed` from the worker (`saveDocumentReading`, `recordFailedRead`), `user_*` from `audit_document()`. Analytics views come in 0064. Read-only for users (§10.2).
 
 ## 5. Classification support
 
@@ -1038,7 +1059,7 @@ create policy documents_worker on documents for all to app_worker
 | `accountant_packages` | accountant may update only `state` (`sent → acknowledged`), `acknowledged_at/by`; `notes` owner/member only |
 | `export_profiles`, `export_mappings` | insert/update: owner, member, accountant |
 | `package_shares` | insert/revoke: owner, member; the service role reads it for `/p/{token}` |
-| derived tables (`tax_ledger_entries`, `vat_ledger_entries`, `filing_entries`, `llm_usage_daily`, `extraction_runs`, `ingest_items`, `statement_imports`, `match_suggestions`) | users: select only; writes come from the worker (`app_worker`) |
+| derived tables (`tax_ledger_entries`, `vat_ledger_entries`, `filing_entries`, `llm_usage_daily`, `extraction_runs`, `pipeline_events`, `ingest_items`, `statement_imports`, `match_suggestions`) | users: select only; writes come from the worker (`app_worker`) |
 | `obligations` | users may update only `state`, `done_at`, `done_source` (mark done / undo, owner and member) |
 
 ### 10.3 Global tables (no `org_id`, no tenant RLS)
