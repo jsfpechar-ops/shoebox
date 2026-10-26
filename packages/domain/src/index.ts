@@ -9,6 +9,7 @@ export * from './money/index';
 export * from './overview/deadlines';
 export * from './overview/meters';
 export * from './overview/totals';
+export * from './overview/ledger-totals';
 export * from './rules/cz/epo';
 export * from './rules/index';
 export * from './taxonomy/cascade';
