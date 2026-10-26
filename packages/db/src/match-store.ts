@@ -208,7 +208,7 @@ export async function syncOpenSuggestions(
     if (kept.has(key)) continue;
     kept.add(key);
     await tx.execute(
-      sql`insert into match_suggestions (org_id, transaction_id, kind, document_ids, amounts, paired_transaction_id, category_code, score, features, state, matcher_version) values (${orgId}, ${transactionId}, ${r.kind}, ${sql.param([...r.documentIds])}::uuid[], ${sql.param([...r.amounts])}::numeric[], ${r.pairedTransactionId}, (select code from categories where code = ${r.categoryCode}), ${r.score}::numeric, ${JSON.stringify(r.features)}::jsonb, 'open', ${r.matcherVersion})`,
+      sql`insert into match_suggestions (org_id, transaction_id, kind, document_ids, amounts, paired_transaction_id, category_code, score, features, state, matcher_version) values (${orgId}, ${transactionId}, ${r.kind}, ${sql.param([...r.documentIds])}::uuid[], ${`{${r.amounts.join(',')}}`}::text::numeric[], ${r.pairedTransactionId}, (select code from categories where code = ${r.categoryCode}), ${r.score}::numeric, ${JSON.stringify(r.features)}::jsonb, 'open', ${r.matcherVersion})`,
     );
     inserted += 1;
   }
