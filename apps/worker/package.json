@@ -23,6 +23,7 @@
     "@shoebox/bank": "workspace:*",
     "@shoebox/db": "workspace:*",
     "@shoebox/domain": "workspace:*",
+    "@shoebox/exports": "workspace:*",
     "@shoebox/extraction": "workspace:*",
     "@shoebox/pipeline": "workspace:*",
     "@shoebox/platform": "workspace:*",

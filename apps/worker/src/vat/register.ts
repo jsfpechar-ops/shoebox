@@ -5,10 +5,12 @@ import {
   type VatPeriodEvaluatePayload,
   vatFilingGenerateJob,
   vatPeriodEvaluateJob,
+  vatWorkbookGenerateJob,
 } from '@shoebox/pipeline';
 import { createSupabaseBlobStore, type Logger } from '@shoebox/platform';
 import type { JobRegistry, TenantHandler } from '../registry';
 import { evaluatePeriod, generateBundle, type VatDeps } from './service';
+import { createVatWorkbookGenerateHandler } from './workbook';
 
 const REQUIRED = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const;
 
@@ -83,6 +85,7 @@ export function registerVatJobs(
   };
   registry.registerTenant(vatPeriodEvaluateJob, createVatPeriodEvaluateHandler(deps));
   registry.registerTenant(vatFilingGenerateJob, createVatFilingGenerateHandler(deps));
+  registry.registerTenant(vatWorkbookGenerateJob, createVatWorkbookGenerateHandler(deps));
   logger.info({}, 'vat jobs registered');
   return true;
 }

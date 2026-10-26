@@ -1,6 +1,12 @@
 export const packageName = '@shoebox/exports' as const;
 export * from './isdoc/build';
 export {
+  buildVatWorkbook,
+  type VatWorkbookInput,
+  vatWorkbookSheets,
+  type WorkbookEntry,
+} from './vat-workbook';
+export {
   columnName,
   createXlsx,
   createXlsxWorkbook,

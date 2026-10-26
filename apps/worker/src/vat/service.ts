@@ -132,7 +132,7 @@ export interface GenerateRequest {
 const OBLIGATION_GENERATOR_VERSION = 1;
 const OPEN_BLOCKING_STATES: readonly string[] = ['generated', 'downloaded', 'marked_filed'];
 
-interface Ctx {
+export interface Ctx {
   readonly store: VatStore;
   readonly blobs: Pick<BlobStore, 'put'>;
   readonly rules: ReturnType<typeof createCzRules>;
@@ -143,7 +143,7 @@ interface Ctx {
   readonly enqueue: VatDeps['enqueue'];
 }
 
-function resolve(deps: VatDeps): Ctx {
+export function resolve(deps: VatDeps): Ctx {
   return {
     store: deps.store ?? dbVatStore,
     blobs: deps.blobs,
@@ -156,15 +156,15 @@ function resolve(deps: VatDeps): Ctx {
   };
 }
 
-type Skipped = { readonly skipped: 'no_profile' | 'not_vat_registered' };
-interface Loaded {
+export type Skipped = { readonly skipped: 'no_profile' | 'not_vat_registered' };
+export interface Loaded {
   readonly ledger: PeriodLedger;
   readonly profile: ProfileVersionRow;
   readonly status: 'platce' | 'identifikovana_osoba';
   readonly period: VatPeriodRange;
 }
 
-async function loadPeriod(
+export async function loadPeriod(
   tx: TenantTx,
   orgId: string,
   periodStart: LegalDate,
