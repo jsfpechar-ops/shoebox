@@ -81,14 +81,20 @@ describe.skipIf(DATABASE_URL === undefined)('0050 audit_document()', () => {
 
   it('refuses an unknown action', async () => {
     expect(
-      await codeAs(OWNER, (tx) => tx`select public.audit_document(${docId}, 'drop', ${tx.json({})})`),
+      await codeAs(
+        OWNER,
+        (tx) => tx`select public.audit_document(${docId}, 'drop', ${tx.json({})})`,
+      ),
     ).toBe('22023');
   });
 
   it('a user cannot insert into audit_log directly', async () => {
     expect(
-      await codeAs(OWNER, (tx) => tx`insert into audit_log (org_id, actor_kind, entity, action)
-        values (${orgId}, 'user', 'documents', 'edit_field')`),
+      await codeAs(
+        OWNER,
+        (tx) => tx`insert into audit_log (org_id, actor_kind, entity, action)
+        values (${orgId}, 'user', 'documents', 'edit_field')`,
+      ),
     ).toBe('42501');
   });
 });
