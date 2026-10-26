@@ -17,6 +17,7 @@ export * from './rules/index';
 export * from './taxonomy/cascade';
 export * from './taxonomy/categories';
 export * from './taxonomy/summary';
+export * from './vat/amend';
 export * from './vat/classify-period';
 export * from './vat/dphdp3';
 export * from './vat/header';
