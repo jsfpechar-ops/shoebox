@@ -1,6 +1,6 @@
 # 0103: Database side of the e-mail inbox
 
-Status: todo
+Status: review
 Ticket: P1-ING-06 (store part) | Depends on: 0100 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
