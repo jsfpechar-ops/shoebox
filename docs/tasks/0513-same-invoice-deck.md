@@ -89,6 +89,10 @@ Everything outside §3.
 
 - [ ] The commands in §6 pass. `git diff --stat` lists only the §3 files.
 
+## 8. Stop and ask
+
+As in the [template](TEMPLATE.md).
+
 ## 9. Report
 
 Write `docs/tasks/0513-report.md` (300 tokens at most) and set `Status: review`.

@@ -55,9 +55,9 @@ describe.skipIf(DATABASE_URL === undefined)('0061: page fix functions', () => {
       [FILE_A, 3],
       [FILE_B, 2],
     ] as const) {
-      await sql`insert into source_files (id, org_id, sha256, storage_path, mime_type, byte_size, page_count)
+      await sql`insert into source_files (id, org_id, sha256, storage_path, mime_type, byte_size, page_count, channel)
         values (${id}, ${ORG}, ${id.replace(/-/g, '').padEnd(64, '0')}, ${`org/${ORG}/files/${id}`},
-          'application/pdf', 1, ${pages})`;
+          'application/pdf', 1, ${pages}, 'upload')`;
     }
   });
 
