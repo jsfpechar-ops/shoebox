@@ -1,3 +1,4 @@
+import { llmCostUsd } from '@shoebox/domain';
 import { and, eq, isNull } from 'drizzle-orm';
 import {
   documentFields,
@@ -130,6 +131,7 @@ export async function saveDocumentReading(tx: TenantTx, write: ReadingWrite): Pr
       cacheReadTokens: run.cacheReadTokens,
       cacheWriteTokens: run.cacheWriteTokens,
       latencyMs: run.latencyMs,
+      costUsd: llmCostUsd(run.model, run),
     })
     .returning({ id: extractionRuns.id });
   if (!inserted) throw new Error('extraction run insert returned no row');

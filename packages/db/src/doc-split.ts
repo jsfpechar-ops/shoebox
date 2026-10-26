@@ -1,3 +1,4 @@
+import { llmCostUsd } from '@shoebox/domain';
 import { and, asc, desc, eq, gte, inArray, isNull, ne } from 'drizzle-orm';
 import { extractionRuns, reviewQuestions } from './schema/document-details';
 import { documentPages } from './schema/document-pages';
@@ -212,6 +213,7 @@ export async function applySortPlan(tx: TenantTx, plan: SortPlan): Promise<strin
         cacheReadTokens: run.cacheReadTokens,
         cacheWriteTokens: run.cacheWriteTokens,
         latencyMs: run.latencyMs,
+        costUsd: llmCostUsd(run.model, run),
       });
     }
   }

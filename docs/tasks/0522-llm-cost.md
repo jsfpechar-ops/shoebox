@@ -1,6 +1,6 @@
 # 0522: fill extraction_runs.cost_usd from a price table
 
-Status: todo
+Status: review
 Ticket: owner ask 2026-10-26 (failure logging for analytics), M02 §4 pricing + acceptance 17 | Depends on: 0520 | Base commit: after 0521 | Branch: claude/project-thread-5vgi6d | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -26,6 +26,7 @@ Every AI call row in `extraction_runs` gets its cost in USD, computed from its t
 | `packages/db/src/document-reading.ts` | edit | set `costUsd` |
 | `packages/db/src/doc-split.ts` | edit | set `costUsd` |
 | `packages/db/src/document-categorize.ts` | edit | set `costUsd` |
+| `packages/testkit/src/factories/document-details.ts` | edit | factory for `pipeline_events` (0520 follow-up) |
 
 No other file may change.
 
@@ -130,13 +131,28 @@ describe('llmCostUsd', () => {
 
    Do not change `recordFailedRead` (a failed call has no usage). If the Drizzle column is not named `costUsd` in `packages/db/src/schema/document-details.ts` (`cost_usd`), STOP. Command: `pnpm --filter @shoebox/db typecheck 2>&1 | tail -10`.
 
+4b. **Edit** `packages/testkit/src/factories/document-details.ts` (0520 follow-up: the RLS suite fails with `testkit: no factory for table "pipeline_events"`). After the `extractionRunFactory` block add:
+
+```ts
+/** `pipeline_events` has a bigserial `id` (left to the database). */
+export const pipelineEventFactory: TenantFactory = (ctx, overrides) => ({
+  org_id: ctx.orgId,
+  document_id: ctx.ids.next(),
+  kind: 'status',
+  code: 'received',
+  ...overrides,
+});
+```
+
+   and in the factory list add `['pipeline_events', pipelineEventFactory],` right after `['extraction_runs', extractionRunFactory],`. Add `pipeline_events` to the table list in the file's header comment. Command (with `DATABASE_URL`): `pnpm --filter @shoebox/db test -- test/rls 2>&1 | tail -15` → all pass.
+
 5. Run the db test for document reading if a `DATABASE_URL` sandbox is up (see K-P03, `packages/db/scripts/local-pg.sh`): `pnpm --filter @shoebox/db test -- document-reading 2>&1 | tail -15`. Otherwise say so in the report.
 
 6. `pnpm exec biome ci packages/domain packages/db 2>&1 | tail -10`; `python3 scripts/context_lint.py 2>&1 | tail -5`.
 
 ## 5. Do not touch
 
-`apps/`, migrations, the analytics views, other packages. Hard rules: no floats in cost math; no new dependency; never push to `main`.
+`apps/`, migrations, the analytics views, other packages (testkit only as in step 4b). Hard rules: no floats in cost math; no new dependency; never push to `main`.
 
 ## 6. Commands
 
