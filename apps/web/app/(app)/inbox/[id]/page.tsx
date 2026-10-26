@@ -6,6 +6,8 @@ import { requireActiveRole } from '../../../../src/auth/org-context';
 import { AutoRefresh } from '../../../../src/documents/auto-refresh';
 import { EDITABLE, editKeyOf } from '../../../../src/documents/correction';
 import { loadDocumentDetail } from '../../../../src/documents/detail-data';
+import { supabaseDuplicateStore } from '../../../../src/documents/duplicate';
+import { DuplicateNotice } from '../../../../src/documents/duplicate-notice';
 import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
@@ -36,6 +38,12 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
     ? await supabase.storage.from('org-files').createSignedUrl(detail.file.path, 300)
     : null;
   const fileUrl = signed && !signed.error ? (signed.data?.signedUrl ?? null) : null;
+  const originalId =
+    auth.ok && detail.status === 'duplicate'
+      ? await supabaseDuplicateStore(supabase, auth.orgId)
+          .originalOf(detail.id)
+          .catch(() => null)
+      : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,6 +58,14 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           {...(processing ? { processingSince: detail.createdAt } : {})}
         />
       </div>
+
+      {detail.status === 'duplicate' ? (
+        <DuplicateNotice
+          documentId={detail.id}
+          originalId={originalId}
+          canAct={auth.ok && (auth.role === 'owner' || auth.role === 'member')}
+        />
+      ) : null}
 
       {processing ? (
         <>
