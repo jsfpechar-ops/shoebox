@@ -1,6 +1,6 @@
 # 0602: After a fix, offer the matching total in one tap
 
-Status: todo
+Status: blocked
 Ticket: GAP-03 (owner go 2026-10-26 23:02) | Depends on: none | Base commit: 886fc60 | Branch: claude/project-thread-7b9jcx | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
