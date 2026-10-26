@@ -1,6 +1,6 @@
 # 0207: Use QR and PDF text to correct the AI reading
 
-Status: todo
+Status: review
 Ticket: P1-EXT-04 (merge, proto subset) | Depends on: 0201, 0203, 0205, 0206 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0207-report.md

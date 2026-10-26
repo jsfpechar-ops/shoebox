@@ -8,7 +8,9 @@ import {
 import { type Clock, createCzRules, parseLegalDate, pragueToday } from '@shoebox/domain';
 import {
   AnthropicHttpError,
+  applyExactData,
   buildProtoRequest,
+  type DocumentScan,
   ISDOC_READER_VERSION,
   type IsdocReading,
   isProtoMediaType,
@@ -19,6 +21,7 @@ import {
   ProtoParseError,
   parseProtoExtraction,
   readIsdoc,
+  scanDocument,
 } from '@shoebox/extraction';
 import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
 import { runProtoChecks } from '@shoebox/validation';
@@ -52,7 +55,10 @@ export interface DocExtractDeps {
   readonly model: string;
   readonly clock: Clock;
   readonly store?: ReadingStore; // default dbReadingStore
+  readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
 }
+
+const NO_SCAN: DocumentScan = { text: null, textGood: false, qrTexts: [] };
 
 /** Maps a thrown error to a code for the run record; never carries document content. */
 function errorCode(error: unknown, fallback: 'error' | 'storage'): string {
@@ -131,11 +137,28 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       return onError(error, errorCode(error, 'storage'));
     }
 
+    // Exact data in the file itself (QR codes, PDF text layer): read for PDFs and images only.
+    let scan: DocumentScan = NO_SCAN;
+    if (modelType !== null) {
+      try {
+        scan = await (deps.scan ?? scanDocument)(bytes, mediaType);
+      } catch {
+        scan = NO_SCAN;
+      }
+    }
+
     const toWrite = (
-      extraction: ProtoExtraction,
+      reading: ProtoExtraction,
       source: 'llm' | 'isdoc',
       runRow: ReadingWrite['run'],
     ): ReadingWrite => {
+      const exact = applyExactData(
+        reading,
+        scan,
+        { ico: doc.orgIco, dic: doc.orgDic },
+        { keepIdentifiers: source === 'isdoc' },
+      );
+      const extraction = exact.extraction;
       const rates = ratesFor(
         extraction.dates.duzp ?? extraction.dates.issue_date ?? null,
         deps.clock,
@@ -145,15 +168,25 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
         doc.orgIco === null && doc.orgDic === null
           ? undefined
           : { ico: doc.orgIco, dic: doc.orgDic };
-      const checks = runProtoChecks(extraction, org === undefined ? { today } : { today, org });
+      const checks = runProtoChecks(
+        { ...extraction, qr: { amount: exact.qrAmount } },
+        org === undefined ? { today } : { today, org },
+      );
       const rows = validationRowsOf(checks);
+      const fields = fieldsOf(extraction, source).map((row) => {
+        const exactSource = exact.sources[row.fieldKey];
+        return exactSource === undefined ? row : { ...row, source: exactSource };
+      });
+      if (exact.qrAmount !== null) {
+        fields.push({ fieldKey: 'qr.amount', valueText: exact.qrAmount, source: 'qr' });
+      }
       return {
         orgId: doc.orgId,
         documentId: doc.id,
         status: statusAfterRead(extraction, rows),
         patch: documentPatchOf(extraction),
         vatSummary: vatSummaryOf(extraction, rates),
-        fields: fieldsOf(extraction, source),
+        fields,
         validations: rows,
         run: runRow,
       };

@@ -203,4 +203,40 @@ describe('doc.extract handler', () => {
     expect(failures).toEqual([{ error: 'unsupported_type', final: true }]);
     expect(llm.requests).toEqual([]);
   });
+
+  it('checks the total against the payment QR amount and stores it as a field', async () => {
+    const { store, saved } = fakeStore();
+    await createDocExtractHandler({
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => ({ text: null, textGood: false, qrTexts: ['SPD*1.0*AM:999.00'] }),
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(saved[0]?.status).toBe('needs_review');
+    expect(saved[0]?.validations).toContainEqual(
+      expect.objectContaining({ ruleId: 'PROTO_QR_AMOUNT', severity: 'blocking' }),
+    );
+    expect(saved[0]?.fields).toContainEqual({
+      fieldKey: 'qr.amount',
+      valueText: '999.00',
+      source: 'qr',
+    });
+  });
+
+  it('saves the reading as before when the scan throws', async () => {
+    const { store, saved } = fakeStore();
+    await createDocExtractHandler({
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => {
+        throw new Error('scan failed');
+      },
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(saved[0]?.status).toBe('ready');
+  });
 });

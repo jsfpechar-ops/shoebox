@@ -1,4 +1,5 @@
 export const packageName = '@shoebox/extraction' as const;
+export * from './exact/apply';
 export * from './isdoc/find';
 export * from './isdoc/map';
 export * from './isdoc/xml';
