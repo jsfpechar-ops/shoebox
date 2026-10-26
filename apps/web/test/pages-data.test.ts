@@ -11,6 +11,7 @@ function fakeSupabase(results: Record<string, Result>) {
       const chain: Record<string, unknown> = {};
       for (const name of ['select', 'eq', 'is', 'order', 'limit']) chain[name] = () => chain;
       chain.maybeSingle = async () => result;
+      // biome-ignore lint/suspicious/noThenProperty: the fake query is awaited like a Supabase builder.
       chain.then = (resolve: (r: Result) => unknown) => Promise.resolve(result).then(resolve);
       return chain;
     },
