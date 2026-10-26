@@ -1,5 +1,6 @@
 import {
   bankImportStatementJob,
+  bankMatchDecideJob,
   docExtractJob,
   docSplitJob,
   emailReceivedJob,
@@ -73,6 +74,21 @@ export async function enqueueBankImport(orgId: string, sourceFileId: string): Pr
   const payload = bankImportStatementJob.payload.parse({ orgId, sourceFileId });
   const key = jobKey(bankImportStatementJob, payload);
   await (await boss()).send(bankImportStatementJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `bank.match.decide`: the owner's tap on a suggested payment. One job per suggestion. */
+export async function enqueueMatchDecision(
+  orgId: string,
+  suggestionId: string,
+  decision: 'accept' | 'reject',
+  userId: string,
+): Promise<void> {
+  const payload = bankMatchDecideJob.payload.parse({ orgId, suggestionId, decision, userId });
+  const key = jobKey(bankMatchDecideJob, payload);
+  await (await boss()).send(bankMatchDecideJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });
