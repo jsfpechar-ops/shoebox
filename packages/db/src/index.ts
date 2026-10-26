@@ -5,6 +5,7 @@ export * from './document-pages';
 export * from './document-reading';
 export { createDbPing, type DbPing } from './health';
 export * from './inbound-email';
+export * from './ledger-rebuild';
 export { MIGRATIONS_FOLDER, MIGRATIONS_SCHEMA, runMigrations } from './migrate';
 export { type RateLimitDb, rateLimitHit } from './rate-limit';
 export * from './rls-catalog';
