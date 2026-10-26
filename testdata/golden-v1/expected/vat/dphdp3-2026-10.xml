@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Pisemnost nazevSW="Shoebox" verzeSW="0.0.0">
+  <DPHDP3 verzePis="03.01">
+    <VetaD dokument="DP3" k_uladis="DPH" dapdph_forma="B" typ_platce="I" rok="2026" mesic="10" trans="A" c_okec="552000" d_poddp="20.11.2026"/>
+    <VetaP c_ufo="451" c_pracufo="2003" dic="7801011229" typ_ds="F" jmeno="Jan" prijmeni="Novák" ulice="Vinohradská" c_pop="1" naz_obce="Praha" psc="13000" stat="ČESKÁ REPUBLIKA" email="jan@example.com"/>
+    <Veta1 p_sl23_e="2212" dan_psl23_e="465" p_sl23_z="245" dan_psl23_z="52"/>
+    <Veta6 dan_zocelk="517" dano_da="517"/>
+  </DPHDP3>
+</Pisemnost>
