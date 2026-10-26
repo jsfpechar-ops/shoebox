@@ -10,6 +10,8 @@ import {
   docExtractJob,
   documentStagePayload,
   idempotencyKey,
+  importSpreadsheetRunJob,
+  importSpreadsheetUndoJob,
   isJobName,
   JOB_NAMES,
   type JobName,
@@ -299,5 +301,25 @@ describe('M06 podklady jobs', () => {
   it('podklady.reserve.nightly is a system cron at 02:30', () => {
     expect(podkladyReserveNightlyJob.scope).toBe('system');
     expect(podkladyReserveNightlyJob.cron).toBe('30 2 * * *');
+  });
+});
+
+describe('import jobs keys (regression: ":" in entityId threw)', () => {
+  it('run: a valid key per chunk, and a nonce makes a fresh key', () => {
+    const base = { orgId: ORG, importId: DOC, fromRow: 200 };
+    expect(jobKey(importSpreadsheetRunJob, base)).toBe(
+      `${ORG}:import.spreadsheet.run:${DOC}-200:1`,
+    );
+    const a = jobKey(importSpreadsheetRunJob, { ...base, nonce: 1 });
+    const b = jobKey(importSpreadsheetRunJob, { ...base, nonce: 2 });
+    expect(a).not.toBe(b);
+    expect(jobIdFromKey(a)).not.toBe(jobIdFromKey(b));
+  });
+
+  it('undo: a valid key, and a nonce makes a repeat undo a new job', () => {
+    expect(() => jobKey(importSpreadsheetUndoJob, { orgId: ORG, importId: DOC })).not.toThrow();
+    expect(jobKey(importSpreadsheetUndoJob, { orgId: ORG, importId: DOC, nonce: 1 })).not.toBe(
+      jobKey(importSpreadsheetUndoJob, { orgId: ORG, importId: DOC, nonce: 2 }),
+    );
   });
 });

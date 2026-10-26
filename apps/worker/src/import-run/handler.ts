@@ -181,7 +181,7 @@ export function createImportRunHandler(
     const nextFrom = from + IMPORT_RUN_ROWS;
     if (nextFrom < dataRows.length) {
       await store.addCounts(tx, { orgId, importId, imported, skipped, duplicates, skippedRows });
-      await deps.enqueueNext({ orgId, importId, fromRow: nextFrom });
+      await deps.enqueueNext({ orgId, importId, fromRow: nextFrom, nonce: payload.nonce });
       deps.logger?.info(
         { importId, fromRow: from, imported, skipped },
         'import.spreadsheet.run chunk',

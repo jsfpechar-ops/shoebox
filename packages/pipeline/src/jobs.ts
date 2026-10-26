@@ -281,9 +281,14 @@ export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;
 /** M01 §4.13: import the valid rows of one uploaded spreadsheet, 200 rows per run. Enqueues itself for the next 200. */
 export const importSpreadsheetRunJob = defineTenantJob({
   name: 'import.spreadsheet.run',
-  payload: tenantPayload({ importId: z.uuid(), fromRow: z.number().int().min(0) }),
+  payload: tenantPayload({
+    importId: z.uuid(),
+    fromRow: z.number().int().min(0),
+    nonce: z.number().int().min(0).optional(),
+  }),
   version: 1,
-  entityId: (payload) => `${payload.importId}:${payload.fromRow}`,
+  // One job per chunk; `nonce` (set by "start", carried down the chain) lets a restarted import queue again.
+  entityId: (p) => `${p.importId}-${p.fromRow}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
   retry: { retryLimit: 2 },
 });
 export type ImportSpreadsheetRunPayload = z.infer<typeof importSpreadsheetRunJob.payload>;
@@ -291,9 +296,9 @@ export type ImportSpreadsheetRunPayload = z.infer<typeof importSpreadsheetRunJob
 /** M01 §6: undo one spreadsheet import. The worker runs it (it needs the tenant transaction); the route checks the 30 days. */
 export const importSpreadsheetUndoJob = defineTenantJob({
   name: 'import.spreadsheet.undo',
-  payload: tenantPayload({ importId: z.uuid() }),
+  payload: tenantPayload({ importId: z.uuid(), nonce: z.number().int().min(0).optional() }),
   version: 1,
-  entityId: (payload) => payload.importId,
+  entityId: (p) => `${p.importId}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
 });
 export type ImportSpreadsheetUndoPayload = z.infer<typeof importSpreadsheetUndoJob.payload>;
 
