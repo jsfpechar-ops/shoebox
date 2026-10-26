@@ -44,7 +44,12 @@ export interface CategorizeCategory {
 
 const BUSINESS_LIKELIHOODS = ['business', 'personal', 'mixed', 'unknown'] as const;
 const SUPPLY_KINDS = ['service', 'goods', 'mixed', 'not_applicable'] as const;
-const DOCUMENT_KEYS = ['subject_cs', 'dominant_category_code', 'business_likelihood', 'personal_reason_cs'] as const;
+const DOCUMENT_KEYS = [
+  'subject_cs',
+  'dominant_category_code',
+  'business_likelihood',
+  'personal_reason_cs',
+] as const;
 const LINE_KEYS = [
   'position',
   'category_code',
@@ -142,18 +147,26 @@ function fail(reason: 'schema' | 'code' | 'empty', message: string): never {
 }
 
 function asObject(value: unknown, path: string): Obj {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) fail('schema', `${path}: object expected`);
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    fail('schema', `${path}: object expected`);
   return value as Obj;
 }
 
-function checkKeys(obj: Obj, allowed: readonly string[], required: readonly string[], path: string): void {
-  for (const key of Object.keys(obj)) if (!allowed.includes(key)) fail('schema', `${path}: unknown key`);
+function checkKeys(
+  obj: Obj,
+  allowed: readonly string[],
+  required: readonly string[],
+  path: string,
+): void {
+  for (const key of Object.keys(obj))
+    if (!allowed.includes(key)) fail('schema', `${path}: unknown key`);
   for (const key of required) if (!(key in obj)) fail('schema', `${path}: missing ${key}`);
 }
 
 function reqString(obj: Obj, key: string, min: number, max: number): string {
   const v = obj[key];
-  if (typeof v !== 'string' || v.length < min || v.length > max) fail('schema', `${key}: string expected`);
+  if (typeof v !== 'string' || v.length < min || v.length > max)
+    fail('schema', `${key}: string expected`);
   return v;
 }
 
@@ -165,13 +178,15 @@ function optNullableString(obj: Obj, key: string, max: number): string | null {
 
 function reqNumber(obj: Obj, key: string, min: number, max: number): number {
   const v = obj[key];
-  if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) fail('schema', `${key}: number expected`);
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max)
+    fail('schema', `${key}: number expected`);
   return v;
 }
 
 function reqPosition(obj: Obj, key: string): number {
   const v = obj[key];
-  if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) fail('schema', `${key}: integer expected`);
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < 1)
+    fail('schema', `${key}: integer expected`);
   return v;
 }
 
@@ -182,7 +197,8 @@ function reqBool(obj: Obj, key: string): boolean {
 }
 
 function reqEnum<T extends string>(v: unknown, allowed: readonly T[]): T {
-  if (typeof v !== 'string' || !(allowed as readonly string[]).includes(v)) fail('schema', 'enum value expected');
+  if (typeof v !== 'string' || !(allowed as readonly string[]).includes(v))
+    fail('schema', 'enum value expected');
   return v as T;
 }
 
@@ -198,7 +214,8 @@ function parseLine(raw: unknown, codes: readonly string[]): CategorizeLineOutput
   return {
     position: reqPosition(o, 'position'),
     categoryCode: reqCode(o.category_code, codes),
-    alternativeCategoryCode: o.alternative_category_code === null ? null : reqCode(o.alternative_category_code, codes),
+    alternativeCategoryCode:
+      o.alternative_category_code === null ? null : reqCode(o.alternative_category_code, codes),
     confidence: reqNumber(o, 'confidence', 0, 1),
     supplyKind: reqEnum(o.supply_kind, SUPPLY_KINDS),
     assetCandidate: reqBool(o, 'asset_candidate'),

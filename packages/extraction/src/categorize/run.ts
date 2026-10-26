@@ -7,8 +7,8 @@ import {
   CATEGORIZE_PROMPT_VERSION,
   CATEGORIZE_SYSTEM_PROMPT,
   type CategorizeCategory,
-  CategorizeParseError,
   type CategorizeOutput,
+  CategorizeParseError,
   parseCategorizeOutput,
 } from './schema';
 
@@ -24,13 +24,22 @@ export interface CategorizeRequestInput {
   readonly document: {
     readonly class: string;
     readonly direction: 'in' | 'out';
-    readonly supplier: { name: string | null; country: string | null; vatPayer: boolean | null; nace: string | null } | null;
+    readonly supplier: {
+      name: string | null;
+      country: string | null;
+      vatPayer: boolean | null;
+      nace: string | null;
+    } | null;
     readonly taxDocStatus: string;
     readonly currency: string;
     readonly issueDate: string | null;
     readonly servicePeriod: readonly [string, string] | null;
   };
-  readonly business: { readonly activities: readonly string[]; readonly nace: string | null; readonly vatStatus: string };
+  readonly business: {
+    readonly activities: readonly string[];
+    readonly nace: string | null;
+    readonly vatStatus: string;
+  };
   readonly lines: readonly CategorizeRequestLine[];
   readonly resolved: Readonly<Record<string, string | null>>; // position → category code already decided, or null
   readonly categories: readonly CategorizeCategory[]; // already filtered by direction and validity by the caller
@@ -65,7 +74,9 @@ export function buildCategorizeRequest(input: CategorizeRequestInput): Categoriz
   const codes = input.categories.map((c) => c.code);
   const schema = buildCategorizeJsonSchema(codes);
   const lines = compactLines(input.lines);
-  const positions = lines.filter((l) => input.resolved[String(l.position)] === null).map((l) => l.position);
+  const positions = lines
+    .filter((l) => input.resolved[String(l.position)] === null)
+    .map((l) => l.position);
 
   const categoryLines = input.categories.map(
     (c) => `${c.code} | ${c.direction} | ${c.taxEffect} | ${c.label} | ${c.explanation}`,
@@ -135,7 +146,11 @@ export interface CategorizeAttempt {
 }
 
 export type CategorizeRunResult =
-  | { readonly ok: true; readonly output: CategorizeOutput; readonly attempts: readonly CategorizeAttempt[] }
+  | {
+      readonly ok: true;
+      readonly output: CategorizeOutput;
+      readonly attempts: readonly CategorizeAttempt[];
+    }
   | { readonly ok: false; readonly error: string; readonly attempts: readonly CategorizeAttempt[] };
 
 const ZERO_USAGE: LlmUsage = {
@@ -146,7 +161,10 @@ const ZERO_USAGE: LlmUsage = {
 };
 
 /** Calls `llm.complete` at most twice: a CategorizeParseError on the first answer triggers one retry with the same request (attempt 2); a second failure returns ok:false with error 'parse'. A thrown provider error is recorded as attempt with ok:false, error = error.name, and re-thrown (pg-boss retries). */
-export async function runCategorize(llm: LlmClient, built: CategorizeRequest): Promise<CategorizeRunResult> {
+export async function runCategorize(
+  llm: LlmClient,
+  built: CategorizeRequest,
+): Promise<CategorizeRunResult> {
   const attempts: CategorizeAttempt[] = [];
   const { model, promptVersion } = built.request;
   for (let attempt = 1; attempt <= 2; attempt++) {
