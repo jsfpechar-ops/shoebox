@@ -28,17 +28,14 @@ function Row({ label, help, children }: { label: string; help?: string; children
 export default async function SettingsPage() {
   const auth = await requireActiveRole(['owner', 'member', 'accountant', 'viewer']);
   const supabase = auth.ok ? await createSupabaseServerClient() : null;
-  const view =
+  const [view, bank, vendors] =
     auth.ok && supabase
-      ? await loadSettings(
-          supabase,
-          auth.orgId,
-          auth.userId,
-          pragueToday({ now: () => Date.now() }),
-        )
-      : null;
-  const bank = auth.ok && supabase ? await loadBankView(supabase, auth.orgId) : null;
-  const vendors = auth.ok && supabase ? await loadVendorMemory(supabase, auth.orgId) : null;
+      ? await Promise.all([
+          loadSettings(supabase, auth.orgId, auth.userId, pragueToday({ now: () => Date.now() })),
+          loadBankView(supabase, auth.orgId),
+          loadVendorMemory(supabase, auth.orgId),
+        ])
+      : [null, null, null];
   const canForget = auth.ok && (auth.role === 'owner' || auth.role === 'member');
 
   return (

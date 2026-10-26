@@ -23,7 +23,11 @@ export function PagesCard({
       {view.question !== null ? (
         <Card className="flex flex-col gap-4 p-6">
           <p className="text-body">{t('doc.pages.same_question')}</p>
-          <Link href={`/inbox/${view.question.otherDocumentId}`} className="text-body underline">
+          <Link
+            prefetch={false}
+            href={`/inbox/${view.question.otherDocumentId}`}
+            className="text-body underline"
+          >
             {t('doc.pages.open_other')}
           </Link>
           {canFix ? (
