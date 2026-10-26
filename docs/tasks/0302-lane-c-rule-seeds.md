@@ -1,6 +1,6 @@
 # 0302: Rule seeds for sorting and money (`classification.*`, `fx.max_lookback_days`, three `vat.*` lists)
 
-Status: todo
+Status: done
 Ticket: P1-CAT-01 (acceptance "classification.* seeded exactly as listed in 06 §2.2"), P1-CAT-02 (`vat.eu_member_states`, `vat.out_of_scope_categories`, `vat.reduced_rate_categories`, `fx.max_lookback_days`) | Depends on: 0301 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
