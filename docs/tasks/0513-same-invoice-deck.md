@@ -1,6 +1,6 @@
 # 0513: The same-invoice question in the review deck format
 
-Status: todo
+Status: review
 Ticket: Page sorting (owner 2026-10-26) | Depends on: 0511 | Base commit: see branch | Branch: claude/project-thread-z0dj04 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens
 
