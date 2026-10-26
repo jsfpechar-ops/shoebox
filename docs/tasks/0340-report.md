@@ -1,6 +1,6 @@
 # 0340 report
 
-Status: blocked
+Status: review (orchestrator chose option 1: keep the 05 §8 FKs; the RLS role test clears filing rows inside its rolled-back transaction before deleting documents)
 
 ## Files changed
 - packages/db/migrations/0043_filings.sql (new): 05 §8 DDL verbatim, the two extra indexes, RLS (filings, filing_documents: apply_tenant_rls; filing_entries: apply_tenant_rls_read_only). No `app.reject_update` exists, so immutability is a comment.

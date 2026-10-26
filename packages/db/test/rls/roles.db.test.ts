@@ -165,10 +165,20 @@ describe.skipIf(DATABASE_URL === undefined)(
             const code = await errorCodeAs(sql, USERS.A[role], (tx) => insertRow(tx, table, row));
             expect(code, `${table}: insert as ${role}`).toBe(allowed ? null : '42501');
           }
-          const counts = await asUser(sql, USERS.A[role], async (tx) => ({
-            updated: await updateCount(tx, table, ORG_A),
-            deleted: await deleteCount(tx, table, ORG_A),
-          }));
+          const counts = await asUser(sql, USERS.A[role], async (tx) => {
+            if (table === 'documents') {
+              // A filed return keeps its evidence: filing rows reference documents without cascade
+              // (05 §8). Clear them as the service role inside this rolled-back transaction.
+              await tx`reset role`;
+              await tx`delete from filing_entries where org_id = ${ORG_A}`;
+              await tx`delete from filing_documents where org_id = ${ORG_A}`;
+              await tx`set local role authenticated`;
+            }
+            return {
+              updated: await updateCount(tx, table, ORG_A),
+              deleted: await deleteCount(tx, table, ORG_A),
+            };
+          });
           if (allowed) {
             expect(counts.updated, `${table}: update as ${role}`).toBeGreaterThanOrEqual(1);
             expect(counts.deleted, `${table}: delete as ${role}`).toBeGreaterThanOrEqual(1);
