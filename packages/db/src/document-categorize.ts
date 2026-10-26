@@ -1,3 +1,4 @@
+import { llmCostUsd } from '@shoebox/domain';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import {
   documentFields,
@@ -371,6 +372,7 @@ export async function saveCategorization(
         cacheReadTokens: run.cacheReadTokens,
         cacheWriteTokens: run.cacheWriteTokens,
         latencyMs: run.latencyMs,
+        costUsd: llmCostUsd(run.model, run),
         error: run.error,
       })
       .returning({ id: extractionRuns.id });

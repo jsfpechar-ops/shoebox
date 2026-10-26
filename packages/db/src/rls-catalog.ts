@@ -39,6 +39,7 @@ export const READ_ONLY_FOR_USERS: readonly string[] = [
   'filing_entries',
   'llm_usage_daily',
   'extraction_runs',
+  'pipeline_events',
   'ingest_items',
   'statement_imports',
   'match_suggestions',

@@ -4,6 +4,7 @@ Updated: 2026-10-26.
 
 ## Now
 
+- 0520–0522 failure analytics: `pipeline_events` log, `analytics` views + CSV export, AI cost per call.
 - 0514–0516: free pre-check skips clear non-invoices (0 tokens); bad answers fail at once. Epic CLS still to build.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
@@ -17,9 +18,8 @@ Updated: 2026-10-26.
 
 ## Next
 
-- Prototype v3 merged (0041a–c, 0042a). Owner: set SHOEBOX_PROTO_ORG_ICO/_DIC and ANTHROPIC_API_KEY on Render, send the Anthropic ZDR form.
 - Design (07 rules 11–14) and tokens merged (#90, #91). Storage merged (#71). Auth = passkey + e-mail link only: 0044a (#93), 0044b offer (#94), 0044c passkey sign-in in review. `[verify]` Supabase passkeys GA before Phase 1 launch.
-- Test env (0054): worker `start` script + `deploy/render-test.yaml`; owner follows the setup guide (Supabase + Render Frankfurt). First real-Supabase run; risks: storage policies, pooler login for `app_worker`.
+- Test env live on Cloud Run europe-west1 (Render dropped, see decisions 2026-10-26).
 - e2e in the cloud container: Chromium projects only, `PLAYWRIGHT_BROWSERS_PATH` shim (see 0044b brief).
 
 ## Blocked (owner)

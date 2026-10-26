@@ -16,6 +16,7 @@ export * from './income-tax/totals';
 export * from './income-tax/vat-note';
 export * from './ledgers/allocate';
 export * from './ledgers/tax';
+export * from './llm-pricing';
 export * from './money/index';
 export * from './overview/deadlines';
 export * from './overview/ledger-totals';

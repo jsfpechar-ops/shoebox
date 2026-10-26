@@ -2,7 +2,8 @@ import type { Row, TenantFactory } from './registry';
 
 /**
  * Factories of the 05 §4 detail tables (migration 0006): document_links, document_lines,
- * document_vat_summary, document_fields, extraction_runs, validation_results, review_questions.
+ * document_vat_summary, document_fields, extraction_runs, validation_results, review_questions,
+ * pipeline_events.
  * Columns are snake_case as in SQL; money and percentages are numeric strings (never floats).
  * Every `document_id` is a fresh id from `ctx.ids`; the RLS suite's `ensureParentRows()` creates
  * that document with `documentFactory`. `category_code` stays null (categories is a global table
@@ -66,6 +67,15 @@ export const extractionRunFactory: TenantFactory = (ctx, overrides) => ({
   ...overrides,
 });
 
+/** `pipeline_events` has a bigserial `id` (left to the database). */
+export const pipelineEventFactory: TenantFactory = (ctx, overrides) => ({
+  org_id: ctx.orgId,
+  document_id: ctx.ids.next(),
+  kind: 'status',
+  code: 'received',
+  ...overrides,
+});
+
 export const validationResultFactory: TenantFactory = (ctx, overrides) => ({
   id: ctx.ids.next(),
   org_id: ctx.orgId,
@@ -102,6 +112,7 @@ export const documentDetailFactories: ReadonlyArray<readonly [string, TenantFact
   ['document_vat_summary', documentVatSummaryFactory],
   ['document_fields', documentFieldFactory],
   ['extraction_runs', extractionRunFactory],
+  ['pipeline_events', pipelineEventFactory],
   ['validation_results', validationResultFactory],
   ['review_questions', reviewQuestionFactory],
   ['document_pages', documentPageFactory],
