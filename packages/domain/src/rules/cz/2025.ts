@@ -70,6 +70,54 @@ export const RULES_CZ_2025: readonly RuleEntryInput[] = [
   base('vat.cnb_rate_rule', `${ZDPH}#p4`, 'rate_valid_on_date_else_last_published'),
   // ZDPH § 101 odst. 1: the return is due within 25 days after the end of the period.
   base('vat.deadline_day', `${ZDPH}#p101`, 25),
+  // Treaty on European Union, Art. 52: the 27 member states (CZ included; VAT consumers that need
+  // "other member states" exclude CZ themselves). 'XI' (Northern Ireland, goods only) is not listed:
+  // TODO(verify): add 'XI' once the goods-only rule has a place in the schema.
+  {
+    ...base('vat.eu_member_states', 'https://eur-lex.europa.eu/eli/treaty/teu_2016/oj', [
+      'AT',
+      'BE',
+      'BG',
+      'HR',
+      'CY',
+      'CZ',
+      'DK',
+      'EE',
+      'FI',
+      'FR',
+      'DE',
+      'GR',
+      'HU',
+      'IE',
+      'IT',
+      'LV',
+      'LT',
+      'LU',
+      'MT',
+      'NL',
+      'PL',
+      'PT',
+      'RO',
+      'SK',
+      'SI',
+      'ES',
+      'SE',
+    ]),
+    verified_at: '2026-10-26',
+  },
+  // ZDPH § 2: pass-through amounts (tourist fee, deposits, customs VAT) are not a supply of the
+  // taxpayer. TODO(verify): bank fees (06 §2.1 "[verify bank fees]").
+  {
+    ...base('vat.out_of_scope_categories', `${ZDPH}#p2`, [
+      'pt_tourist_fee',
+      'pt_deposit',
+      'pt_customs_vat',
+    ]),
+    verified_at: '2026-10-26',
+  },
+  // ZDPH § 47 and příloha č. 2: none of the seeded categories is a reduced-rate service by default
+  // (06 §2.1: `[]`, "[verify per service]" in M04 §4.2).
+  { ...base('vat.reduced_rate_categories', `${ZDPH}#p47`, []), verified_at: '2026-10-26' },
   // ZDP § 7 odst. 7: flat-rate expense percentages and their caps (income cap 2 000 000 Kč).
   base('pausalni_vydaje.rates_caps', `${ZDP}#p7`, {
     '80': 1_600_000,
