@@ -2,6 +2,7 @@ export const packageName = '@shoebox/domain' as const;
 export * from './clock/index';
 export * from './dates/index';
 export * from './enums/index';
+export * from './ledgers/allocate';
 export * from './money/index';
 export * from './overview/deadlines';
 export * from './overview/meters';
