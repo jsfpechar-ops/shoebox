@@ -44,6 +44,12 @@ export const READ_ONLY_FOR_USERS: readonly string[] = [
   'match_suggestions',
 ];
 
+/**
+ * Tenant tables where users may only update (05 §10.2: obligations, state/done_at/done_source; a
+ * trigger guards the columns). No user insert or delete policy: the worker writes those rows.
+ */
+export const USER_UPDATE_ONLY: readonly string[] = ['obligations'];
+
 /** 05 §10.2: written by owners only (a member cannot insert, update or delete). */
 export const OWNER_ONLY_TABLES: readonly string[] = [
   'organizations',

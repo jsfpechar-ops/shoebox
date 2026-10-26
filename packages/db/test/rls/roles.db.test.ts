@@ -5,6 +5,7 @@ import {
   NO_USER_INSERT,
   OWNER_ONLY_TABLES,
   READ_ONLY_FOR_USERS,
+  USER_UPDATE_ONLY,
 } from '../../src/rls-catalog';
 import {
   asUser,
@@ -159,7 +160,10 @@ describe.skipIf(DATABASE_URL === undefined)(
     it('owner and member insert, update and delete exactly where the role matrix allows', async () => {
       for (const table of tenants.tables) {
         for (const role of ['owner', 'member'] as const) {
-          const allowed = mayWrite(table, role);
+          // USER_UPDATE_ONLY tables: users update (owner, member) but insert and delete nothing.
+          const updateOnly = USER_UPDATE_ONLY.includes(table);
+          const allowed = mayWrite(table, role) && !updateOnly;
+          const mayUpdate = mayWrite(table, role);
           const row = await buildRow(sql, table, tenants.ctx.A);
           if (!NO_USER_INSERT.includes(table)) {
             const code = await errorCodeAs(sql, USERS.A[role], (tx) => insertRow(tx, table, row));
@@ -179,11 +183,15 @@ describe.skipIf(DATABASE_URL === undefined)(
               deleted: await deleteCount(tx, table, ORG_A),
             };
           });
-          if (allowed) {
+          if (mayUpdate) {
             expect(counts.updated, `${table}: update as ${role}`).toBeGreaterThanOrEqual(1);
+          } else {
+            expect(counts.updated, `${table}: update as ${role}`).toBe(0);
+          }
+          if (allowed) {
             expect(counts.deleted, `${table}: delete as ${role}`).toBeGreaterThanOrEqual(1);
           } else {
-            expect(counts, `${table} as ${role}`).toEqual({ updated: 0, deleted: 0 });
+            expect(counts.deleted, `${table}: delete as ${role}`).toBe(0);
           }
         }
       }
