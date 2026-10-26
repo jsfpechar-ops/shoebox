@@ -6,11 +6,12 @@ import {
   type ExecFn,
   readManifest,
   validateXml,
+  validateXmlOrStructural,
   XmllintMissingError,
   xsdAvailable,
 } from '../src/validate';
 
-// Fakes the vendored DPHDP3 03.01.04 XSD (manifest hash plus schema file) so the XSD branches run.
+// Toggles the DPHDP3 03.01.04 XSD (schema file present or not) so both branches run.
 // The stub delegates everything else to the real filesystem.
 const state = vi.hoisted(() => ({ vendored: false }));
 
@@ -19,7 +20,7 @@ vi.mock('node:fs', async (importOriginal) => {
   return {
     ...actual,
     existsSync: (p: PathLike) => {
-      if (state.vendored && String(p).endsWith('/xsd/DPHDP3/03.01.04/dphdp3_epo2.xsd')) return true;
+      if (String(p).endsWith('/xsd/DPHDP3/03.01.04/dphdp3_epo2.xsd')) return state.vendored;
       return actual.existsSync(p);
     },
     readFileSync: (p: PathOrFileDescriptor, enc: BufferEncoding) => {
@@ -144,6 +145,24 @@ describe('validateXml with the XSD vendored', () => {
     ).rejects.toBeInstanceOf(XmllintMissingError);
   });
 
+  it('validateXmlOrStructural falls back to the structural result without xmllint', async () => {
+    await expect(
+      validateXmlOrStructural(AUG, 'DPHDP3', VERSION, {
+        exec: async () => ({ code: null, stderr: '', error: enoent() }),
+      }),
+    ).resolves.toEqual({ valid: true, method: 'structural', xsdAvailable: false, errors: [] });
+  });
+
+  it('validateXmlOrStructural rethrows other errors', async () => {
+    await expect(
+      validateXmlOrStructural(AUG, 'DPHDP3', VERSION, {
+        exec: async () => {
+          throw new Error('boom');
+        },
+      }),
+    ).rejects.toThrow('boom');
+  });
+
   it('throws XmllintMissingError through the real exec when the binary path does not exist', async () => {
     await expect(
       validateXml(AUG, 'DPHDP3', VERSION, { xmllint: '/nonexistent/shoebox-xmllint' }),
@@ -209,12 +228,20 @@ describe('defaultExec', () => {
   });
 });
 
-// Real xmllint against a schema path that is not on disk: exercises the non-stubbed exec path.
+// Real xmllint against the vendored official schema: exercises the non-stubbed exec path.
 const hasXmllint = existsSync('/usr/bin/xmllint');
 describe.skipIf(!hasXmllint)('validateXml with the real xmllint binary', () => {
-  it('reports invalid through the xsd method when the schema file cannot be loaded', async () => {
+  it('validates against the vendored official schema', async () => {
     state.vendored = true;
     const result = await validateXml(AUG, 'DPHDP3', VERSION, { xmllint: '/usr/bin/xmllint' });
+    expect(result).toEqual({ valid: true, method: 'xsd', xsdAvailable: true, errors: [] });
+  });
+
+  it('reports schema violations through the xsd method', async () => {
+    state.vendored = true;
+    const bad = AUG.replace(/ rok="\d{4}"/, ' rok="20x6"');
+    expect(bad).not.toBe(AUG);
+    const result = await validateXml(bad, 'DPHDP3', VERSION, { xmllint: '/usr/bin/xmllint' });
     expect(result.method).toBe('xsd');
     expect(result.valid).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);

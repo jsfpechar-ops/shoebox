@@ -162,3 +162,18 @@ export async function validateXml(
     await rm(file, { force: true });
   }
 }
+
+/** Like validateXml, but a host without xmllint gets the structural result (filings stay drafts) instead of an error. */
+export async function validateXmlOrStructural(
+  xml: string,
+  form: EpoForm,
+  version: string,
+  opts?: { readonly exec?: ExecFn; readonly xmllint?: string },
+): Promise<ValidationResult> {
+  try {
+    return await validateXml(xml, form, version, opts);
+  } catch (e) {
+    if (!(e instanceof XmllintMissingError)) throw e;
+    return { valid: true, method: 'structural', xsdAvailable: false, errors: [] };
+  }
+}

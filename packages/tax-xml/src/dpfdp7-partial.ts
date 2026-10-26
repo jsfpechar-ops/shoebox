@@ -87,12 +87,12 @@ export function serializeDpfdp7Partial(
         ['pln_moc', 'N'],
         ['audit', 'N'],
         ['c_ufo_cil', textAttr(h.fuCode)],
-        ['c_pracufo', textAttr(h.ufoCode)],
       ],
     },
     {
       name: 'VetaP',
       attrs: [
+        ['c_pracufo', textAttr(h.ufoCode)],
         ['rod_c', rc.normalized],
         ['jmeno', textAttr(h.firstName)],
         ['prijmeni', textAttr(h.lastName)],

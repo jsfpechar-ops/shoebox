@@ -55,7 +55,13 @@ import {
   vatWorkbookGenerateJob,
 } from '@shoebox/pipeline';
 import type { BlobStore, Logger } from '@shoebox/platform';
-import { serializeDphdp3, serializeKh, serializeShv, validateXml } from '@shoebox/tax-xml';
+import {
+  serializeDphdp3,
+  serializeKh,
+  serializeShv,
+  type validateXml,
+  validateXmlOrStructural,
+} from '@shoebox/tax-xml';
 import { z } from 'zod';
 import { type ImportedStore, registerImportedFilings } from './imported';
 import {
@@ -167,7 +173,7 @@ export function resolve(deps: VatDeps): Ctx {
     logger: deps.logger,
     now: deps.now ?? Date.now,
     appVersion: deps.appVersion ?? process.env.SHOEBOX_APP_VERSION ?? '0.0.0',
-    validate: deps.validate ?? validateXml,
+    validate: deps.validate ?? validateXmlOrStructural,
     enqueue: deps.enqueue,
   };
 }

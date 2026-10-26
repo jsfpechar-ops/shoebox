@@ -1,10 +1,10 @@
 {
   "form": "DPFDP7",
-  "version": "00.00.00",
-  "verze_pis": "00.00",
+  "version": "01.01.02",
+  "verze_pis": "01.01",
   "main": "dpfdp7_epo2.xsd",
   "source_url": "https://adisspr.mfcr.cz/adis/jepo/schema/dpfdp7_epo2.xsd",
-  "sha256": null,
-  "fetched_at": null,
+  "sha256": "2984fcb540461e8422b727b186a6d8fcc843572520244ffbca578d72f5993358",
+  "fetched_at": "2026-10-26",
   "valid_for_periods_from": "2026-01-01"
 }

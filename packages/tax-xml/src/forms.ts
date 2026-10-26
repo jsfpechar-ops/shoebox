@@ -318,16 +318,7 @@ export const FORM_RULES: Readonly<Record<EpoForm, readonly VetaRule[]>> = {
       name: 'VetaD',
       min: 1,
       max: 1,
-      attrs: [
-        'dokument',
-        'k_uladis',
-        'rok',
-        'dap_typ',
-        'pln_moc',
-        'audit',
-        'c_ufo_cil',
-        'c_pracufo',
-      ],
+      attrs: ['dokument', 'k_uladis', 'rok', 'dap_typ', 'pln_moc', 'audit', 'c_ufo_cil'],
       required: ['dokument', 'k_uladis', 'rok', 'dap_typ'],
     },
     {
@@ -335,6 +326,7 @@ export const FORM_RULES: Readonly<Record<EpoForm, readonly VetaRule[]>> = {
       min: 1,
       max: 1,
       attrs: [
+        'c_pracufo',
         'rod_c',
         'jmeno',
         'prijmeni',

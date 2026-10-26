@@ -125,7 +125,7 @@ describe('podkladyPdfLines S2 (M06 §9 general 2)', () => {
       expect(texts).toContain(`podklady.flat.caveat.${k}`);
   });
   it('assets, private use, warnings, checklist (DE: depreciation and car present, accommodation absent), one footer disclaimer', () => {
-    expect(texts.some((x) => x.includes('Skoda Dealer') && x.includes('650 000 Kč'))).toBe(true);
+    expect(texts.some((x) => x.includes('Škoda Dealer') && x.includes('650 000 Kč'))).toBe(true);
     expect(texts).toContain('podklady.assets.note');
     expect(texts.some((x) => x.includes('Telefon') && x.includes('12 000 Kč'))).toBe(true);
     expect(texts.some((x) => x.startsWith('podklady.readiness.P_UNPAID_ISSUED'))).toBe(true);
@@ -181,6 +181,13 @@ describe('helpers and bytes', () => {
       'Prilis zlutoucky kun UPEL dabelske ody – 10 €',
     );
     expect(transliterate('東京')).toBe('??');
+  });
+  it('keeps Czech letters as written in the lines', () => {
+    const all = podkladyPdfLines(buildPodkladySummary(base(), rules, d('2027-02-10')), t).map(
+      (l) => `${l.text} ${l.value ?? ''}`,
+    );
+    expect(all.some((x) => x.includes('Tomáš Řehoř'))).toBe(true);
+    expect(all.some((x) => x.includes('Kč'))).toBe(true);
   });
   it('buildPodkladyPdf: a PDF with at most 4 pages that contains the footer text', async () => {
     const bytes = await buildPodkladyPdf(buildPodkladySummary(base(), rules, d('2027-02-10')), t);

@@ -1,5 +1,9 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fontkit from '@pdf-lib/fontkit';
 import { CZK, Money, type PodkladySummary, round0 } from '@shoebox/domain';
-import { PDFDocument, type PDFFont, type PDFPage, StandardFonts } from 'pdf-lib';
+import { PDFDocument, type PDFFont, type PDFPage } from 'pdf-lib';
 
 export type Translate = (key: string, params?: Record<string, string | number>) => string;
 export type PdfLine = {
@@ -99,7 +103,7 @@ export function podkladyPdfLines(s: PodkladySummary, t: Translate): PdfLine[] {
 
   // (1) header
   push({ kind: 'h1', text: t('podklady.title', { year: s.year }) });
-  row(t('podklady.header.name'), transliterate(s.taxpayer.legalName));
+  row(t('podklady.header.name'), s.taxpayer.legalName);
   row(t('podklady.header.ico'), s.taxpayer.ico ?? '-');
   row(t('podklady.header.regime'), t(`podklady.regime.${s.regime}`));
   row(t('podklady.header.generated'), s.generatedOn);
@@ -175,11 +179,7 @@ export function podkladyPdfLines(s: PodkladySummary, t: Translate): PdfLine[] {
   h2('podklady.section.assets');
   para(t('podklady.assets.note'));
   for (const a of s.assets.assets) {
-    const label = [
-      a.date ?? '-',
-      transliterate(a.partnerName ?? ''),
-      transliterate(a.description ?? ''),
-    ]
+    const label = [a.date ?? '-', a.partnerName ?? '', a.description ?? '']
       .filter((part) => part !== '')
       .join(' ');
     row(label, formatKc(a.price));
@@ -197,7 +197,7 @@ export function podkladyPdfLines(s: PodkladySummary, t: Translate): PdfLine[] {
   for (const p of s.privateUse.partialShares) {
     row(
       t('podklady.private.partial', {
-        description: transliterate(p.description ?? ''),
+        description: p.description ?? '',
         share: p.businessSharePct,
       }),
       formatKc(p.privatePart),
@@ -253,16 +253,24 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
   return out;
 }
 
-/** A4 PDF of the Podklady summary, at most a few pages; Helvetica (WinAnsi) with transliterated text. */
+const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const FONT_DIR = path.join(PACKAGE_ROOT, 'assets', 'fonts');
+
+/** A4 PDF of the Podklady summary, at most a few pages; Noto Sans (OFL) embedded, so Czech letters print as written. */
 export async function buildPodkladyPdf(s: PodkladySummary, t: Translate): Promise<Uint8Array> {
   const lines = podkladyPdfLines(s, t);
   const doc = await PDFDocument.create();
-  const regular = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  doc.registerFontkit(fontkit);
+  const [regularBytes, boldBytes] = await Promise.all([
+    readFile(path.join(FONT_DIR, 'NotoSans-Regular.ttf')),
+    readFile(path.join(FONT_DIR, 'NotoSans-Bold.ttf')),
+  ]);
+  const regular = await doc.embedFont(regularBytes, { subset: true });
+  const bold = await doc.embedFont(boldBytes, { subset: true });
 
   const footerText = lines
     .filter((l) => l.kind === 'footer')
-    .map((l) => transliterate(l.text))
+    .map((l) => l.text)
     .join(' ');
   const footerLines = wrapText(footerText, regular, 8, WIDTH);
 
@@ -297,8 +305,8 @@ export async function buildPodkladyPdf(s: PodkladySummary, t: Translate): Promis
     const lineHeight = size * 1.4;
     if (line.kind === 'h2') y -= 6;
 
-    const text = transliterate(line.text);
-    const value = line.value !== undefined ? transliterate(line.value) : undefined;
+    const text = line.text;
+    const value = line.value !== undefined ? line.value : undefined;
     const valueWidth = value !== undefined ? regular.widthOfTextAtSize(value, size) : 0;
     const maxWidth = value !== undefined ? WIDTH - valueWidth - 12 : WIDTH;
     const parts = wrapText(text, font, size, maxWidth);

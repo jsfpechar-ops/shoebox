@@ -4,7 +4,7 @@
   "verze_pis": "03.01",
   "main": "dphdp3_epo2.xsd",
   "source_url": "https://adisspr.mfcr.cz/adis/jepo/schema/dphdp3_epo2.xsd",
-  "sha256": null,
-  "fetched_at": null,
+  "sha256": "08e7b168b0675c896298217b7049889d14789353220a973665a0bf33064aa0cf",
+  "fetched_at": "2026-10-26",
   "valid_for_periods_from": "2026-01-01"
 }
