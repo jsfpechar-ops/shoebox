@@ -1,6 +1,6 @@
 # 0418: VAT cards on Přehled and the period preview page
 
-Status: todo
+Status: review
 Ticket: P3-VAT-12 (screens part) | Depends on: 0351 (lane C VAT API, merged) | Branch: claude/project-thread-yn56ih | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 
