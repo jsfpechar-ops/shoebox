@@ -110,7 +110,7 @@ describe('classifyPeriod: verdicts', () => {
     expect(new Set(r.checks.map((c) => c.code)).size).toBe(r.checks.length);
     expect(r.checks.length).toBe(24);
     expect(r).toMatchObject({
-      policyVersion: '2026.2',
+      policyVersion: '2026.3',
       rulesDate: '2026-08-01',
       evaluatedAt: '2026-09-20T10:00:00Z',
     });
@@ -220,6 +220,37 @@ describe('needs_accountant checks (M05 §9 #7, #9)', () => {
     expect(check(classifyPeriod(goods(payer), rules), 'S_TREATMENT_NOT_ALLOWED').outcome).toBe(
       'pass',
     );
+  });
+  it('S_RC_COMMODITY (policy 2026.3): payer § 92a document with one code passes; without a code or with two codes it needs the accountant', () => {
+    const rc = (lines: ReturnType<typeof line>[]) =>
+      payer({ documents: [doc({ documentId: 'r', lines })] });
+    expect(
+      check(
+        classifyPeriod(
+          rc([line({ vatTreatment: 'rcv_domestic_reverse_charge', rcCommodityCode: '4' })]),
+          rules,
+        ),
+        'S_RC_COMMODITY',
+      ).outcome,
+    ).toBe('pass');
+    expect(
+      check(
+        classifyPeriod(rc([line({ vatTreatment: 'rcv_domestic_reverse_charge' })]), rules),
+        'S_RC_COMMODITY',
+      ).outcome,
+    ).toBe('needs_accountant');
+    expect(
+      check(
+        classifyPeriod(
+          rc([
+            line({ vatTreatment: 'rcv_domestic_reverse_charge', rcCommodityCode: '4' }),
+            line({ vatTreatment: 'rcv_domestic_reverse_charge', rcCommodityCode: '5' }),
+          ]),
+          rules,
+        ),
+        'S_RC_COMMODITY',
+      ).outcome,
+    ).toBe('needs_accountant');
   });
   it('S_RC_COMMODITY and S_FORBIDDEN_CLASS (class and line type)', () => {
     expect(
