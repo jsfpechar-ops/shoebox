@@ -256,3 +256,13 @@ export const docSplitJob = defineTenantJob({
   entityId: (payload) => payload.batchId,
 });
 export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;
+
+/** M01 §4.13: import the valid rows of one uploaded spreadsheet, 200 rows per run. Enqueues itself for the next 200. */
+export const importSpreadsheetRunJob = defineTenantJob({
+  name: 'import.spreadsheet.run',
+  payload: tenantPayload({ importId: z.uuid(), fromRow: z.number().int().min(0) }),
+  version: 1,
+  entityId: (payload) => `${payload.importId}:${payload.fromRow}`,
+  retry: { retryLimit: 2 },
+});
+export type ImportSpreadsheetRunPayload = z.infer<typeof importSpreadsheetRunJob.payload>;

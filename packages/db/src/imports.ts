@@ -9,8 +9,9 @@ import {
 } from '@shoebox/validation';
 import { and, eq, sql } from 'drizzle-orm';
 import { documentFields, documentLines, validationResults } from './schema/document-details';
-import { documents } from './schema/documents';
-import { spreadsheetImports } from './schema/imports';
+import { documents, sourceFiles } from './schema/documents';
+import { importMappings, spreadsheetImports } from './schema/imports';
+import { organizations } from './schema/tenancy';
 import { markIfSemanticDuplicate } from './semantic-dedupe';
 import type { TenantTx } from './tenant';
 
@@ -249,4 +250,82 @@ export async function undoImport(
     .set({ state: 'undone', undoneAt: now })
     .where(and(eq(spreadsheetImports.id, importId), eq(spreadsheetImports.orgId, orgId)));
   return { removed: removed.length, kept: left[0]?.n ?? 0 };
+}
+
+/** One import run as the worker reads it: the import, its source file, mapping and org identifiers. */
+export interface ImportRunRecord {
+  readonly state: string;
+  readonly storagePath: string;
+  readonly fileName: string | null;
+  /** `import_mappings.mapping` (`{target: columnIndex}`); null when the import has no mapping row. */
+  readonly mapping: unknown;
+  /** `import_mappings.options`; null when the import has no mapping row. */
+  readonly options: unknown;
+  readonly createdBy: string | null;
+  readonly importedCount: number;
+  readonly skippedCount: number;
+  readonly duplicateCount: number;
+  readonly skippedRows: ReadonlyArray<{ row: number; reason: string }>;
+  readonly orgIco: string | null;
+  readonly orgDic: string | null;
+}
+
+/** Loads one import with its source file, mapping and org identifiers. Null when unknown in this org. */
+export async function loadImportRun(
+  tx: TenantTx,
+  input: { orgId: string; importId: string },
+): Promise<ImportRunRecord | null> {
+  const [row] = await tx
+    .select({
+      state: spreadsheetImports.state,
+      storagePath: sourceFiles.storagePath,
+      fileName: sourceFiles.originalFilename,
+      mapping: importMappings.mapping,
+      options: importMappings.options,
+      createdBy: spreadsheetImports.createdBy,
+      importedCount: spreadsheetImports.importedCount,
+      skippedCount: spreadsheetImports.skippedCount,
+      duplicateCount: spreadsheetImports.duplicateCount,
+      skippedRows: spreadsheetImports.skippedRows,
+      orgIco: organizations.ico,
+      orgDic: organizations.dic,
+    })
+    .from(spreadsheetImports)
+    .innerJoin(sourceFiles, eq(sourceFiles.id, spreadsheetImports.sourceFileId))
+    .leftJoin(importMappings, eq(importMappings.id, spreadsheetImports.mappingId))
+    .innerJoin(organizations, eq(organizations.id, spreadsheetImports.orgId))
+    .where(
+      and(eq(spreadsheetImports.id, input.importId), eq(spreadsheetImports.orgId, input.orgId)),
+    )
+    .limit(1);
+  if (!row) return null;
+  return {
+    ...row,
+    skippedRows: row.skippedRows as ReadonlyArray<{ row: number; reason: string }>,
+  };
+}
+
+/** Adds one run's counts to the import and appends its skipped rows; the import stays `importing`. */
+export async function addImportRunCounts(
+  tx: TenantTx,
+  input: {
+    orgId: string;
+    importId: string;
+    imported: number;
+    skipped: number;
+    duplicates: number;
+    skippedRows: ReadonlyArray<{ row: number; reason: string }>;
+  },
+): Promise<void> {
+  await tx
+    .update(spreadsheetImports)
+    .set({
+      importedCount: sql`${spreadsheetImports.importedCount} + ${input.imported}`,
+      skippedCount: sql`${spreadsheetImports.skippedCount} + ${input.skipped}`,
+      duplicateCount: sql`${spreadsheetImports.duplicateCount} + ${input.duplicates}`,
+      skippedRows: sql`${spreadsheetImports.skippedRows} || ${JSON.stringify(input.skippedRows)}::jsonb`,
+    })
+    .where(
+      and(eq(spreadsheetImports.id, input.importId), eq(spreadsheetImports.orgId, input.orgId)),
+    );
 }
