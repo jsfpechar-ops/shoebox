@@ -156,7 +156,9 @@ describe('buildCategorizeRequest', () => {
     }));
     const resolved = Object.fromEntries(lines.map((l) => [String(l.position), null]));
     const built = buildCategorizeRequest(input({ lines, resolved }));
-    const user = JSON.parse((built.request.messages[0]?.content[0] as { text: string }).text);
+    const user = JSON.parse(
+      (built.request.messages[0]?.content[0] as { text: string } | undefined)?.text ?? '{}',
+    );
     expect(user.lines.length).toBeLessThanOrEqual(60);
     for (const l of user.lines) expect(l.description.length).toBeLessThanOrEqual(200);
   });
