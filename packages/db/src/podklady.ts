@@ -15,6 +15,10 @@ import {
   type ProfileSegment,
   parseLegalDate,
   type ReadinessInput,
+  resolveFxRate,
+  convertToCzk,
+  round2,
+  type Currency,
   type VatNoteInput,
 } from '@shoebox/domain';
 import { eq, sql } from 'drizzle-orm';
@@ -39,6 +43,8 @@ export interface PodkladyRows {
   readonly taxpayer: { legalName: string; ico: string | null };
   readonly ledgerHash: string;
   readonly documents: ReadonlyArray<{ documentId: string; revision: number }>;
+  /** Personal documents in a foreign currency with no ČNB rate (excluded from privateUse). */
+  readonly privateUseFxMissing: readonly string[];
 }
 
 const PAYMENT_CATEGORIES = [
@@ -64,6 +70,8 @@ export async function readPodkladyRows(
   orgId: string,
   year: number,
   currentLedgerAlgo: bigint,
+  /** Rule `fx.max_lookback_days`: how far back a ČNB rate may be taken for a personal document. */
+  fxMaxLookbackDays: number,
 ): Promise<PodkladyRows> {
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
@@ -221,14 +229,68 @@ export async function readPodkladyRows(
   }));
 
   // Private use.
-  const personalRows = await rowsOf<{ document_id: string; paid_at: string; amount: string }>(
+  const personalRows = await rowsOf<{
+    document_id: string;
+    paid_at: string;
+    currency: string;
+    amount: string;
+    fx_rate: string | null;
+  }>(
     tx,
-    sql`select id as document_id, paid_at::text, coalesce(total_gross, 0)::text as amount
+    sql`select id as document_id, paid_at::text, currency, coalesce(total_gross, 0)::text as amount, fx_rate::text
         from documents
         where org_id = ${orgId} and business_flag = 'personal' and deleted_at is null
           and paid_at between ${yearStart}::date and ${yearEnd}::date
         order by paid_at, id`,
   );
+  // ZDP § 38: foreign amounts enter the podklady in CZK. documents.fx_rate is the per-unit ČNB rate
+  // set at categorization; without it, the ČNB fixing of the payment date (fx_rates) is used.
+  const foreignCurrencies = [...new Set(personalRows.map((r) => r.currency).filter((c) => c !== 'CZK'))];
+  const fxRows =
+    foreignCurrencies.length === 0
+      ? []
+      : await rowsOf<{ rate_date: string; currency: string; amount: number; rate: string }>(
+          tx,
+          sql`select rate_date::text, currency, amount, rate::text from fx_rates
+              where currency in (${sql.join(foreignCurrencies.map((c) => sql`${c}`), sql`, `)})
+                and rate_date between (${yearStart}::date - ${fxMaxLookbackDays}::int) and ${yearEnd}::date
+              order by rate_date`,
+        );
+  const privateUseFxMissing: string[] = [];
+  const personalDocuments: PrivateUseInput['personalDocuments'][number][] = [];
+  for (const r of personalRows) {
+    const paidAt = parseLegalDate(r.paid_at);
+    if (r.currency === 'CZK') {
+      personalDocuments.push({ documentId: r.document_id, paidAt, amountCzk: czk(r.amount) });
+      continue;
+    }
+    const foreign = Money.parse(r.amount, r.currency as Currency);
+    if (r.fx_rate !== null) {
+      personalDocuments.push({
+        documentId: r.document_id,
+        paidAt,
+        amountCzk: round2(Money.fromDecimal(foreign.toDecimal().times(r.fx_rate), CZK)),
+      });
+      continue;
+    }
+    const fx = resolveFxRate(
+      r.currency as Currency,
+      paidAt,
+      fxRows.map((x) => ({
+        rateDate: parseLegalDate(x.rate_date),
+        currency: x.currency as Currency,
+        amount: x.amount,
+        rate: x.rate,
+      })),
+      'rate_valid_on_date_else_last_published',
+      fxMaxLookbackDays,
+    );
+    if (fx === null) {
+      privateUseFxMissing.push(r.document_id);
+      continue;
+    }
+    personalDocuments.push({ documentId: r.document_id, paidAt, amountCzk: round2(convertToCzk(foreign, fx)) });
+  }
   const partialRows = await rowsOf<{
     document_id: string;
     line_id: string;
@@ -237,12 +299,16 @@ export async function readPodkladyRows(
     share: string;
   }>(
     tx,
-    sql`select l.document_id, l.id as line_id, l.description, coalesce(l.gross, 0)::text as total, l.business_share_pct::text as share
+    sql`select l.document_id, l.id as line_id, l.description,
+               coalesce((select sum(e.amount_czk) from tax_ledger_entries e
+                         where e.org_id = l.org_id and e.line_id = l.id and e.tax_year = ${year}), 0)::text as total,
+               l.business_share_pct::text as share
         from document_lines l
         join documents d on d.id = l.document_id and d.org_id = l.org_id
         where l.org_id = ${orgId} and l.business_share_pct > 0 and l.business_share_pct < 100
           and d.status in ('ready', 'finalized') and d.deleted_at is null and d.class in (${bookable})
-          and coalesce(d.paid_at, d.issue_date) between ${yearStart}::date and ${yearEnd}::date
+          and exists (select 1 from tax_ledger_entries e
+                      where e.org_id = l.org_id and e.line_id = l.id and e.tax_year = ${year})
         order by d.issue_date, l.document_id, l.position`,
   );
   const carRows = await rowsOf<{ id: string; answer: unknown }>(
@@ -251,11 +317,7 @@ export async function readPodkladyRows(
         where org_id = ${orgId} and kind = 'car_regime' order by created_at, id`,
   );
   const privateUse: PrivateUseInput = {
-    personalDocuments: personalRows.map((r) => ({
-      documentId: r.document_id,
-      paidAt: parseLegalDate(r.paid_at),
-      amountCzk: czk(r.amount),
-    })),
+    personalDocuments,
     partialShareLines: partialRows.map((r) => ({
       documentId: r.document_id,
       lineId: r.line_id,
@@ -355,6 +417,7 @@ export async function readPodkladyRows(
     taxpayer,
     ledgerHash,
     documents,
+    privateUseFxMissing,
   };
 }
 
