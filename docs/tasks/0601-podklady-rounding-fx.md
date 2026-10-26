@@ -281,7 +281,7 @@ Use the variable names the test already uses for the read result (read the 10 li
 
 Command: `pnpm db:start 2>&1 | tail -5 && DATABASE_URL=<as the repo's db test setup prints> pnpm --filter @shoebox/db test -- podklady 2>&1 | tail -30`. If `pnpm db:start` is not available in this container, run `pnpm --filter @shoebox/db test -- podklady 2>&1 | tail -30` (the suite skips without `DATABASE_URL`) and write in the report: "DB test not run here, CI runs it".
 
-## 5. Non-goals
+## 5. Do not touch
 
 - The PDF, the Private sheet layout, the `privateUseFxMissing` list in the UI (a later brief lists it on the Missing sheet). Do not touch `packages/domain`.
 
@@ -300,6 +300,10 @@ Command: `pnpm db:start 2>&1 | tail -5 && DATABASE_URL=<as the repo's db test se
 - [ ] `readPodkladyRows` converts a EUR personal document with `fx_rate` 25 and total 100 to 2 500,00 CZK; a partial-share line's `totalCzk` equals its ledger sum.
 - [ ] All typechecks green; exports tests green.
 
-## 8. Report
+## 8. Stop and ask
+
+An anchor is not found verbatim, a test the brief wrote seems wrong, or a step admits two readings: stop, write the report with `Status: blocked` and the question.
+
+## 9. Report
 
 `docs/tasks/0601-report.md` per `docs/context/executor.md`. Commit as `0601 step k`. Do not push and do not open a PR: the orchestrator merges this branch.

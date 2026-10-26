@@ -4,13 +4,13 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 
 - 2026-10-17 [scope] Option B: scanner + VAT filings for simple cases + income-tax podklady. Not accounting software; the accountant reviews. (owner)
 - 2026-10-17 [scope] MVP first: no billing, subscriptions or marketing site in V3. (owner)
-- 2026-10-17 [stack] TypeScript end-to-end; Next.js 15, Node 22 worker, Supabase EU, pg-boss, Drizzle, Cloudflare Email Worker, Claude Haiku 5.5 → Sonnet 5.5 via an EU endpoint. Reason: one type system, fewest vendors, AI agents are productive in it. See 03. (owner)
+- 2026-10-17 [stack] TypeScript end-to-end: Next.js 15, Node 22 worker, Supabase EU, pg-boss, Drizzle, Cloudflare Email Worker, Claude Haiku 5.5 → Sonnet 5.5 (EU endpoint). See 03. (owner)
 - 2026-10-17 [test-data] Golden set anonymized before commit. (owner)
 - 2026-10-18 [workflow] Orchestrator + executor model: orchestrator writes briefs, Haiku 5.5 executes; Sonnet 5.5 only for the three reasons in workflow; 60k checkpoint, 100k hard stop, 30 tool calls. (owner)
 - 2026-10-18 [workflow] New-file briefs carry the full test file; the executor implements until it passes and may not edit it. Reason: greenfield code has no anchors. (orchestrator)
 - 2026-10-18 [scope] Manual entry ("Přidat ručně") and substitute documents (náhradní doklad) are always available; spreadsheet import in Phase 2. Reason: replace the Excel list small OSVČ keep today. (owner)
 - 2026-10-18 [schema] Document status `rejected` renamed to `supporting` (kept, linked, never booked). (orchestrator)
-- 2026-10-18 [schema] All module "proposed schema changes" merged into 05 as one canonical, final-form DDL (validated on PostgreSQL 16); Later tables (global priors, batch API, Fio connections, support grants) kept in 05 §9.1 but not migrated. Modules point to 05. (orchestrator)
+- 2026-10-18 [schema] Module schema proposals merged into 05 as the one canonical DDL (PostgreSQL 16); Later tables kept in 05 §9.1, not migrated. (orchestrator)
 - 2026-10-18 [rules] One rule-key list in 06 §2; duplicates removed. (orchestrator)
 - 2026-10-18 [security] Spoofed inbound mail (spf and dkim fail) is quarantined 30 days, not dropped (ADR-005). (orchestrator)
 - 2026-10-18 [bank] Fio token sync is Later (after legal opinion L-01); ADR-009 aligned with 02. (orchestrator)
@@ -46,3 +46,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-26 [bank] Matcher: no deps; overpay = partial; FÚ 705/2866/721 verified.
 - 2026-10-26 [auth] No download re-confirm (no TOTP); P3-VAT-12 aal2 dropped. (coord.)
 - 2026-10-26 [test-env] Supabase + Google Cloud sysel0123 free tiers (deploy/gcp; Render dropped); auto sign-in, no login (0055). (owner)
+- 2026-10-26 [tax] Accountant review: §75 share + §92a in the simple return (0602/0603, policy 2026.3, KH B.2 pomer=A [verify]); podklady whole Kč + CZK private rows (0601); K-C01 correct. (owner)

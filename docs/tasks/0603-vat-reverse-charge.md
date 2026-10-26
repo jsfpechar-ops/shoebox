@@ -523,7 +523,7 @@ The first expectation of `it('S_RC_COMMODITY and S_FORBIDDEN_CLASS (class and li
 
 Commands: `pnpm --filter @shoebox/domain test -- classify-period 2>&1 | tail -30`, `pnpm --filter @shoebox/domain test -- rules 2>&1 | tail -30` (update a pinned `'2026.2'` to `'2026.3'` if one exists), `pnpm --filter @shoebox/domain typecheck 2>&1 | tail -30` → green.
 
-## 5. Non-goals
+## 5. Do not touch
 
 - Pohoda, the VAT workbook, the web screens, the ledger builder, the amendment detector (its `khLookup` import keeps working). Multi-code documents stay with the accountant.
 
@@ -538,6 +538,10 @@ All commands of §4; plus `pnpm --filter @shoebox/domain test -- kh-dp3.property
 - [ ] Policy `2026.3` allows both § 92a treatments; `S_RC_COMMODITY` passes for a one-code payer document.
 - [ ] All typechecks green (domain, tax-xml, worker).
 
-## 8. Report
+## 8. Stop and ask
+
+An anchor is not found verbatim, a test the brief wrote seems wrong, or a step admits two readings: stop, write the report with `Status: blocked` and the question.
+
+## 9. Report
 
 `docs/tasks/0603-report.md` per `docs/context/executor.md`. Commit as `0603 step k`. Do not push and do not open a PR: the orchestrator merges this branch.

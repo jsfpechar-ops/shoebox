@@ -322,7 +322,7 @@ Replace `'needs_accountant'` with `'pass'` in that expectation only.
 
 Command: `pnpm --filter @shoebox/domain test -- classify-period 2>&1 | tail -30` → green. Then `pnpm --filter @shoebox/domain typecheck 2>&1 | tail -30`.
 
-## 5. Non-goals
+## 5. Do not touch
 
 - KH A.1/B.1 (brief 0603). The ledger (`ledger.ts`), the worker, the web app, the spec files.
 
@@ -344,6 +344,10 @@ Command: `pnpm --filter @shoebox/domain test -- classify-period 2>&1 | tail -30`
 - [ ] Existing goldens (`dphdp3`, `kh`, `kh-dp3.property`, tax-xml `kh-shv`) pass unchanged.
 - [ ] Policy version `2026.2`, flag true, `S_PARTIAL_SHARE_DEDUCTION` passes for a payer.
 
-## 8. Report
+## 8. Stop and ask
+
+An anchor is not found verbatim, a test the brief wrote seems wrong, or a step admits two readings: stop, write the report with `Status: blocked` and the question.
+
+## 9. Report
 
 `docs/tasks/0602-report.md` per `docs/context/executor.md`; include the `[verify]` line on KH B.2 amounts. Commit as `0602 step k`. Do not push and do not open a PR: the orchestrator merges this branch.

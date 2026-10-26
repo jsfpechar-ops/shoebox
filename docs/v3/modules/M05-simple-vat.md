@@ -23,7 +23,9 @@ M05 defines how finalized documents become **VAT ledger** entries (`vat_ledger_e
 8. Obligations (deadlines) for VAT returns, KH, SH, VAT payment, amendments.
 9. Submission guide (download + step-by-step on MOJE daně or datová schránka). **No automatic submission** (02 guardrails).
 
-**Out of scope (→ VAT workbook for the accountant):** domestic reverse charge (§92a, rows 10/11/25, KH A1/B1), imports (rows 7/8/42), exports (22), new means of transport (9, 23), OSS/distance sales (24), triangular trade (30/31), bad-debt and §42a/§74a corrections (14, 33, 34, 48), pro-rata coefficient (50–53), §78 adjustments (60), refunds §84 (61), §75 partial private-use deduction, advance tax documents (ZDD), deduction deferral, `kod_zo` (period switch), KH response to a tax-office request (`vyzva_odp`, `c_jed_vyzvy`), dodatečné-opravné (`E`) forms, VAT groups. IO detection/registration alert itself is Phase 1 (dashboard/M04); M05 starts once the profile says `identifikovana_osoba`.
+**In scope since 0602/0603 (accountant review 2026-10-26):** §75 proportional deduction (rows 40–44, KH B.2/B.3 with `pomer=A`) and domestic reverse charge (§92a, rows 10/11/25, KH A1/B1, one commodity code per document).
+
+**Out of scope (→ VAT workbook for the accountant):** imports (rows 7/8/42), exports (22), new means of transport (9, 23), OSS/distance sales (24), triangular trade (30/31), bad-debt and §42a/§74a corrections (14, 33, 34, 48), pro-rata coefficient (50–53), §78 adjustments (60), refunds §84 (61), advance tax documents (ZDD), deduction deferral, `kod_zo` (period switch), KH response to a tax-office request (`vyzva_odp`, `c_jed_vyzvy`), dodatečné-opravné (`E`) forms, VAT groups. IO detection/registration alert itself is Phase 1 (dashboard/M04); M05 starts once the profile says `identifikovana_osoba`.
 
 ## 2. User stories
 
@@ -119,11 +121,11 @@ Output (`SimpleCheckResult`, stored verbatim in `filings.simple_check`):
 | `S_PROFILE_CHANGED_IN_PERIOD` | `vat_status` or `vat_period` differs between two profile versions overlapping the period | needs_accountant |
 | `S_ENTRY_BEFORE_STATUS` | a VAT-relevant document's `vat_point_date` precedes the earliest profile with an IO/payer status | not_ready (fix the profile date) |
 | `S_TREATMENT_NOT_ALLOWED` | an entry's treatment not in `allowed_treatments[status]` | needs_accountant |
-| `S_RC_COMMODITY` | any line with `rc_commodity_code` not null | needs_accountant |
+| `S_RC_COMMODITY` | a §92a document (payer) with no `rc_commodity_code` or more than one distinct code, a code on a non-§92a line, or any code for an IO (policy 2026.3) | needs_accountant |
 | `S_FORBIDDEN_CLASS` | document class in `forbid_document_classes` (default `received_advance_tax_doc`) or a line type in `forbid_line_types` (default `advance_deduction`) | needs_accountant |
 | `S_EU_GOODS_MULTI_RATE` | an `rcv_eu_goods_acquisition` document has > `max_rates_per_eu_goods_document` rates | needs_accountant |
 | `S_PRIOR_PERIOD_CREDIT_NOTE` | a credit note in the period `corrects` a document whose `vat_point_date` is in an earlier period | needs_accountant |
-| `S_PARTIAL_SHARE_DEDUCTION` | payer: `rcv_domestic_vat` or self-assessed line with `0 < business_share_pct < 100` (§75 partial deduction) | needs_accountant |
+| `S_PARTIAL_SHARE_DEDUCTION` | payer: `rcv_domestic_vat` or self-assessed line with `0 < business_share_pct < 100` (§75 partial deduction); passes when the policy allows it (`allow_partial_business_share_on_deduction`, true since 2026.2) | needs_accountant |
 | `S_PLATFORM_INCOME_PAYER` | payer: a `platform_statement` line with `taxable_income` category and no linked `issued_invoice` | needs_accountant |
 | `S_IO_OUTPUT_VAT` | IO: any `iss_domestic_vat`/`iss_eu_*`/`iss_non_eu_service` line | needs_accountant |
 | `S_MAX_DOCS` | VAT-relevant documents in period > `max_docs` (150) | needs_accountant |
@@ -164,9 +166,9 @@ When the verdict is `not_ready` or `needs_accountant`, the user can always downl
 2. For each **source row** in `epo.dphdp3_row_map` (`kind: 'source'`): `base_raw = Σ base_czk`, `tax_raw = Σ vat_czk` over entries whose `dphdp3_rows` contains the row.
 3. **Rounding** (rule `vat.return_rounding`, default `sum_entries_then_round`, decision D-11): `base = round0(base_raw)`, `tax = round0(tax_raw)`. Alternative value `round_base_then_multiply`: `tax = round0(base × pct / 100)` (rate from the row map). The default keeps KH (haléře) and DPHDP3 consistent **[verify with advisor]**.
 4. **Derived rows** (`kind: 'derived'`), in map order, using already-rounded row values (payers only unless stated):
-   - ř. 43 base = ř.3 + ř.5 + ř.12 base; ř. 43 deduction (full column) = ř.3 + ř.5 + ř.12 tax. ř. 44 likewise from ř. 4, 6, 13. (Full deduction right assumed in a simple period → net zero, CTF §2 notes.)
-   - ř. 46 full column = ř.40 + ř.41 + ř.43 + ř.44 deduction. Reduced column (`odp_sum_kr`) is not emitted (no coefficient).
-   - ř. 62 = Σ tax of ř. 1, 2, 3, 4, 5, 6, 12, 13 (IO: 3–13 only).
+   - ř. 43 = Σ over the source rows whose `deduction_row` is 43 (3, 5, 10, 12) of the per-row rounded proportional share: for each source row, `round0(Σ round2(base × deduction_pct / 100))` and the same for tax (or `round0(base × rate)` in the multiply mode). ř. 44 likewise from 4, 6, 11, 13. Input rows 40/41/42 sum the proportional share per entry too (§75, 0602); output rows stay full.
+   - ř. 46 full column = ř.40 + ř.41 + ř.42 + ř.43 + ř.44 deduction (XSD: Σ ř. 40–45). Reduced column (`odp_sum_kr`) is not emitted (no coefficient).
+   - ř. 62 = Σ tax of the output rows ≤ 13 in the row map for the status (payer: 1, 2, 3, 4, 5, 6, 10, 11, 12, 13; IO: 5, 6, 12, 13). XSD: ř. 62 = 1 + … + 13 − 61.
    - ř. 63 = ř. 46 (IO: 0). Formula per CTF §2 ("ř. 63 = ř. 46 + 52 + 53 + 60") with 52/53/60 out of scope **[verify]**.
    - ř. 64 `dano_da` = max(0, ř.62 − ř.63); ř. 65 `dano_no` = max(0, ř.63 − ř.62).
 5. Header (§4.7): `trans = 'A'` if ř.62 ≠ 0 or any row 20/21/26 ≠ 0, else `'N'` **[verify semantics]**.
@@ -177,10 +179,11 @@ When the verdict is `not_ready` or `needs_accountant`, the user can always downl
 **KH** (`computeKh`, payers only):
 - `A2`: one row per (document, rate bucket grouped into attrs 1/2): `k_stat` = 2-letter prefix of `counterparty_vat_id` (Greece `EL`) else `partner.country`; `vatid_dod` = VAT ID without prefix or empty; `c_evid_dd`; `dppd` = entry `vat_point_date`; `zakl_dane1/dan1` (standard), `zakl_dane2/dan2` (reduced), 2 decimals.
 - `A4`: per document: `dic_odb` (digits only), `c_evid_dd`, `dppd` = `duzp`, `zakl_dane1..2`, `dan1..2`, `kod_rezim_pl="0"`, `zdph_44="N"`.
-- `B2`: per document: `dic_dod`, `c_evid_dd`, `dppd` = `duzp`, `zakl_dane1..2`, `dan1..2`, `pomer="N"`, `zdph_44="N"`.
+- `B2`: per document: `dic_dod`, `c_evid_dd`, `dppd` = `duzp`, `zakl_dane1..2`, `dan1..2` in the proportional share claimed, `pomer="A"` when any entry has `deduction_pct < 100` else `"N"` **[verify: GFŘ pokyny B.2]**, `zdph_44="N"`.
+- `A1` (issued §92a) per document: `dic_odb`, `c_evid_dd`, `duzp`, `zakl_dane1` (all rates), `kod_pred_pl` (the document's single code). `B1` (received §92a) per document: `dic_dod`, `c_evid_dd`, `duzp`, `zakl_dane1..2`, `dan1..2` proportional, `kod_pred_pl`. A document with 0 or > 1 codes is refused by `S_RC_COMMODITY`.
 - `A5`, `B3`: one aggregate row each (Σ of entries), omitted if all zero.
 - `c_radku`: 1-based sequence per Věta after sorting by (`dppd`, `c_evid_dd`, `dic`) **[verify format]**.
-- **Věta C** = the corresponding **DPHDP3 values** (whole CZK): `obrat23`=ř.1 base, `obrat5`=ř.2 base, `pln23`=ř.40 base, `pln5`=ř.41 base, `celk_zd_a2`=ř.3+4+5+6+12+13 bases; `pln_rez_pren`, `rez_pren23`, `rez_pren5` = 0 (omitted). Whether Věta C should carry KH sums instead is **[verify]** (CTF §1.3 marks the mapping [I]).
+- **Věta C** = the corresponding **DPHDP3 values** (whole CZK): `obrat23`=ř.1 base, `obrat5`=ř.2 base, `pln23`=ř.40 base, `pln5`=ř.41 base, `celk_zd_a2`=ř.3+4+5+6+12+13 bases; `pln_rez_pren`=ř.25 base, `rez_pren23`=ř.10 base, `rez_pren5`=ř.11 base (0 omitted). Whether Věta C should carry KH sums instead is **[verify]** (CTF §1.3 marks the mapping [I]).
 
 **SH** (`computeShv`): group SH entries of the **calendar month** by (`k_stat`, `c_vat`, `k_pln_eu`): `pln_hodnota = ceil0(Σ base_czk)` (rule `vat.shv_rounding`, CTF §1.4 "rounded up"; credit notes negative) **[verify]**, `pln_pocet` = number of distinct documents, `c_rad` 1-based, `por_c_stran = 1` **[verify]**.
 
