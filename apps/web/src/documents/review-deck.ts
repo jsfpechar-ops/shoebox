@@ -1,9 +1,9 @@
-import type { MessageKey } from '@shoebox/i18n';
+import { type MessageKey, t } from '@shoebox/i18n';
 
 export interface QuestionPayload {
   readonly question: MessageKey;
   readonly params: Record<string, string | number>;
-  readonly options: readonly { value: string; label: MessageKey }[];
+  readonly options: readonly { value: string; label: MessageKey; text?: string }[];
   readonly suggested: string | null;
 }
 
@@ -26,17 +26,21 @@ export type ReviewCard =
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** null unless the payload has a string question, 1–4 options of {value, label} strings, optional params object and suggested string that is one of the values. */
+/** null unless the payload has a string question, 1–4 options of {value, label} strings, optional params object and suggested string that is one of the values; an option may carry a non-empty string text. */
 export function parseQuestionPayload(raw: unknown): QuestionPayload | null {
   if (!isRecord(raw)) return null;
   if (typeof raw.question !== 'string') return null;
   if (!Array.isArray(raw.options) || raw.options.length < 1 || raw.options.length > 4) return null;
 
-  const options: { value: string; label: MessageKey }[] = [];
+  const options: { value: string; label: MessageKey; text?: string }[] = [];
   for (const option of raw.options) {
     if (!isRecord(option) || typeof option.value !== 'string' || typeof option.label !== 'string')
       return null;
-    options.push({ value: option.value, label: option.label as MessageKey });
+    options.push(
+      typeof option.text === 'string' && option.text.trim() !== ''
+        ? { value: option.value, label: option.label as MessageKey, text: option.text.trim() }
+        : { value: option.value, label: option.label as MessageKey },
+    );
   }
 
   let params: Record<string, string | number> = {};
@@ -57,6 +61,11 @@ export function parseQuestionPayload(raw: unknown): QuestionPayload | null {
   }
 
   return { question: raw.question as MessageKey, params, options, suggested };
+}
+
+/** What an option button says: its own text (category names from M04) or the translated label. */
+export function optionText(option: { label: MessageKey; text?: string }): string {
+  return option.text ?? t(option.label);
 }
 
 /** Questions first (oldest first, those of one document together in order of their first question), then documents with blocking checks (most blocking first, then oldest). A document that has an open question gets no document card. */

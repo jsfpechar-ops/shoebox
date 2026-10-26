@@ -4,10 +4,12 @@ import {
   createCzRules,
   RULES_CZ_2025,
   RULES_CZ_2026,
+  RULES_CZ_PRODUCT,
   type RuleKey,
   RuleMissingError,
   RuleSetSchema,
 } from '../src/index';
+import { parseDphdp3RowMap, parseKhRouting } from '../src/rules/cz/epo';
 
 // Real law values (P0-DOM-05, 06 §2.1): every key is asserted on a known date and on the day
 // before a change. Sources are in the comments of src/rules/cz/2025.ts and 2026.ts.
@@ -19,6 +21,8 @@ const SEEDED_KEYS: readonly RuleKey[] = [
   'calendar.cz_public_holidays',
   'cash.payment_limit',
   'deadlines.generators',
+  'epo.dphdp3_row_map',
+  'epo.kh_routing',
   'insurance.min_advances',
   'pausalni_dan.bands',
   'pausalni_dan.deadlines',
@@ -27,9 +31,12 @@ const SEEDED_KEYS: readonly RuleKey[] = [
   'vat.cnb_rate_rule',
   'vat.deadline_day',
   'vat.deduction_deferral_years',
+  'vat.eu_member_states',
   'vat.io_eu_goods_threshold',
   'vat.kh_document_limit',
+  'vat.out_of_scope_categories',
   'vat.rates',
+  'vat.reduced_rate_categories',
   'vat.registration_thresholds',
   'vat.ruceni_cash_threshold',
   'vat.simplified_document_limit',
@@ -42,6 +49,9 @@ const PRIMARY_HOSTS = [
   'www.cssz.gov.cz',
   'www.vzp.cz',
   'eur-lex.europa.eu',
+  'adisspr.mfcr.cz',
+  // product keys (06 §2.2) are product decisions: their source is the spec in this repository
+  'github.com',
 ];
 
 const PAUSALNI_DAN_CEILINGS = {
@@ -59,21 +69,23 @@ describe('seed files (06 §2)', () => {
     const parsed = RuleSetSchema.safeParse(CZ_RULE_ENTRIES);
     expect(parsed.success).toBe(true);
     expect(CZ_RULE_ENTRIES.every((entry) => entry.layer === 'base')).toBe(true);
-    expect(CZ_RULE_ENTRIES).toHaveLength(RULES_CZ_2025.length + RULES_CZ_2026.length);
+    expect(CZ_RULE_ENTRIES).toHaveLength(
+      RULES_CZ_2025.length + RULES_CZ_2026.length + RULES_CZ_PRODUCT.length,
+    );
   });
 
   it('every entry names a primary source and a verification date', () => {
     for (const entry of CZ_RULE_ENTRIES) {
       expect(PRIMARY_HOSTS, entry.source).toContain(new URL(entry.source).hostname);
-      expect(['2026-10-18', '2026-10-25']).toContain(entry.verified_at);
+      expect(['2026-10-18', '2026-10-25', '2026-10-26']).toContain(entry.verified_at);
     }
   });
 
   it('seeds exactly the P0-DOM-05 keys in both years', () => {
     expect([...new Set(RULES_CZ_2025.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
     expect([...new Set(RULES_CZ_2026.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
-    expect(RULES_CZ_2025).toHaveLength(18);
-    expect(RULES_CZ_2026).toHaveLength(19);
+    expect(RULES_CZ_2025).toHaveLength(23);
+    expect(RULES_CZ_2026).toHaveLength(24);
   });
 
   it('2025 segments span the calendar year; 2026 segments start on 2026-01-01', () => {
@@ -82,7 +94,7 @@ describe('seed files (06 §2)', () => {
       expect(entry.valid_to).toBe('2025-12-31');
     }
     expect(RULES_CZ_2026.every((entry) => entry.valid_from >= '2026-01-01')).toBe(true);
-    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(18);
+    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(23);
   });
 
   it('every seeded key resolves on every day of 2025 and 2026 and not before', () => {
@@ -247,5 +259,81 @@ describe('assets and cash', () => {
     ]);
     expect(patched.at('2026-02-28').get('vat.kh_document_limit')).toBe(10_000);
     expect(patched.at('2026-03-01').get('vat.kh_document_limit')).toBe(20_000);
+  });
+});
+
+describe('VAT lists (brief 0302)', () => {
+  it('vat.eu_member_states: EU-27 incl. CZ, no XI, in both years', () => {
+    for (const date of ['2025-12-31', '2026-01-01']) {
+      const states = rules.at(date).get('vat.eu_member_states');
+      expect(states).toHaveLength(27);
+      expect(states).toContain('CZ');
+      expect(states).toContain('IE');
+      expect(states).not.toContain('XI');
+      expect(states).not.toContain('GB');
+      expect(states).not.toContain('US');
+    }
+  });
+
+  it('vat.out_of_scope_categories and vat.reduced_rate_categories', () => {
+    for (const date of ['2025-12-31', '2026-01-01']) {
+      expect(rules.at(date).get('vat.out_of_scope_categories')).toEqual([
+        'pt_tourist_fee',
+        'pt_deposit',
+        'pt_customs_vat',
+      ]);
+      expect(rules.at(date).get('vat.reduced_rate_categories')).toEqual([]);
+    }
+  });
+});
+
+describe('product keys of lane C (06 §2.2, brief 0302)', () => {
+  it('one open-ended base segment per key from 2025-01-01', () => {
+    expect(RULES_CZ_PRODUCT).toHaveLength(12);
+    for (const entry of RULES_CZ_PRODUCT) {
+      expect(entry.layer).toBe('base');
+      expect(entry.valid_from).toBe('2025-01-01');
+      expect(entry.valid_to).toBeNull();
+      expect(new URL(entry.source).hostname).toBe('github.com');
+    }
+    expect(new Set(RULES_CZ_PRODUCT.map((e) => e.key)).size).toBe(12);
+  });
+
+  it('the numeric thresholds', () => {
+    const at = rules.at('2026-10-26');
+    expect(at.get('fx.max_lookback_days')).toBe(7);
+    expect(at.get('classification.vendor_memory_min_confirmations')).toBe(2);
+    expect(at.get('classification.auto_accept_confidence')).toBe(0.8);
+    expect(at.get('classification.low_value_skip_czk')).toBe(100);
+    expect(at.get('classification.max_questions_per_document')).toBe(2);
+    expect(at.get('classification.max_service_period_days_for_end')).toBe(62);
+    expect(rules.at('2024-12-31').has('fx.max_lookback_days')).toBe(false);
+  });
+});
+
+describe('EPO row map and KH routing (brief 0310)', () => {
+  it('resolve in both years and parse with the strict schemas', () => {
+    for (const date of ['2025-01-01', '2025-12-31', '2026-01-01', '2026-10-26']) {
+      const at = rules.at(date);
+      const rows = parseDphdp3RowMap(at.get('epo.dphdp3_row_map'));
+      expect(rows).toHaveLength(19);
+      expect(rows.map((r) => r.row)).toContain('5');
+      const kh = parseKhRouting(at.get('epo.kh_routing'));
+      expect(kh.version).toBe(1);
+      expect(kh.rules.length).toBeGreaterThan(0);
+    }
+    expect(rules.at('2024-12-31').has('epo.dphdp3_row_map')).toBe(false);
+  });
+
+  it('the seeded entries carry a primary-source URL and the 2026-10-26 verification', () => {
+    for (const entry of CZ_RULE_ENTRIES.filter(
+      (e) => e.key === 'epo.dphdp3_row_map' || e.key === 'epo.kh_routing',
+    )) {
+      expect(entry.layer).toBe('base');
+      expect(entry.verified_at).toBe('2026-10-26');
+      expect(['adisspr.mfcr.cz', 'financnisprava.gov.cz']).toContain(
+        new URL(entry.source).hostname,
+      );
+    }
   });
 });

@@ -110,7 +110,21 @@
     {
       "idx": 15,
       "version": "7",
-      "when": 1792979548478,
+      "when": 1792979529209,
+      "tag": "0040_categories_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792979529210,
+      "tag": "0041_ledgers",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792993314570,
       "tag": "0020_money",
       "breakpoints": true
     }
