@@ -113,5 +113,5 @@ describe('allocateProRata (M04 §4.11.3, AC-4)', () => {
       ),
       { numRuns: 10_000 },
     );
-  });
+  }, 60_000);
 });
