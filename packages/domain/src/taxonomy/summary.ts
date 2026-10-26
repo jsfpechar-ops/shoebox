@@ -129,6 +129,7 @@ function taxPhrase(input: SummaryInput): string {
 }
 
 function vatPhrase(input: SummaryInput): string | null {
+  if (input.dominant.taxEffect === 'private') return null;
   const { vatTreatment, vatRatePct } = input.dominant;
   const rate = vatRatePct === null ? '' : `${formatPct(vatRatePct)} %`;
   const { vatStatus, deductionAllowed, vatPeriod } = input;
