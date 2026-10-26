@@ -17,6 +17,7 @@ export * from './schema/partners';
 export * from './schema/platform';
 export * from './schema/tenancy';
 export { markIfSemanticDuplicate } from './semantic-dedupe';
+export * from './suppliers';
 export {
   closeDb,
   configureDb,
