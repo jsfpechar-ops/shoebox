@@ -100,6 +100,14 @@ export interface VatLedgerEntryDraft {
   readonly evidenceNumber: string | null;
 }
 
+/** Treatments that never reach the CZ VAT return, so a missing VAT point date is not an issue. */
+const NO_VAT_POINT_TREATMENTS: readonly VatTreatment[] = [
+  'rcv_domestic_no_vat',
+  'rcv_out_of_scope',
+  'rcv_foreign_vat_charged',
+  'iss_no_vat',
+];
+
 export type VatLedgerIssueCode =
   | 'S_DATE_MISSING'
   | 'S_FX_MISSING'
@@ -188,9 +196,15 @@ export function buildVatLedgerEntries(input: VatLedgerInput): VatLedgerResult {
       issues.push({ code: 'S_DATE_MISSING', vatTreatment: treatment, vatRateType: rateType });
       continue;
     }
-    // No VAT point rule for this treatment (e.g. rcv_foreign_vat_charged, rcv_out_of_scope): nothing to report.
+    // No VAT point rule for a treatment outside the CZ return: nothing to report. Any other treatment
+    // without a VAT point date must not drop out silently (e.g. a received EU service with no issue date).
     const vp = deriveVatPointDate(doc, [treatment], profileAt, payments, rules);
-    if (vp === null) continue;
+    if (vp === null) {
+      if (!NO_VAT_POINT_TREATMENTS.includes(treatment)) {
+        issues.push({ code: 'S_DATE_MISSING', vatTreatment: treatment, vatRateType: rateType });
+      }
+      continue;
+    }
 
     // 4b. Profile and period.
     const profile = profileAt(vp.date);

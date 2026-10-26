@@ -602,6 +602,17 @@ describe('gates and issues', () => {
         },
       ],
     });
+    const noIssueDate = booking({ issueDate: null, duzp: d('2026-07-31'), servicePeriodTo: null });
+    expect(build(noIssueDate, BOOKING, IO)).toEqual({
+      entries: [],
+      issues: [
+        {
+          code: 'S_DATE_MISSING',
+          vatTreatment: 'rcv_eu_service_reverse_charge',
+          vatRateType: 'standard',
+        },
+      ],
+    });
     const b = booking();
     const none = booking({ lines: b.lines.map((l) => ({ ...l, vatRateType: 'none' as const })) });
     expect(build(none, BOOKING, IO)).toEqual({
