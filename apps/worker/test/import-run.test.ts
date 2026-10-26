@@ -3,6 +3,7 @@ import type { ImportSpreadsheetRunPayload } from '@shoebox/pipeline';
 import { icoChecksumValid } from '@shoebox/validation';
 import { describe, expect, it } from 'vitest';
 import { createImportRunHandler, type ImportRunStore } from '../src/import-run/handler';
+import { createImportUndoHandler } from '../src/import-run/undo';
 
 const ORG = '11111111-1111-4111-8111-111111111111';
 const IMPORT = '55555555-5555-4555-8555-555555555555';
@@ -170,5 +171,22 @@ describe('import.spreadsheet.run handler', () => {
     expect(counts).toHaveLength(0);
     expect(finished).toHaveLength(0);
     expect(enqueued).toHaveLength(0);
+  });
+});
+
+describe('import undo job', () => {
+  it('calls undoImport with the org, the import and the clock time', async () => {
+    const calls: { orgId: string; importId: string; now: Date }[] = [];
+    const handler = createImportUndoHandler({
+      clock: { now: () => Date.parse('2026-10-26T10:00:00Z') },
+      undo: async (_tx, input) => {
+        calls.push(input);
+        return { removed: 2, kept: 1 };
+      },
+    });
+    await handler({ orgId: ORG, importId: IMPORT }, ctx);
+    expect(calls).toEqual([
+      { orgId: ORG, importId: IMPORT, now: new Date('2026-10-26T10:00:00Z') },
+    ]);
   });
 });

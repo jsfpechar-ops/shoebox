@@ -30,6 +30,7 @@ export const JOB_NAMES = [
   'expected.sweep',
   'import.spreadsheet.parse',
   'import.spreadsheet.run',
+  'import.spreadsheet.undo',
   // Ledger jobs (M04)
   'ledger.rebuild_document',
   'ledger.rebuild_transaction',
@@ -266,3 +267,12 @@ export const importSpreadsheetRunJob = defineTenantJob({
   retry: { retryLimit: 2 },
 });
 export type ImportSpreadsheetRunPayload = z.infer<typeof importSpreadsheetRunJob.payload>;
+
+/** M01 §6: undo one spreadsheet import. The worker runs it (it needs the tenant transaction); the route checks the 30 days. */
+export const importSpreadsheetUndoJob = defineTenantJob({
+  name: 'import.spreadsheet.undo',
+  payload: tenantPayload({ importId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.importId,
+});
+export type ImportSpreadsheetUndoPayload = z.infer<typeof importSpreadsheetUndoJob.payload>;

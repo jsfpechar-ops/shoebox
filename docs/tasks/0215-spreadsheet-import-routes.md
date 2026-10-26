@@ -1,6 +1,6 @@
 # 0215: Spreadsheet import routes
 
-Status: todo
+Status: review
 Ticket: P2-IMP-02 (part 4, the rest of 0214) | Depends on: 0212, 0213, 0214 step 1 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0215-report.md

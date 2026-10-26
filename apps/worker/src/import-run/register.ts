@@ -1,7 +1,8 @@
-import { importSpreadsheetRunJob } from '@shoebox/pipeline';
+import { importSpreadsheetRunJob, importSpreadsheetUndoJob } from '@shoebox/pipeline';
 import { createSupabaseBlobStore, type Logger } from '@shoebox/platform';
 import type { JobRegistry } from '../registry';
 import { createImportRunHandler } from './handler';
+import { createImportUndoHandler } from './undo';
 
 const REQUIRED = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const;
 
@@ -28,6 +29,10 @@ export function registerImportRun(
         registry.enqueue(importSpreadsheetRunJob, payload, { startAfterSeconds: 1 }),
       logger,
     }),
+  );
+  registry.registerTenant(
+    importSpreadsheetUndoJob,
+    createImportUndoHandler({ clock: { now: () => Date.now() }, logger }),
   );
   logger.info({}, 'import.spreadsheet.run registered');
   return true;
