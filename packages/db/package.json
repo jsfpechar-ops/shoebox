@@ -12,6 +12,10 @@
     "./health": {
       "types": "./src/health.ts",
       "default": "./src/health.ts"
+    },
+    "./inbound-email": {
+      "types": "./src/inbound-email.ts",
+      "default": "./src/inbound-email.ts"
     }
   },
   "scripts": {
