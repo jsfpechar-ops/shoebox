@@ -237,7 +237,11 @@ export async function detectAmendments(
   const needsAccountant = async (filing: FiledFiling, reason: string): Promise<void> => {
     if (!workbookQueued) {
       workbookQueued = true;
-      await c.enqueue(vatWorkbookGenerateJob, { orgId, periodStart: period.start });
+      await c.enqueue(vatWorkbookGenerateJob, {
+        orgId,
+        periodStart: period.start,
+        nonce: c.now(),
+      });
     }
     c.logger.info(
       { event: 'filing.amendment_needs_accountant', orgId, filingId: filing.id, reason },

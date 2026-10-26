@@ -264,7 +264,9 @@ describe('M05 VAT jobs', () => {
     expect(vatFilingGenerateJob.payload.parse(payload)).toEqual(payload);
     expect(() => vatFilingGenerateJob.payload.parse({ ...payload, kind: 'x' })).toThrow();
     expect(vatFilingGenerateJob.name).toBe('vat.filing.generate');
-    expect(vatFilingGenerateJob.entityId(payload)).toBe('2026-08-01:radne');
+    expect(vatFilingGenerateJob.entityId(payload)).toBe('2026-08-01-radne');
+    // The key builder rejects ':' in an entity id, so the filing key must build.
+    expect(() => jobKey(vatFilingGenerateJob, payload)).not.toThrow();
     expect(
       vatPeriodEvaluateJob.entityId({ orgId: ORG, periodStart: '2026-08-01', family: 'IO' }),
     ).toBe('2026-08-01');
@@ -299,5 +301,29 @@ describe('M06 podklady jobs', () => {
   it('podklady.reserve.nightly is a system cron at 02:30', () => {
     expect(podkladyReserveNightlyJob.scope).toBe('system');
     expect(podkladyReserveNightlyJob.cron).toBe('30 2 * * *');
+  });
+});
+
+describe('lane C jobs can run again (a finished job keeps its id)', () => {
+  const ORG_ID = '11111111-1111-4111-8111-111111111111';
+  const USER_ID = '22222222-2222-4222-8222-222222222222';
+  // biome-ignore lint/suspicious/noExplicitAny: one helper over a heterogeneous job table
+  const idOf = (def: any, p: any): string => jobIdFromKey(jobKey(def, p));
+  const cases = [
+    [podkladyReserveRefreshJob, { orgId: ORG_ID, reason: 'ledger_rebuilt' as const }],
+    [vatPeriodEvaluateJob, { orgId: ORG_ID, periodStart: '2026-08-01', family: 'PAYER' as const }],
+    [vatWorkbookGenerateJob, { orgId: ORG_ID, periodStart: '2026-08-01' }],
+    [vatAmendmentDetectJob, { orgId: ORG_ID, periodStart: '2026-08-01' }],
+    [
+      vatFilingGenerateJob,
+      { orgId: ORG_ID, periodStart: '2026-08-01', kind: 'radne' as const, requestedBy: USER_ID },
+    ],
+    [podkladyGenerateJob, { orgId: ORG_ID, year: 2026, answersVersion: 1, requestedBy: USER_ID }],
+  ] as const;
+
+  it.each(cases)('%s: two requests with different nonces get different job ids', (def, base) => {
+    expect(idOf(def, { ...base, nonce: 1 })).not.toBe(idOf(def, { ...base, nonce: 2 }));
+    expect(idOf(def, { ...base, nonce: 1 })).toBe(idOf(def, { ...base, nonce: 1 }));
+    expect(idOf(def, base)).not.toBe(idOf(def, { ...base, nonce: 1 }));
   });
 });

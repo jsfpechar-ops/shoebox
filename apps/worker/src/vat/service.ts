@@ -246,7 +246,7 @@ export function stateChanged(c: Ctx, filingId: string, from: string | null, to: 
 }
 
 async function enqueueWorkbook(orgId: string, periodStart: LegalDate, c: Ctx): Promise<void> {
-  await c.enqueue(vatWorkbookGenerateJob, { orgId, periodStart });
+  await c.enqueue(vatWorkbookGenerateJob, { orgId, periodStart, nonce: c.now() });
 }
 
 function shMonthsOf(
@@ -407,7 +407,7 @@ export async function evaluatePeriod(
     states: ['marked_filed'],
   });
   if (filed.length > 0)
-    await c.enqueue(vatAmendmentDetectJob, { orgId, periodStart: period.start });
+    await c.enqueue(vatAmendmentDetectJob, { orgId, periodStart: period.start, nonce: c.now() });
   const importedStore = importedStoreOf(c.store);
   const imported =
     importedStore === null

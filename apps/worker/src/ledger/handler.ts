@@ -136,6 +136,7 @@ export function createLedgerRebuildDocumentHandler(
     await deps.enqueue<PodkladyReserveRefreshPayload>(podkladyReserveRefreshJob, {
       orgId: payload.orgId,
       reason: 'ledger_rebuilt',
+      nonce: Date.now(),
     });
     for (const periodStart of result.changed
       ? await periodsOf(resolved, ctx.tx, payload.documentId)
@@ -145,7 +146,12 @@ export function createLedgerRebuildDocumentHandler(
         payload.orgId,
         periodStart,
       );
-      await deps.enqueue(vatPeriodEvaluateJob, { orgId: payload.orgId, periodStart, family });
+      await deps.enqueue(vatPeriodEvaluateJob, {
+        orgId: payload.orgId,
+        periodStart,
+        family,
+        nonce: Date.now(),
+      });
     }
   };
 }
@@ -163,6 +169,8 @@ export function createLedgerRebuildOrgHandler(
   return async (payload, ctx) => {
     let offset = 0;
     let batchIndex = 0;
+    // A finished job keeps its id, so each org run needs its own nonces (not just the batch index).
+    const runNonce = Date.now();
     for (;;) {
       const ids = await resolved.store.list(
         ctx.tx,
@@ -176,7 +184,7 @@ export function createLedgerRebuildOrgHandler(
           orgId: payload.orgId,
           documentId,
           reason: documentReason(payload.reason),
-          nonce: batchIndex,
+          nonce: runNonce + batchIndex,
         });
       }
       offset += ids.length;
