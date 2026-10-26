@@ -1,6 +1,6 @@
 # 0501: `document_pages` table and the upload batch id
 
-Status: in-progress
+Status: review
 Ticket: Page sorting (owner 2026-10-26) | Depends on: none | Base commit: see branch | Branch: claude/project-thread-z0dj04 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
