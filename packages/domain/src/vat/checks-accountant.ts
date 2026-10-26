@@ -148,7 +148,8 @@ const priorPeriodCreditNote: SimpleCheckFn = (ctx) => {
 };
 
 const partialShareDeduction: SimpleCheckFn = (ctx) => {
-  if (!ctx.isPayer) return null;
+  // § 75 proportional deduction is computed by computeDphdp3/computeKh since 0602 (policy 2026.2).
+  if (!ctx.isPayer || ctx.policy.allow_partial_business_share_on_deduction) return null;
   const docs = ctx.input.documents.filter((d) => d.lines.some(isPartialShare));
   return docs.length > 0 ? fail(docIds(docs)) : null;
 };
