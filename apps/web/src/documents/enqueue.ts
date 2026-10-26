@@ -1,4 +1,6 @@
 import {
+  type CategorizeTrigger,
+  docCategorizeJob,
   docExtractJob,
   docSplitJob,
   emailReceivedJob,
@@ -62,6 +64,22 @@ export async function enqueueEmailReceived(orgId: string, inboundEmailId: string
   const payload = emailReceivedJob.payload.parse({ orgId, inboundEmailId });
   const key = jobKey(emailReceivedJob, payload);
   await (await boss()).send(emailReceivedJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `doc.categorize` for a user action; `nonce` keeps two quick answers from collapsing into one job. */
+export async function enqueueDocCategorize(
+  orgId: string,
+  documentId: string,
+  revision: number,
+  trigger: CategorizeTrigger,
+  nonce: number = Date.now(),
+): Promise<void> {
+  const payload = docCategorizeJob.payload.parse({ orgId, documentId, revision, trigger, nonce });
+  const key = jobKey(docCategorizeJob, payload);
+  await (await boss()).send(docCategorizeJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });
