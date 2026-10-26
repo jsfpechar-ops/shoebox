@@ -1,10 +1,14 @@
 import {
+  computeLedgerTotals,
   computeLimitMeters,
   computeOverviewTotals,
   type createCzRules,
   type Deadline,
+  type LedgerTotalsEntry,
   type LegalDate,
   type LimitMeter,
+  mergeOverviewTotals,
+  type MergedOverviewTotals,
   type OverviewDocument,
   type OverviewTotals,
   upcomingDeadlines,
@@ -15,7 +19,7 @@ import type { OverviewProfile } from './rows';
 export interface OverviewView {
   readonly asOf: LegalDate;
   readonly profile: OverviewProfile | null;
-  readonly totals: OverviewTotals;
+  readonly totals: MergedOverviewTotals;
   readonly meters: readonly LimitMeter[];
   readonly deadlines: readonly Deadline[];
   readonly nextPayment: Deadline | null;
@@ -26,11 +30,13 @@ export interface OverviewView {
 export function buildOverviewView(input: {
   readonly profile: OverviewProfile | null;
   readonly documents: readonly OverviewDocument[];
+  readonly ledgerEntries?: readonly LedgerTotalsEntry[];
   readonly asOf: LegalDate;
   readonly rules: ReturnType<typeof createCzRules>;
 }): OverviewView {
   const { profile, documents, asOf, rules } = input;
-  const totals = computeOverviewTotals(documents, profile?.vatStatus ?? 'neplatce', asOf);
+  const documentTotals = computeOverviewTotals(documents, profile?.vatStatus ?? 'neplatce', asOf);
+  const totals = mergeOverviewTotals(documentTotals, computeLedgerTotals(input.ledgerEntries ?? [], asOf));
   // Meters stay hidden until at least one counted document exists (M11 §8 empty states).
   const meters =
     profile === null || totals.countedCount === 0
