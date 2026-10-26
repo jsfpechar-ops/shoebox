@@ -64,10 +64,10 @@ describe.skipIf(DATABASE_URL === undefined)('match store', () => {
       values (${ORG}, ${PARTNER}, '2400123455', '2010', 'CZ8720100000002400123455')`;
     await sql`insert into statement_imports (id, org_id, money_account_id, channel, format, parser_version, state)
       values (${IMPORT}, ${ORG}, ${ACC}, 'statement_file', 'gpc', 1, 'parsed')`;
-    await sql`insert into documents (id, org_id, status, class, direction, currency, total_gross, document_number, variable_symbol, issue_date, due_date, partner_id, pay_to_account, deleted_at)
-      values (${DOC1}, ${ORG}, 'ready', 'received_invoice', 'in', 'CZK', 1210.00, 'FV2026001', '2026001', '2026-03-01', '2026-03-15', ${PARTNER}, null, null),
-             (${DOC2}, ${ORG}, 'ready', 'issued_invoice', 'out', 'CZK', 500.00, '2026-7', '7', '2026-03-05', '2026-03-19', null, '{"account":"1003-1234567899","bank_code":"0800"}'::jsonb, null),
-             (${DOC3}, ${ORG}, 'ready', 'received_invoice', 'in', 'CZK', 99.00, 'X', null, '2026-03-01', null, null, null, now())`;
+    await sql`insert into documents (id, org_id, entry_mode, status, class, direction, currency, total_gross, document_number, variable_symbol, issue_date, due_date, partner_id, pay_to_account, deleted_at)
+      values (${DOC1}, ${ORG}, 'manual', 'ready', 'received_invoice', 'in', 'CZK', 1210.00, 'FV2026001', '2026001', '2026-03-01', '2026-03-15', ${PARTNER}, null, null),
+             (${DOC2}, ${ORG}, 'manual', 'ready', 'issued_invoice', 'out', 'CZK', 500.00, '2026-7', '7', '2026-03-05', '2026-03-19', null, '{"account":"1003-1234567899","bank_code":"0800"}'::jsonb, null),
+             (${DOC3}, ${ORG}, 'manual', 'ready', 'received_invoice', 'in', 'CZK', 99.00, 'X', null, '2026-03-01', null, null, null, now())`;
     await sql`insert into transactions (id, org_id, money_account_id, source, statement_import_id, booked_on, amount, currency, counterparty_account, counterparty_bank_code, variable_symbol, message, match_state)
       values (${TX1}, ${ORG}, ${ACC}, 'statement_file', ${IMPORT}, '2026-03-10', -1210.00, 'CZK', '2400123455', '2010', '2026001', null, 'unmatched'),
              (${TX2}, ${ORG}, ${ACC}, 'statement_file', null, '2026-03-12', 500.00, 'CZK', null, null, '7', 'Faktura 2026-7', 'unmatched'),
