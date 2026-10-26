@@ -41,6 +41,8 @@
   "doc.detail.preview_alt": "The uploaded document",
   "doc.detail.not_found": "We can't find this document.",
   "doc.detail.reading": "We're still reading this document. This page updates by itself.",
+  "doc.detail.failed": "We couldn't read this document. You can try again, or upload a clearer copy.",
+  "doc.read_again.button": "Read again",
   "doc.detail.vat_line": "VAT {rate} %: base {base}, VAT {vat}",
   "doc.fix.cta": "Fix",
   "doc.fix.save": "Save",
