@@ -18,11 +18,17 @@ const RATES: FxRateRow[] = [
   { rateDate: d('2026-10-05'), currency: 'EUR', amount: 1, rate: '24.580000' },
   { rateDate: d('2026-09-20'), currency: 'GBP', amount: 1, rate: '28.000000' },
 ];
-const fx = (currency: string, date: string) => resolveFxRate(currency, d(date), RATES, RULE, LOOKBACK);
+const fx = (currency: string, date: string) =>
+  resolveFxRate(currency, d(date), RATES, RULE, LOOKBACK);
 
 describe('resolveFxRate (M04 §4.9, M05 §4.2 step 6)', () => {
   it('the rate published on the date, else the last one before it (Saturday → Friday)', () => {
-    expect(fx('USD', '2026-10-02')).toMatchObject({ currency: 'USD', rateDate: '2026-10-02', rate: '23.456000', amount: 1 });
+    expect(fx('USD', '2026-10-02')).toMatchObject({
+      currency: 'USD',
+      rateDate: '2026-10-02',
+      rate: '23.456000',
+      amount: 1,
+    });
     expect(fx('USD', '2026-10-03')?.rateDate).toBe('2026-10-02');
     expect(fx('USD', '2026-10-04')?.rateDate).toBe('2026-10-02');
     expect(fx('USD', '2026-10-05')?.rateDate).toBe('2026-10-05');
@@ -38,7 +44,13 @@ describe('resolveFxRate (M04 §4.9, M05 §4.2 step 6)', () => {
   });
 
   it('CZK is the identity rate on the date itself', () => {
-    expect(fx('CZK', '2026-10-03')).toEqual({ currency: 'CZK', rateDate: '2026-10-03', rate: '1', amount: 1, perUnit: expect.anything() });
+    expect(fx('CZK', '2026-10-03')).toEqual({
+      currency: 'CZK',
+      rateDate: '2026-10-03',
+      rate: '1',
+      amount: 1,
+      perUnit: expect.anything(),
+    });
     expect(fx('CZK', '2026-10-03')?.perUnit.toString()).toBe('1');
   });
 
