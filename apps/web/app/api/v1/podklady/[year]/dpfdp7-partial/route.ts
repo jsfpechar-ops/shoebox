@@ -18,6 +18,7 @@ import {
 } from '../../../../../../src/podklady/dpfdp7';
 import { loadPodkladySummary } from '../../../../../../src/podklady/load';
 import { parseYearParam } from '../../../../../../src/podklady/preview';
+import { appOrigin } from '../../../../../../src/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +29,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ year: string }> },
 ): Promise<Response> {
+  if (request.headers.get('origin') !== appOrigin())
+    return Response.json({ error: 'origin' }, { status: 403 });
   const auth = await requireActiveRole(['owner', 'member', 'accountant', 'viewer']);
   if (!auth.ok)
     return Response.json(
