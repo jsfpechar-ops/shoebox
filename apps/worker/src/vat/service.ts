@@ -2,11 +2,13 @@
 // anything anywhere (AGENTS rule 8). Logs carry ids and counts only, never document content.
 
 import {
+  insertDocumentLinks,
   insertFiling,
   listFilings,
   type PeriodEntryRow,
   type PeriodLedger,
   type ProfileVersionRow,
+  readGovernmentFilingFields,
   readPeriodLedger,
   setFilingState,
   supersedeOpenFilings,
@@ -16,11 +18,13 @@ import {
 import {
   buildEpoHeader,
   classifyPeriod,
+  compareWithImported,
   computeDphdp3,
   computeKh,
   computeShv,
   createCzRules,
   type Dphdp3Computation,
+  dicDigits,
   type EpoForm,
   type EpoHeader,
   FILING_KIND_VALUES,
@@ -49,6 +53,7 @@ import { type TenantJobDefinition, vatWorkbookGenerateJob } from '@shoebox/pipel
 import type { BlobStore, Logger } from '@shoebox/platform';
 import { serializeDphdp3, serializeKh, serializeShv, validateXml } from '@shoebox/tax-xml';
 import { z } from 'zod';
+import { type ImportedStore, registerImportedFilings } from './imported';
 import {
   foreignPolicyOf,
   khLookup,
@@ -67,6 +72,9 @@ export interface VatStore {
   readonly listFilings: typeof listFilings;
   readonly setFilingState: typeof setFilingState;
   readonly upsertVatObligations: typeof upsertVatObligations;
+  /** Optional: without these the imported filing check is skipped. */
+  readonly readGovernmentFilingFields?: typeof readGovernmentFilingFields;
+  readonly insertDocumentLinks?: typeof insertDocumentLinks;
 }
 
 export const dbVatStore: VatStore = {
@@ -76,6 +84,8 @@ export const dbVatStore: VatStore = {
   listFilings,
   setFilingState,
   upsertVatObligations,
+  readGovernmentFilingFields,
+  insertDocumentLinks,
 };
 
 export type Validate = typeof validateXml;
@@ -100,6 +110,8 @@ export interface EvaluateResult {
   readonly ledgerHash: string;
   readonly draftFilingId: string | null;
   readonly obligations: number;
+  /** Our DPHDP3 equals the imported filed return; null when none or not a simple return. */
+  readonly matchesFiled: boolean | null;
 }
 
 export type GenerateOutcome =
@@ -342,12 +354,29 @@ export async function evaluatePeriod(
   const c = resolve(deps);
   const loaded = await loadPeriod(tx, orgId, periodStart, c);
   if ('skipped' in loaded) return loaded;
-  const { ledger, status, period } = loaded;
+  const { ledger, status, period, profile } = loaded;
   const check = classifyPeriod(
     toClassifierInput(ledger, status, period, new Date(c.now()).toISOString()),
     c.rules,
   );
   if (check.verdict === 'needs_accountant') await enqueueWorkbook(orgId, period.start, c);
+  const importedStore = importedStoreOf(c.store);
+  const imported =
+    importedStore === null
+      ? null
+      : await registerImportedFilings(
+          tx,
+          {
+            orgId,
+            periodStart: period.start,
+            periodEnd: period.end,
+            orgDicDigits: dicDigits(profile.dic),
+            ledgerDocumentIds: [...new Set(ledger.entries.map((e) => e.documentId))],
+            now: new Date(c.now()),
+          },
+          importedStore,
+          c.logger,
+        );
   const draftFilingId =
     check.verdict === 'nothing_to_file'
       ? null
@@ -360,6 +389,18 @@ export async function evaluatePeriod(
     dp3 = computeDphdp3(entries, status, c.rules, period.start);
     if (status === 'platce') shMonths = shMonthsOf(entries, period, c);
   }
+  const matchesFiled =
+    imported !== null && dp3 !== null ? compareWithImported(dp3, imported).matches : null;
+  if (matchesFiled === true)
+    c.logger.info(
+      { event: 'filing.matches_filed', orgId, periodStart: period.start },
+      'matches filed',
+    );
+  if (matchesFiled === false)
+    c.logger.info(
+      { event: 'filing.amendment_needed', orgId, periodStart: period.start },
+      'amendment needed',
+    );
   const obligations = await refreshObligations(tx, orgId, c, loaded, shMonths, dp3);
   c.logger.info(
     {
@@ -377,6 +418,18 @@ export async function evaluatePeriod(
     ledgerHash: ledger.ledgerHash,
     draftFilingId,
     obligations,
+    matchesFiled,
+  };
+}
+
+function importedStoreOf(store: VatStore): ImportedStore | null {
+  const { readGovernmentFilingFields: read, insertDocumentLinks: link } = store;
+  if (read === undefined || link === undefined) return null;
+  return {
+    readGovernmentFilingFields: read,
+    insertDocumentLinks: link,
+    listFilings: store.listFilings,
+    insertFiling: store.insertFiling,
   };
 }
 
