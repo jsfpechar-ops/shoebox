@@ -109,7 +109,7 @@ export interface CandidateScore {
   readonly txRemaining: Money;
   readonly docOpen: Money;
   readonly anchorDistanceDays: number;
-  readonly dueDate?: LegalDate;
+  readonly dueDate?: LegalDate | undefined;
   readonly docCreatedAt: string;
   readonly capped: boolean;
 }
