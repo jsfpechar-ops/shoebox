@@ -56,7 +56,8 @@ describe.skipIf(DATABASE_URL === undefined)('statement import store', () => {
     sql = postgres(serviceUrl, { max: 1, onnotice: () => undefined });
     await runMigrations(serviceUrl);
     await sql`delete from organizations where id = ${ORG}`;
-    await sql`insert into organizations (id, name) values (${ORG}, 'Bank Org')`;
+    await sql`insert into organizations (id, name, inbound_email_slug, inbound_email_secret)
+      values (${ORG}, 'Bank Org', 'bank-org-0111', 'AB12CD34')`;
     await sql`insert into source_files (id, org_id, sha256, storage_path, mime_type, byte_size, original_filename, channel)
       values (${FILE}, ${ORG}, ${'a'.repeat(64)}, ${`${ORG}/files/x.gpc`}, 'text/plain', 10, 'vypis.gpc', 'upload')`;
     db = createTenantDb(
