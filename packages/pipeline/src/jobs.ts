@@ -362,6 +362,9 @@ export const ORG_REBUILD_REASONS = ['profile_changed', 'rules_changed', 'manual'
 
 /** Id-safe key part (no ':' or whitespace). */
 const nonceField = z.number().int().min(0).optional();
+/** Appends the per-request nonce so a repeat request gets a new job id (a finished job keeps its id). */
+const withNonce = (base: string, nonce: number | undefined): string =>
+  nonce === undefined ? base : `${base}-${nonce}`;
 
 export const docCategorizePayload = tenantPayload({
   documentId: z.uuid(),
@@ -425,13 +428,14 @@ export const ledgerVerifyJob = defineSystemJob({
 export const vatPeriodEvaluatePayload = tenantPayload({
   periodStart: z.iso.date(),
   family: z.enum(['IO', 'PAYER']),
+  nonce: nonceField,
 });
 export type VatPeriodEvaluatePayload = z.infer<typeof vatPeriodEvaluatePayload>;
 export const vatPeriodEvaluateJob = defineTenantJob({
   name: 'vat.period.evaluate',
   payload: vatPeriodEvaluatePayload,
   version: 1,
-  entityId: (p) => p.periodStart,
+  entityId: (p) => withNonce(p.periodStart, p.nonce),
 });
 
 /** M05 §6: generate one filing (radne, opravne, dodatecne, nasledne) for a period. */
@@ -441,38 +445,41 @@ export const vatFilingGeneratePayload = tenantPayload({
   amendsFilingId: z.uuid().optional(),
   discoveredOn: z.iso.date().optional(),
   requestedBy: z.uuid(),
+  nonce: nonceField,
 });
 export type VatFilingGeneratePayload = z.infer<typeof vatFilingGeneratePayload>;
 export const vatFilingGenerateJob = defineTenantJob({
   name: 'vat.filing.generate',
   payload: vatFilingGeneratePayload,
   version: 1,
-  entityId: (p) => `${p.periodStart}:${p.kind}`,
+  entityId: (p) => withNonce(`${p.periodStart}-${p.kind}`, p.nonce),
 });
 
 /** M05 §6: build the period workbook (xlsx). */
 export const vatWorkbookGeneratePayload = tenantPayload({
   periodStart: z.iso.date(),
   requestedBy: z.uuid().optional(),
+  nonce: nonceField,
 });
 export type VatWorkbookGeneratePayload = z.infer<typeof vatWorkbookGeneratePayload>;
 export const vatWorkbookGenerateJob = defineTenantJob({
   name: 'vat.workbook.generate',
   payload: vatWorkbookGeneratePayload,
   version: 1,
-  entityId: (p) => p.periodStart,
+  entityId: (p) => withNonce(p.periodStart, p.nonce),
 });
 
 /** M05 §6: detect whether a period needs an amendment (opravne) after a ledger change. */
 export const vatAmendmentDetectPayload = tenantPayload({
   periodStart: z.iso.date(),
+  nonce: nonceField,
 });
 export type VatAmendmentDetectPayload = z.infer<typeof vatAmendmentDetectPayload>;
 export const vatAmendmentDetectJob = defineTenantJob({
   name: 'vat.amendment.detect',
   payload: vatAmendmentDetectPayload,
   version: 1,
-  entityId: (p) => p.periodStart,
+  entityId: (p) => withNonce(p.periodStart, p.nonce),
 });
 
 /** M06 §6: build the annual podklady (PDF + XLSX) for one tax year; idempotent per ledger hash and answers version. */
@@ -480,13 +487,14 @@ export const podkladyGeneratePayload = tenantPayload({
   year: z.number().int().min(2024),
   answersVersion: z.number().int().min(0),
   requestedBy: z.uuid(),
+  nonce: nonceField,
 });
 export type PodkladyGeneratePayload = z.infer<typeof podkladyGeneratePayload>;
 export const podkladyGenerateJob = defineTenantJob({
   name: 'podklady.generate',
   payload: podkladyGeneratePayload,
   version: 1,
-  entityId: (p) => `${p.year}-${p.answersVersion}`,
+  entityId: (p) => withNonce(`${p.year}-${p.answersVersion}`, p.nonce),
 });
 
 export const PODKLADY_RESERVE_REASONS = ['ledger_rebuilt', 'nightly', 'profile_changed'] as const;
@@ -494,13 +502,14 @@ export const PODKLADY_RESERVE_REASONS = ['ledger_rebuilt', 'nightly', 'profile_c
 /** M06 §6: recompute the tax reserve and the income-tax obligations of one org. */
 export const podkladyReserveRefreshPayload = tenantPayload({
   reason: z.enum(PODKLADY_RESERVE_REASONS),
+  nonce: nonceField,
 });
 export type PodkladyReserveRefreshPayload = z.infer<typeof podkladyReserveRefreshPayload>;
 export const podkladyReserveRefreshJob = defineTenantJob({
   name: 'podklady.reserve.refresh',
   payload: podkladyReserveRefreshPayload,
   version: 1,
-  entityId: (p) => `reserve-${p.reason}`,
+  entityId: (p) => withNonce(`reserve-${p.reason}`, p.nonce),
 });
 
 export const podkladyReserveNightlyPayload = z.strictObject({});

@@ -156,12 +156,12 @@ export async function enqueueRadarRefresh(orgId: string): Promise<void> {
   });
 }
 
-/** Queues `vat.filing.generate` for one period and kind; the key makes a second identical request a no-op. Returns the job id. */
+/** Queues `vat.filing.generate` for one period and kind; the nonce lets a later request run again (a finished job keeps its id). Returns the job id. */
 export async function enqueueVatFilingGenerate(
   orgId: string,
   input: Omit<VatFilingGeneratePayload, 'orgId'>,
 ): Promise<string> {
-  const payload = vatFilingGenerateJob.payload.parse({ ...input, orgId });
+  const payload = vatFilingGenerateJob.payload.parse({ nonce: Date.now(), ...input, orgId });
   const key = jobKey(vatFilingGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(vatFilingGenerateJob.name, payload, { id, singletonKey: key });
@@ -174,21 +174,32 @@ export async function enqueueVatWorkbookGenerate(
   periodStart: string,
   requestedBy?: string,
 ): Promise<string> {
-  const payload = vatWorkbookGenerateJob.payload.parse({ orgId, periodStart, requestedBy });
+  const payload = vatWorkbookGenerateJob.payload.parse({
+    orgId,
+    periodStart,
+    requestedBy,
+    nonce: Date.now(),
+  });
   const key = jobKey(vatWorkbookGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(vatWorkbookGenerateJob.name, payload, { id, singletonKey: key });
   return id;
 }
 
-/** Queues `podklady.generate` for one tax year and answers version; the key makes a second identical request a no-op. */
+/** Queues `podklady.generate` for one tax year and answers version; the nonce lets a later request run again. */
 export async function enqueuePodkladyGenerate(
   orgId: string,
   year: number,
   answersVersion: number,
   requestedBy: string,
 ): Promise<string> {
-  const payload = podkladyGenerateJob.payload.parse({ orgId, year, answersVersion, requestedBy });
+  const payload = podkladyGenerateJob.payload.parse({
+    orgId,
+    year,
+    answersVersion,
+    requestedBy,
+    nonce: Date.now(),
+  });
   const key = jobKey(podkladyGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(podkladyGenerateJob.name, payload, { id, singletonKey: key });
