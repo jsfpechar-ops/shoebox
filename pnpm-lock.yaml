@@ -201,6 +201,13 @@ importers:
         version: 4.1.11(@types/node@22.20.5)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.5)(jiti@2.7.0)(tsx@4.23.15)
 
   packages/bank:
+    dependencies:
+      '@shoebox/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@shoebox/validation':
+        specifier: workspace:*
+        version: link:../validation
     devDependencies:
       typescript:
         specifier: 'catalog:'
