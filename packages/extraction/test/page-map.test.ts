@@ -34,7 +34,11 @@ describe('buildSortRequest', () => {
     expect(content.map((b) => b.type)).toEqual(['text', 'document', 'text', 'image', 'text']);
     expect(content[0]).toEqual({ type: 'text', text: 'Strany 1–3:' });
     expect(content[2]).toEqual({ type: 'text', text: 'Strana 4:' });
-    expect(content[3]).toMatchObject({ type: 'image', mediaType: 'image/jpeg', dataBase64: 'Ag==' });
+    expect(content[3]).toMatchObject({
+      type: 'image',
+      mediaType: 'image/jpeg',
+      dataBase64: 'Ag==',
+    });
   });
 });
 
@@ -70,7 +74,10 @@ describe('parsePageMap', () => {
           {
             page: 1,
             blank: false,
-            items: [item({ where: 'top', kind: 'receipt' }), item({ where: 'bottom', kind: 'receipt' })],
+            items: [
+              item({ where: 'top', kind: 'receipt' }),
+              item({ where: 'bottom', kind: 'receipt' }),
+            ],
           },
         ],
       },
@@ -126,7 +133,11 @@ describe('parsePageMap', () => {
 
   it('drops an ICO that is not 8 digits and a label where n > m', () => {
     const [page] = parsePageMap(
-      { pages: [{ page: 1, blank: false, items: [item({ supplier_ico: '1234', page_label: '3/2' })] }] },
+      {
+        pages: [
+          { page: 1, blank: false, items: [item({ supplier_ico: '1234', page_label: '3/2' })] },
+        ],
+      },
       [1],
     );
     expect(page?.items[0]).toMatchObject({ supplierIco: '', labelN: null, labelOf: null });
