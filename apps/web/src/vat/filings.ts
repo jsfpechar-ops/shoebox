@@ -107,6 +107,28 @@ function decidePodkladyDownload(filing: FilingView, format: string | null): Down
   };
 }
 
+/** VAT_WORKBOOK: xlsx only; stale when the ledger hash moved on. */
+function decideWorkbookDownload(
+  filing: FilingView,
+  currentLedgerHash: string,
+  format: string | null,
+): DownloadDecision {
+  if (format !== 'xlsx') return { ok: false, status: 400, error: 'bad_format' };
+  if (!DOWNLOADABLE_STATES.includes(filing.state))
+    return { ok: false, status: 409, error: 'not_generated' };
+  if (filing.totals.ledgerHash !== currentLedgerHash)
+    return { ok: false, status: 409, error: 'period_changed' };
+  const path = filing.xlsxPath;
+  if (path === null || path === undefined)
+    return { ok: false, status: 409, error: 'not_generated' };
+  return {
+    ok: true,
+    paths: [{ path, name: `DPH-${filing.periodStart.slice(0, 7)}-workbook.xlsx` }],
+    markDownloaded: filing.state === 'generated',
+    contentType: XLSX_MIME,
+  };
+}
+
 export function decideDownload(
   filing: FilingView | null,
   bundle: readonly FilingView[],
@@ -115,6 +137,8 @@ export function decideDownload(
 ): DownloadDecision {
   if (filing === null) return { ok: false, status: 404, error: 'not_found' };
   if (filing.type === 'PODKLADY_DPFO') return decidePodkladyDownload(filing, format);
+  if (filing.type === 'VAT_WORKBOOK')
+    return decideWorkbookDownload(filing, currentLedgerHash, format);
   if (format !== 'xml' && format !== 'zip') return { ok: false, status: 400, error: 'bad_format' };
   const refusal = refusalFor(filing, currentLedgerHash);
   if (refusal !== null) return refusal;

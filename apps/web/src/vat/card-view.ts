@@ -7,7 +7,7 @@ export type FilingKind = 'radne' | 'opravne' | 'dodatecne' | 'nasledne';
 
 export type VatAction =
   | { kind: 'open'; href: string }
-  | { kind: 'download'; href: string; label: 'zip' | 'xml' }
+  | { kind: 'download'; href: string; label: 'zip' | 'xml' | 'xlsx' }
   | { kind: 'prepare'; periodStart: string; filingKind: FilingKind }
   | { kind: 'workbook'; periodStart: string }
   | { kind: 'mark_filed'; filingId: string; periodEnd: string };
@@ -115,9 +115,18 @@ export function vatCardView(group: readonly PeriodCard[]): VatCardView {
         reasons: main.reasons.map(reasonText),
         actions,
       };
-    case 'needs_accountant':
+    case 'needs_accountant': {
+      const workbookId =
+        main.workbookFilingId ?? group.find((c) => c.workbookFilingId !== null)?.workbookFilingId;
+      if (workbookId !== null && workbookId !== undefined)
+        actions.push({
+          kind: 'download',
+          href: `/api/v1/filings/${workbookId}/download?format=xlsx`,
+          label: 'xlsx',
+        });
       actions.push({ kind: 'workbook', periodStart });
       return { ...base, tone: 'warn', body: t('vat.card.needs_accountant'), reasons: [], actions };
+    }
     case 'filed':
       return {
         ...base,

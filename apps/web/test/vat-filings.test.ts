@@ -61,6 +61,20 @@ describe('decideDownload (M05 §9 #13)', () => {
     expect(decideDownload(f(), [], 'h1', 'pdf')).toMatchObject({ ok: false, status: 400 });
     expect(decideDownload(null, [], 'h1', 'xml')).toMatchObject({ ok: false, status: 404 });
   });
+  it('VAT_WORKBOOK: xlsx ok, changed hash, wrong format', () => {
+    const w = f({ type: 'VAT_WORKBOOK', xsdValid: null, xmlPath: null, xlsxPath: 'org/o/w.xlsx' });
+    expect(decideDownload(w, [w], 'h1', 'xlsx')).toMatchObject({
+      ok: true,
+      markDownloaded: true,
+      paths: [{ path: 'org/o/w.xlsx', name: 'DPH-2026-08-workbook.xlsx' }],
+    });
+    expect(decideDownload(w, [w], 'h2', 'xlsx')).toEqual({
+      ok: false,
+      status: 409,
+      error: 'period_changed',
+    });
+    expect(decideDownload(w, [w], 'h1', 'xml')).toMatchObject({ ok: false, status: 400 });
+  });
   it('zip bundles DP3, KH, SH in order and skips drafts', () => {
     const kh = f({ id: 'f2', type: 'DPHKH1', xmlPath: 'org/o/filings/b1/DPHKH1.xml' });
     const sh = f({

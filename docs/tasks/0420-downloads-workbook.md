@@ -1,6 +1,6 @@
 # 0420: Friendly download errors and the VAT workbook download
 
-Status: todo
+Status: review
 Ticket: K-D03 | Depends on: 0418, 0419 | Branch: claude/project-thread-yn56ih | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 

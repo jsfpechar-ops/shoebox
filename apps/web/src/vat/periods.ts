@@ -45,6 +45,8 @@ export interface PeriodCard {
   readonly reasons: readonly string[];
   readonly filedOn: string | null;
   readonly proposal: { kind: string; dueDate: string } | null;
+  /** Active VAT_WORKBOOK filing of this period, if one was prepared (0420). */
+  readonly workbookFilingId: string | null;
 }
 
 export interface CardInputs {
@@ -189,6 +191,7 @@ function filingCard(
     reasons,
     filedOn: f.filedOn,
     proposal,
+    workbookFilingId: null,
   };
 }
 
@@ -201,6 +204,11 @@ export function buildPeriodCards(input: CardInputs): PeriodCard[] {
   }
 
   const active = input.filings.filter((f) => f.state !== 'superseded');
+  const workbooks = new Map<string, string>();
+  for (const f of active) {
+    if (f.type === 'VAT_WORKBOOK' && (f.state === 'generated' || f.state === 'downloaded'))
+      workbooks.set(f.periodStart, f.id);
+  }
   const cards: PeriodCard[] = [];
   const haveFiling = new Set<string>();
   for (const f of active) {
@@ -233,6 +241,7 @@ export function buildPeriodCards(input: CardInputs): PeriodCard[] {
       reasons: [],
       filedOn: null,
       proposal: null,
+      workbookFilingId: null,
     });
   }
 
@@ -241,7 +250,7 @@ export function buildPeriodCards(input: CardInputs): PeriodCard[] {
     if (a.periodStart !== b.periodStart) return a.periodStart < b.periodStart ? 1 : -1;
     return formIndex(a.form) - formIndex(b.form);
   });
-  return cards;
+  return cards.map((c) => ({ ...c, workbookFilingId: workbooks.get(c.periodStart) ?? null }));
 }
 
 export function parseYear(raw: string | null, today: string): number | null {
