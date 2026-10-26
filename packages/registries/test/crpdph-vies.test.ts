@@ -7,7 +7,11 @@ const CRPDPH_OK = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns
 const status = (code: number) =>
   `<Envelope><Body><R><status odpovedGenerovana="2026-10-26" statusCode="${code}" statusText="X"/></R></Body></Envelope>`;
 
-function fakeFetch(body: string, init: { status?: number } = {}, seen: unknown[] = []): typeof fetch {
+function fakeFetch(
+  body: string,
+  init: { status?: number } = {},
+  seen: unknown[] = [],
+): typeof fetch {
   return (async (url: unknown, req: unknown) => {
     seen.push({ url, req });
     return new Response(body, { status: init.status ?? 200 });
@@ -58,7 +62,9 @@ describe('createCrpdphClient', () => {
     const r = await c.status(['25596641', '00006947']);
     expect(r.status).toBe('ok');
     const { url, req } = seen[0] as { url: string; req: RequestInit };
-    expect(url).toBe('https://mojedane.gov.cz/dpr/axis2/services/rozhraniCRPDPH.rozhraniCRPDPHSOAP');
+    expect(url).toBe(
+      'https://mojedane.gov.cz/dpr/axis2/services/rozhraniCRPDPH.rozhraniCRPDPHSOAP',
+    );
     expect(String(req.body)).toContain('<dic>25596641</dic><dic>00006947</dic>');
     expect((req.headers as Record<string, string>).SOAPAction).toBe(
       'http://adis.mfcr.cz/rozhraniCRPDPH/getStatusNespolehlivySubjektRozsirenyV2',
@@ -73,7 +79,9 @@ describe('createCrpdphClient', () => {
       status: 'unavailable',
       reason: 'crpdph_unavailable',
     });
-    expect(await createCrpdphClient({ fetch: fakeFetch('', { status: 503 }) }).status(['1'])).toEqual({
+    expect(
+      await createCrpdphClient({ fetch: fakeFetch('', { status: 503 }) }).status(['1']),
+    ).toEqual({
       status: 'unavailable',
       reason: 'http_error',
     });
@@ -86,7 +94,9 @@ describe('createCrpdphClient', () => {
   });
   it('times out', async () => {
     const slow = ((_u: unknown, req: RequestInit) =>
-      new Promise((_r, reject) => req.signal?.addEventListener('abort', () => reject(new Error('aborted'))))) as unknown as typeof fetch;
+      new Promise((_r, reject) =>
+        req.signal?.addEventListener('abort', () => reject(new Error('aborted'))),
+      )) as unknown as typeof fetch;
     expect(await createCrpdphClient({ fetch: slow, timeoutMs: 10 }).status(['1'])).toEqual({
       status: 'unavailable',
       reason: 'timeout',
@@ -107,7 +117,11 @@ describe('createViesClient', () => {
       address: '---',
     });
     const seen: unknown[] = [];
-    const r = await createViesClient({ fetch: fakeFetch(body, {}, seen), now: NOW }).check('DE', '123456789', ME);
+    const r = await createViesClient({ fetch: fakeFetch(body, {}, seen), now: NOW }).check(
+      'DE',
+      '123456789',
+      ME,
+    );
     expect(r).toEqual({
       status: 'ok',
       fetchedAt: '2026-10-26T08:00:00.000Z',
@@ -130,16 +144,25 @@ describe('createViesClient', () => {
     });
   });
   it('maps MS_UNAVAILABLE to unavailable and INVALID_INPUT to invalid', async () => {
-    const err = (e: string) => JSON.stringify({ actionSucceed: false, errorWrappers: [{ error: e }] });
-    expect(await createViesClient({ fetch: fakeFetch(err('MS_UNAVAILABLE')) }).check('DE', '1', ME)).toEqual({
+    const err = (e: string) =>
+      JSON.stringify({ actionSucceed: false, errorWrappers: [{ error: e }] });
+    expect(
+      await createViesClient({ fetch: fakeFetch(err('MS_UNAVAILABLE')) }).check('DE', '1', ME),
+    ).toEqual({
       status: 'unavailable',
       reason: 'vies_unavailable',
     });
-    const r = await createViesClient({ fetch: fakeFetch(err('INVALID_INPUT')), now: NOW }).check('DE', 'x', ME);
+    const r = await createViesClient({ fetch: fakeFetch(err('INVALID_INPUT')), now: NOW }).check(
+      'DE',
+      'x',
+      ME,
+    );
     expect(r.status === 'ok' && r.data.valid).toBe(false);
   });
   it('maps HTTP errors', async () => {
-    expect(await createViesClient({ fetch: fakeFetch('', { status: 500 }) }).check('DE', '1', ME)).toEqual({
+    expect(
+      await createViesClient({ fetch: fakeFetch('', { status: 500 }) }).check('DE', '1', ME),
+    ).toEqual({
       status: 'unavailable',
       reason: 'http_error',
     });
