@@ -13,5 +13,6 @@ export * from './rules/cz/epo';
 export * from './rules/index';
 export * from './taxonomy/cascade';
 export * from './taxonomy/categories';
+export * from './vat/ledger';
 export * from './vat/point-date';
 export * from './vat/treatment';
