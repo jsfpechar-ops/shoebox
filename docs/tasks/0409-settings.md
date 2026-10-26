@@ -52,6 +52,7 @@ Settings shows, in plain words, what Sysel knows about the firm (name, IÄŒO, DIÄ
      "settings.role.viewer": "Can only look",
      "settings.empty": "We could not load your settings. Please reload the page.",
    ```
+   Also change the existing value of `"trash.note"` to `"Documents you moved here do not count in your totals. You can bring them back at any time."` (automatic deletion after 30 days is not built yet).
 2. New `apps/web/src/settings/settings-data.ts`:
    ```ts
    import type { LegalDate } from '@shoebox/domain';

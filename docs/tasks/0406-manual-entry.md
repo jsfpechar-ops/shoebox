@@ -89,7 +89,7 @@ For a lost receipt, a cash expense or a document never issued, the user types th
    import { describe, expect, it } from 'vitest';
    import { manualDocumentColumns, manualFields, parseManualEntry } from '../src/documents/manual-entry';
 
-   const base = { kind: 'received_receipt', partner: 'Parkoviště Anděl', date: '9. 9. 2026', amount: '350', paid: 'cash' };
+   const base = { kind: 'received_receipt', partner: 'Parkoviště Anděl', date: '2026-09-09', amount: '350', paid: 'cash' };
 
    describe('parseManualEntry', () => {
      it('reads a cash receipt', () => {
@@ -134,7 +134,7 @@ For a lost receipt, a cash expense or a document never issued, the user types th
      });
    });
    ```
-   If `normalizeInput('date', '9. 9. 2026')` does not give `2026-09-09`, STOP and report (do not change the test).
+   (The form's date input sends ISO dates, so the test uses `2026-09-09`.)
 3. New `manual-entry-actions.ts`: `export type ManualState = { errors: Partial<Record<'partner'|'date'|'amount'|'form', MessageKey>> }` and `export async function saveManualEntryAction(_prev: ManualState, form: FormData): Promise<ManualState>`. Steps: `requireActiveRole(['owner','member'])` (not ok → `{ errors: { form: 'manual.error.save' } }`); collect the form keys as strings; `parseManualEntry` (errors → return them); load org `ico, dic`; `plan = planCorrection({ fields: manualFields(v), documentClass: v.kind, editKey: 'totals.gross', value: v.amount, org, today: pragueToday({ now: () => Date.now() }) })`; insert `documents` `{ org_id, ...manualDocumentColumns(v), status: 'needs_review' }` `.select('id').single()`; insert `document_fields` rows for each `plan.fields` entry (source `user`, `set_by: auth.userId`); insert one `document_lines` `{ org_id, document_id, position: 1, description: v.note, gross: v.amount }`; insert `plan.rows` into `validation_results` (as in correction-store); update status to `plan.status`; `rpc('audit_document', …'create_manual'…)`; any error → `{ errors: { form: 'manual.error.save' } }`; success → `revalidatePath('/inbox')` and `redirect(\`/inbox/${id}\`)`. Never log values.
 4. New `manual-entry-form.tsx` (`'use client'`): `useActionState(saveManualEntryAction, { errors: {} })`; a `<form action={action} className="flex flex-col gap-4">` with, in order: Type `<select name="kind">` (3 options), Who `Input name="partner"` with hint, Date `Input name="date" type="date"` (default today: `new Date().toISOString().slice(0, 10)`), Amount `Input name="amount" inputMode="decimal"`, "How was it paid?" `<fieldset>` + `<legend>` with 4 radios (`name="paid"`, cash checked), What for `Input name="note"`, a checkbox `name="missing"` with label `manual.missing` — when checked (local `useState`) show Why `<select name="reason">` and `<p className="text-body">` `manual.substitute.note`; a `role="alert"` paragraph for `errors.form`; submit `Button` `manual.save` (disabled while pending). Each field error renders under its input with `role="alert"` and the input gets `aria-invalid` + `aria-describedby`.
 5. New `apps/web/app/(app)/inbox/new/page.tsx`: server component; `requireActiveRole(['owner','member'])`; not ok → `redirect('/inbox')`. Renders a back link (`doc.detail.back` → `/inbox`), `<h1 className="text-title">` `manual.title`, `<p className="text-body">` `manual.intro`, `<Card className="p-6"><ManualEntryForm /></Card>`. `export const metadata = { title: t('manual.title') }`.
