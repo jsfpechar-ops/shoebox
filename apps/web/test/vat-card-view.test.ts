@@ -16,6 +16,7 @@ function card(kind: CardKind, over: Partial<PeriodCard> = {}): PeriodCard {
     reasons: [],
     filedOn: null,
     proposal: null,
+    workbookFilingId: null,
     ...over,
   };
 }
@@ -56,6 +57,15 @@ describe('vatCardView', () => {
     const v = vatCardView([card('needs_accountant')]);
     expect(v.tone).toBe('warn');
     expect(kinds(v)).toEqual(['open', 'workbook']);
+  });
+  it('needs_accountant offers the spreadsheet download once prepared', () => {
+    const v = vatCardView([card('needs_accountant', { workbookFilingId: 'wb' })]);
+    expect(kinds(v)).toEqual(['open', 'download', 'workbook']);
+    expect(v.actions[1]).toEqual({
+      kind: 'download',
+      href: '/api/v1/filings/wb/download?format=xlsx',
+      label: 'xlsx',
+    });
   });
   it('filed', () => {
     const v = vatCardView([card('filed', { filedOn: '2026-10-05' })]);

@@ -2,11 +2,11 @@ import { pragueToday } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
 import { focusRing } from '@shoebox/ui';
 import Link from 'next/link';
+import { DownloadButton } from '../files/download-button';
 import { HelpTip } from '../overview/help-tip';
 import type { VatAction, VatCardView } from './card-view';
 import { MarkFiledForm, PrepareButton, WorkbookButton } from './vat-actions';
 
-const primaryLink = `${focusRing} inline-flex min-h-11 items-center rounded-control bg-primary px-4 text-body font-semibold text-primary-foreground`;
 const textLink = `${focusRing} inline-flex min-h-11 items-center rounded-control px-1 text-body text-foreground underline`;
 
 const TONE_CLASS: Record<VatCardView['tone'], string> = {
@@ -34,9 +34,16 @@ export function VatActionView({
       );
     case 'download':
       return (
-        <a href={action.href} download className={primaryLink}>
-          {t(action.label === 'zip' ? 'vat.action.download_zip' : 'vat.action.download_xml')}
-        </a>
+        <DownloadButton
+          href={action.href}
+          label={t(
+            action.label === 'zip'
+              ? 'vat.action.download_zip'
+              : action.label === 'xlsx'
+                ? 'vat.action.download_xlsx'
+                : 'vat.action.download_xml',
+          )}
+        />
       );
     case 'prepare':
       return canWrite ? (

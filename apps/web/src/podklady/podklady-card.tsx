@@ -1,6 +1,7 @@
 import { t } from '@shoebox/i18n';
 import { focusRing } from '@shoebox/ui';
 import Link from 'next/link';
+import { DownloadButton } from '../files/download-button';
 import { MarkFiledForm } from '../vat/vat-actions';
 import type { PodkladyCardModel } from './card-view';
 import { PrepareSummaryButton } from './podklady-actions';
@@ -37,14 +38,10 @@ export function PodkladyCard({
           {t('podklady.card.view')}
         </Link>
         {model.pdfHref !== null ? (
-          <a href={model.pdfHref} download className={textLink}>
-            {t('podklady.card.pdf')}
-          </a>
+          <DownloadButton href={model.pdfHref} label={t('podklady.card.pdf')} />
         ) : null}
         {model.xlsxHref !== null ? (
-          <a href={model.xlsxHref} download className={textLink}>
-            {t('podklady.card.xlsx')}
-          </a>
+          <DownloadButton href={model.xlsxHref} label={t('podklady.card.xlsx')} />
         ) : null}
         {canWrite && model.canPrepare ? <PrepareSummaryButton year={model.year} /> : null}
       </div>

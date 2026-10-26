@@ -57,8 +57,16 @@ describe('buildPeriodCards (M09 §4.9)', () => {
         reasons: [],
         filedOn: null,
         proposal: null,
+        workbookFilingId: null,
       },
     ]);
+  });
+  it('attaches the active workbook filing to its period cards', () => {
+    const cards = buildPeriodCards({
+      ...base,
+      filings: [F({}), F({ id: 'wb', type: 'VAT_WORKBOOK', state: 'generated' })],
+    });
+    expect(cards.map((c) => [c.filingId, c.workbookFilingId])).toEqual([['f', 'wb']]);
   });
   it('not_ready lists reasons; needs_accountant; unvalidated draft', () => {
     const nr = F({
