@@ -21,6 +21,7 @@ export * from './vat/amend';
 export * from './vat/classify-period';
 export * from './vat/dphdp3';
 export * from './vat/header';
+export * from './vat/imported';
 export * from './vat/kh';
 export * from './vat/ledger';
 export * from './vat/obligations';
