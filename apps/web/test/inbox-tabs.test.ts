@@ -24,6 +24,8 @@ describe('hrefs', () => {
   });
   it('builds the download link', () => {
     expect(registerDownloadHref({ year: null, paid: 'all', q: '' })).toBe('/api/register');
-    expect(registerDownloadHref({ year: 2026, paid: 'paid', q: '' })).toBe('/api/register?year=2026&paid=paid');
+    expect(registerDownloadHref({ year: 2026, paid: 'paid', q: '' })).toBe(
+      '/api/register?year=2026&paid=paid',
+    );
   });
 });

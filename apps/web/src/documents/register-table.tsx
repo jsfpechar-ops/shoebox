@@ -69,7 +69,11 @@ export function RegisterTable({ rows }: { rows: readonly RegisterRow[] }) {
                 ) : null}
               </TableCell>
               <TableCell>
-                {row.manual ? t('register.file.manual') : row.hasFile ? t('register.file.yes') : DASH}
+                {row.manual
+                  ? t('register.file.manual')
+                  : row.hasFile
+                    ? t('register.file.yes')
+                    : DASH}
               </TableCell>
             </TableRow>
           ))}
