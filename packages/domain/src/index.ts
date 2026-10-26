@@ -5,6 +5,7 @@ export * from './enums/index';
 export * from './fx';
 export * from './income-tax/answers';
 export * from './income-tax/assets';
+export * from './income-tax/flat-rate';
 export * from './income-tax/private-use';
 export * from './income-tax/readiness';
 export * from './income-tax/totals';
