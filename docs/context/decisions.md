@@ -43,3 +43,5 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-25 [i18n] UI in English for now to save tokens; `en.json` defines the keys and is the default locale; `cs.json` kept dormant (partial, falls back to English) until Josef asks for Czech again. Brief 0050. (owner)
 - 2026-10-25 [onboarding] `/vitejte`: IČO, ARES fills the rest, ≤ 3 chip steps (0060–0064). (owner)
 - 2026-10-25 [test-env] Supabase + one free Render service (web+worker, `deploy/render-test.yaml`); `tsx`; auto sign-in, no login (0055). (owner)
+- 2026-10-26 [deps] pdfjs-dist (Mozilla pdf.js, Apache-2.0) for PDF click-to-fill on the document page. XLSX and ZIP exports are written without a new dependency (`packages/exports`). (owner: "finish it all", lane D)
+- 2026-10-26 [ops] Nightly backup = free GitHub Action: pg_dump, encrypted (gpg AES256, passphrase only in a repo secret), one copy in a private Supabase Storage bucket (EU), one as a 30-day Action artifact (encrypted; second exception to EU-only). (owner: "finish it all", lane D)
