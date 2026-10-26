@@ -1,10 +1,11 @@
 import { pragueToday } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
-import { Card, formatLegalDate } from '@shoebox/ui';
+import { Card, formatLegalDate, formatMoney } from '@shoebox/ui';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { requireActiveRole } from '../../../src/auth/org-context';
 import { HelpTip } from '../../../src/overview/help-tip';
+import { loadBankView } from '../../../src/settings/bank-data';
 import { loadSettings } from '../../../src/settings/settings-data';
 import { createSupabaseServerClient } from '../../../src/supabase/server';
 
@@ -34,6 +35,7 @@ export default async function SettingsPage() {
           pragueToday({ now: () => Date.now() }),
         )
       : null;
+  const bank = auth.ok && supabase ? await loadBankView(supabase, auth.orgId) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,6 +79,58 @@ export default async function SettingsPage() {
               <p className="text-body">
                 {t('settings.tax.since', { date: formatLegalDate(view.tax.since) })}
               </p>
+            </Card>
+          )}
+
+          {bank === null ? null : (
+            <Card className="flex flex-col gap-4 p-6">
+              <h2 className="flex items-center gap-1 text-card-title">
+                {t('settings.bank.title')}
+                <HelpTip term={t('settings.bank.title')} text={t('settings.bank.help')} />
+              </h2>
+              {bank.accounts.length === 0 ? (
+                <p className="text-body">{t('settings.bank.none')}</p>
+              ) : (
+                <dl className="flex flex-col gap-4">
+                  {bank.accounts.map((account) => (
+                    <Row key={account.id} label={account.label}>
+                      {account.lastImport === null
+                        ? t('settings.bank.no_import')
+                        : t('settings.bank.last_import', {
+                            from:
+                              account.lastImport.from === null
+                                ? ''
+                                : formatLegalDate(account.lastImport.from),
+                            to:
+                              account.lastImport.to === null
+                                ? ''
+                                : formatLegalDate(account.lastImport.to),
+                            n: account.lastImport.added,
+                          })}
+                    </Row>
+                  ))}
+                </dl>
+              )}
+              {bank.problems.map((problem) => (
+                <p key={problem.id} role="status" className="text-body text-muted-foreground">
+                  {t(problem.message)}
+                </p>
+              ))}
+              {bank.payments.length === 0 ? null : (
+                <>
+                  <h3 className="text-body font-medium">{t('settings.bank.payments')}</h3>
+                  <ul className="flex flex-col gap-2">
+                    {bank.payments.map((p) => (
+                      <li key={p.id} className="flex flex-wrap justify-between gap-2 text-body">
+                        <span>
+                          {formatLegalDate(p.date)} · {p.who}
+                        </span>
+                        <span className="tabular-nums">{formatMoney(p.amount, p.currency, true)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </Card>
           )}
 

@@ -89,7 +89,7 @@ export function bankView(
     };
   });
 
-  const problems: BankView['problems'] = [];
+  const problems: { id: string; message: MessageKey; at: string }[] = [];
   for (const i of newestFirst) {
     const message = PROBLEM_KEYS[i.state];
     if (message === undefined) continue;
