@@ -2,6 +2,7 @@
 // so db.query.<table> knows each migration slice. Each slice adds its `export * from './<area>'`.
 export * from './document-details';
 export * from './documents';
+export * from './document-pages';
 export * from './enums';
 export * from './partners';
 export * from './platform';
