@@ -3,3 +3,43 @@
 
 /* Tailwind scans apps/web by default; the shared components live in packages/ui. */
 @source "../../../packages/ui/src";
+
+/* pdf.js text layer (0410): transparent words over the canvas, same geometry as pdf.js web/pdf_viewer.css. */
+.sysel-pdf-page {
+  position: relative;
+}
+.sysel-text-layer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  transform-origin: 0 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.sysel-text-layer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: pointer;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+.sysel-text-layer > :not(.markedContent),
+.sysel-text-layer .markedContent span:not(.markedContent) {
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.sysel-text-layer .markedContent {
+  display: contents;
+}
+.sysel-text-layer span:hover {
+  outline: 2px solid var(--color-ring);
+}
+.sysel-text-layer ::selection {
+  background: var(--color-muted);
+}

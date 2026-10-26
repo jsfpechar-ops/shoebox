@@ -2,9 +2,10 @@
 
 import { type MessageKey, t } from '@shoebox/i18n';
 import { Button, Input } from '@shoebox/ui';
-import { useActionState, useEffect, useId, useState } from 'react';
+import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import type { EditKey, FixKind } from './correction';
 import { type FixState, fixFieldAction } from './correction-actions';
+import { cleanPicked, isPickTarget, PICK_EVENT, setPickTarget } from './pick';
 
 const idle: FixState = { error: null, saved: false };
 
@@ -25,10 +26,25 @@ export function FixField({
   const id = useId();
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(fixFieldAction, idle);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (state.saved) setOpen(false);
   }, [state.saved]);
+
+  useEffect(() => {
+    if (!open) return;
+    setPickTarget(id);
+    function onPick(event: Event) {
+      if (!isPickTarget(id) || !inputRef.current) return;
+      const value = cleanPicked(kind, String((event as CustomEvent).detail ?? ''));
+      if (value === null) return;
+      inputRef.current.value = value;
+      inputRef.current.focus();
+    }
+    window.addEventListener(PICK_EVENT, onPick);
+    return () => window.removeEventListener(PICK_EVENT, onPick);
+  }, [open, id, kind]);
 
   if (!open) {
     return (
@@ -62,6 +78,8 @@ export function FixField({
           inputMode={kind === 'money' ? 'decimal' : undefined}
           defaultValue={current}
           autoFocus
+          ref={inputRef}
+          onFocus={() => setPickTarget(id)}
           aria-label={t(label)}
           aria-invalid={state.error ? true : undefined}
           aria-describedby={state.error ? errorId : undefined}
@@ -73,6 +91,7 @@ export function FixField({
           {t('doc.fix.cancel')}
         </Button>
       </form>
+      <p className="text-body text-muted-foreground">{t('doc.fix.pick_hint')}</p>
       {state.error ? (
         <p id={errorId} role="alert" className="text-body text-destructive">
           {t(state.error)}
