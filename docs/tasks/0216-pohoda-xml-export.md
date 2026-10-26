@@ -1,6 +1,6 @@
 # 0216: Pohoda XML export (dataPack 2.0), pure builder
 
-Status: todo
+Status: review
 Ticket: P2-EXPF-01 (part 1) | Depends on: lane C categorize (merged) | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0216-report.md
