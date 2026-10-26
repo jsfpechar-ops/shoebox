@@ -202,6 +202,10 @@ export default async function InboxPage({
           <p className="text-body">{t('inbox.empty.body')}</p>
         </Card>
       ) : (
+        <>
+        <Link href="/inbox/review" className="text-body underline">
+          {t('review.cta')}
+        </Link>
         <ul
           aria-label={t('inbox.list.label')}
           className="flex flex-col divide-y divide-border rounded-control border border-border bg-card"
@@ -229,6 +233,7 @@ export default async function InboxPage({
             </li>
           ))}
         </ul>
+        </>
       )}
       <AutoRefresh active={rows.some((row) => row.processing)} />
     </div>
