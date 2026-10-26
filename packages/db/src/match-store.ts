@@ -132,8 +132,12 @@ export interface PaymentLinkInsert {
   readonly matchMethod: string;
   readonly confidence: string;
   readonly matcherVersion: number;
+  /** Default 'system'. */
+  readonly createdBy?: 'system' | 'user';
+  /** Set with createdBy 'user': confirmed_by = this user, confirmed_at = now(). */
+  readonly confirmedBy?: string;
 }
-/** created_by 'system'; returns the new ids in input order. */
+/** created_by 'system' unless the row says 'user'; returns the new ids in input order. */
 export async function insertPaymentLinks(
   tx: TenantTx,
   orgId: string,
@@ -142,7 +146,7 @@ export async function insertPaymentLinks(
   const ids: string[] = [];
   for (const r of rows) {
     const [inserted] = await tx.execute<{ id: string }>(
-      sql`insert into payment_links (org_id, transaction_id, document_id, link_type, amount, amount_account_currency, match_method, confidence, matcher_version, created_by) values (${orgId}, ${r.transactionId}, ${r.documentId}, ${r.linkType}, ${r.amount}::numeric, ${r.amountAccountCurrency}::numeric, ${r.matchMethod}, ${r.confidence}::numeric, ${r.matcherVersion}, 'system') returning id`,
+      sql`insert into payment_links (org_id, transaction_id, document_id, link_type, amount, amount_account_currency, match_method, confidence, matcher_version, created_by, confirmed_by, confirmed_at) values (${orgId}, ${r.transactionId}, ${r.documentId}, ${r.linkType}, ${r.amount}::numeric, ${r.amountAccountCurrency}::numeric, ${r.matchMethod}, ${r.confidence}::numeric, ${r.matcherVersion}, ${r.createdBy ?? 'system'}, ${r.confirmedBy ?? null}, ${r.confirmedBy !== undefined ? sql`now()` : sql`null`}) returning id`,
     );
     if (!inserted) throw new Error('payment_links insert returned no row');
     ids.push(inserted.id);
@@ -237,6 +241,49 @@ export async function setTransactionMatch(
   }
   await tx.execute(
     sql`update transactions set ${sql.join(sets, sql`, `)} where org_id = ${orgId} and id = ${transactionId}`,
+  );
+}
+
+export interface SuggestionForDecision {
+  readonly id: string;
+  readonly transaction_id: string;
+  readonly kind: string;
+  readonly document_ids: string[];
+  readonly amounts: string[];
+  readonly state: string;
+  readonly score: string;
+}
+export async function loadSuggestionForDecision(
+  tx: TenantTx,
+  orgId: string,
+  id: string,
+): Promise<SuggestionForDecision | null> {
+  const [row] = await tx.execute<SuggestionForDecision & Record<string, unknown>>(
+    sql`select id, transaction_id, kind::text as kind, document_ids::text[] as document_ids, amounts::text[] as amounts, state::text as state, score::text as score from match_suggestions where org_id = ${orgId} and id = ${id}`,
+  );
+  return row ?? null;
+}
+/** Only an open suggestion can be decided; true when a row changed. */
+export async function decideSuggestion(
+  tx: TenantTx,
+  orgId: string,
+  id: string,
+  state: 'accepted' | 'rejected',
+  userId: string,
+): Promise<boolean> {
+  const rows = await tx.execute<{ id: string }>(
+    sql`update match_suggestions set state = ${state}, decided_by = ${userId}, decided_at = now() where org_id = ${orgId} and id = ${id} and state = 'open' returning id`,
+  );
+  return [...rows].length > 0;
+}
+/** 'matched' when the links cover abs(amount), 'partial' when some do, else untouched. */
+export async function refreshTransactionMatchState(
+  tx: TenantTx,
+  orgId: string,
+  transactionId: string,
+): Promise<void> {
+  await tx.execute(
+    sql`with s as (select t.id, coalesce((select sum(l.amount_account_currency) from payment_links l where l.org_id = t.org_id and l.transaction_id = t.id), 0) as linked, abs(t.amount) as total from transactions t where t.org_id = ${orgId} and t.id = ${transactionId}) update transactions t set match_state = case when s.linked >= s.total then 'matched' else 'partial' end, matched_at = case when s.linked >= s.total then now() else null end from s where t.org_id = ${orgId} and t.id = s.id and s.linked > 0`,
   );
 }
 

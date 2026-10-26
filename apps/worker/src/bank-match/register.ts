@@ -1,21 +1,32 @@
 import { authorityRulesOf } from '@shoebox/bank';
 import {
+  decideSuggestion,
   insertPaymentLinks,
   loadDocumentLinks,
   loadDocumentPaidView,
   loadMatchContextRows,
   loadOpenDocuments,
   loadOwnAccounts,
+  loadSuggestionForDecision,
   loadTransactionsForMatch,
+  refreshTransactionMatchState,
   setDocumentPaidAt,
   setTransactionMatch,
   syncOpenSuggestions,
 } from '@shoebox/db';
 import { createCzRules, pragueToday } from '@shoebox/domain';
-import { bankMatchDocumentJob, bankMatchTransactionsJob } from '@shoebox/pipeline';
+import {
+  bankMatchDecideJob,
+  bankMatchDocumentJob,
+  bankMatchTransactionsJob,
+} from '@shoebox/pipeline';
 import type { Logger } from '@shoebox/platform';
 import type { JobRegistry } from '../registry';
-import { createBankMatchDocumentHandler, createBankMatchTransactionsHandler } from './handler';
+import {
+  createBankMatchDecideHandler,
+  createBankMatchDocumentHandler,
+  createBankMatchTransactionsHandler,
+} from './handler';
 
 export function registerBankMatch(
   registry: Pick<JobRegistry, 'registerTenant'>,
@@ -48,6 +59,20 @@ export function registerBankMatch(
   };
   registry.registerTenant(bankMatchTransactionsJob, createBankMatchTransactionsHandler(deps));
   registry.registerTenant(bankMatchDocumentJob, createBankMatchDocumentHandler(deps));
+  registry.registerTenant(
+    bankMatchDecideJob,
+    createBankMatchDecideHandler({
+      store: {
+        loadSuggestion: loadSuggestionForDecision,
+        decide: decideSuggestion,
+        insertLinks: insertPaymentLinks,
+        refreshTransaction: refreshTransactionMatchState,
+        loadDocumentLinks,
+        loadDocumentPaidView,
+        setPaidAt: setDocumentPaidAt,
+      },
+    }),
+  );
   logger.info({}, 'bank.match registered');
   return true;
 }

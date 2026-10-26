@@ -276,6 +276,18 @@ export const bankMatchDocumentJob = defineTenantJob({
   entityId: (p) => `${p.documentId}:${p.trigger}`,
 });
 
+/** M07 US9: the owner confirmed or rejected one suggested pairing; the worker writes the result. */
+export const bankMatchDecideJob = defineTenantJob({
+  name: 'bank.match.decide',
+  payload: tenantPayload({
+    suggestionId: z.uuid(),
+    decision: z.enum(['accept', 'reject']),
+    userId: z.uuid(),
+  }),
+  version: 1,
+  entityId: (p) => p.suggestionId,
+});
+
 /** M02: read one document (Haiku 5.5), then run the checks. Enqueued by the upload API. */
 export const docExtractJob = defineTenantJob({
   name: 'doc.extract',

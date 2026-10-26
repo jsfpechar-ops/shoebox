@@ -22,16 +22,19 @@ import {
   windowKindOf,
 } from '@shoebox/bank';
 import type {
+  decideSuggestion,
   insertPaymentLinks,
   loadDocumentLinks,
   loadDocumentPaidView,
   loadMatchContextRows,
   loadOpenDocuments,
   loadOwnAccounts,
+  loadSuggestionForDecision,
   loadTransactionsForMatch,
   MatchDocRow,
   MatchTxRow,
   PaymentLinkInsert,
+  refreshTransactionMatchState,
   SuggestionInsert,
   setDocumentPaidAt,
   setTransactionMatch,
@@ -149,6 +152,51 @@ export function toDocView(row: MatchDocRow): DocView {
 
 const sumMoney = (items: readonly Money[], currency: string): Money =>
   items.reduce((acc, m) => acc.add(m), Money.zero(currency));
+
+export type PaidAtDeps = {
+  readonly onPaidAtChanged?: BankMatchDeps['onPaidAtChanged'] | undefined;
+  readonly store: Pick<BankMatchStore, 'loadDocumentLinks' | 'loadDocumentPaidView' | 'setPaidAt'>;
+};
+/** Recomputes paid_at for the given documents; returns the ids whose value changed. */
+export async function refreshPaidAt(
+  deps: PaidAtDeps,
+  tx: TenantTx,
+  orgId: string,
+  documentIds: readonly string[],
+): Promise<string[]> {
+  const cfg = MATCHER_CONFIG;
+  const store = deps.store;
+  const paidAtChanged: string[] = [];
+  for (const id of documentIds) {
+    const view = await store.loadDocumentPaidView(tx, orgId, id);
+    if (view === null) continue;
+    const rows = await store.loadDocumentLinks(tx, orgId, id);
+    const linkViews: LinkView[] = rows.map((r) => ({
+      linkType: r.link_type as LinkType,
+      amount: Money.parse(r.amount, view.currency),
+      bookedOn: parseLegalDate(r.booked_on),
+      createdAt: r.created_at,
+    }));
+    const paidAt = computePaidAt(
+      {
+        amountDue: Money.parse(view.amount_due ?? '0', view.currency),
+        currency: view.currency,
+        ...(view.issue_date !== null ? { issueDate: parseLegalDate(view.issue_date) } : {}),
+        ...(view.is_paid_per_document !== null
+          ? { isPaidPerDocument: view.is_paid_per_document }
+          : {}),
+      },
+      linkViews,
+      cfg,
+    );
+    const changed = await store.setPaidAt(tx, orgId, id, paidAt);
+    if (changed) {
+      paidAtChanged.push(id);
+      await deps.onPaidAtChanged?.(orgId, id, paidAt);
+    }
+  }
+  return paidAtChanged;
+}
 
 export async function runMatch(
   deps: BankMatchDeps,
@@ -411,35 +459,7 @@ export async function runMatch(
   }
 
   // 6. paid_at.
-  const paidAtChanged: string[] = [];
-  for (const id of linkedDocs) {
-    const view = await store.loadDocumentPaidView(tx, orgId, id);
-    if (view === null) continue;
-    const rows = await store.loadDocumentLinks(tx, orgId, id);
-    const linkViews: LinkView[] = rows.map((r) => ({
-      linkType: r.link_type as LinkType,
-      amount: Money.parse(r.amount, view.currency),
-      bookedOn: parseLegalDate(r.booked_on),
-      createdAt: r.created_at,
-    }));
-    const paidAt = computePaidAt(
-      {
-        amountDue: Money.parse(view.amount_due ?? '0', view.currency),
-        currency: view.currency,
-        ...(view.issue_date !== null ? { issueDate: parseLegalDate(view.issue_date) } : {}),
-        ...(view.is_paid_per_document !== null
-          ? { isPaidPerDocument: view.is_paid_per_document }
-          : {}),
-      },
-      linkViews,
-      cfg,
-    );
-    const changed = await store.setPaidAt(tx, orgId, id, paidAt);
-    if (changed) {
-      paidAtChanged.push(id);
-      await deps.onPaidAtChanged?.(orgId, id, paidAt);
-    }
-  }
+  const paidAtChanged = await refreshPaidAt(deps, tx, orgId, linkedDocs);
 
   // 7.
   return {
@@ -474,5 +494,62 @@ export function createBankMatchDocumentHandler(
 ): TenantHandler<{ orgId: string; documentId: string; trigger: string }> {
   return async (payload, ctx) => {
     await runMatch(deps, ctx.tx, payload.orgId, { documentId: payload.documentId });
+  };
+}
+
+export interface BankMatchDecideStore {
+  readonly loadSuggestion: typeof loadSuggestionForDecision;
+  readonly decide: typeof decideSuggestion;
+  readonly insertLinks: typeof insertPaymentLinks;
+  readonly refreshTransaction: typeof refreshTransactionMatchState;
+  readonly loadDocumentLinks: typeof loadDocumentLinks;
+  readonly loadDocumentPaidView: typeof loadDocumentPaidView;
+  readonly setPaidAt: typeof setDocumentPaidAt;
+}
+export interface BankMatchDecideDeps {
+  readonly store: BankMatchDecideStore;
+  readonly onPaidAtChanged?: BankMatchDeps['onPaidAtChanged'] | undefined;
+}
+
+/** M07 US9: apply the owner's tap on one suggestion. Only an open suggestion changes anything. */
+export function createBankMatchDecideHandler(deps: BankMatchDecideDeps): TenantHandler<{
+  orgId: string;
+  suggestionId: string;
+  decision: 'accept' | 'reject';
+  userId: string;
+}> {
+  return async (payload, ctx) => {
+    const { orgId, suggestionId, decision, userId } = payload;
+    const tx = ctx.tx;
+    const s = await deps.store.loadSuggestion(tx, orgId, suggestionId);
+    if (s === null || s.state !== 'open') return;
+    const changed = await deps.store.decide(
+      tx,
+      orgId,
+      suggestionId,
+      decision === 'accept' ? 'accepted' : 'rejected',
+      userId,
+    );
+    if (!changed || decision === 'reject') return;
+    // TODO(M07-transfer-accept): transfer and category suggestions only change state for now.
+    if (s.kind !== 'document' && s.kind !== 'multi_document') return;
+    // TODO(M07-fx): the matcher writes same-currency suggestions only, so both amounts are equal.
+    const rows: PaymentLinkInsert[] = s.document_ids.map((documentId, i) => ({
+      transactionId: s.transaction_id,
+      documentId,
+      linkType: 'payment',
+      amount: s.amounts[i] ?? '0',
+      amountAccountCurrency: s.amounts[i] ?? '0',
+      matchMethod: 'manual',
+      confidence: s.score,
+      matcherVersion: MATCHER_CONFIG.version,
+      createdBy: 'user',
+      confirmedBy: userId,
+    }));
+    await deps.store.insertLinks(tx, orgId, rows);
+    await deps.store.refreshTransaction(tx, orgId, s.transaction_id);
+    // TODO(M07-learning): confirmation should teach counterparty_aliases (M07 §5).
+    // TODO(M07-supersede-on-accept): other open suggestions of the transaction stay open.
+    await refreshPaidAt(deps, tx, orgId, s.document_ids);
   };
 }
