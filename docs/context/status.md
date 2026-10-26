@@ -1,8 +1,10 @@
 # Status
 
-Updated: 2026-10-25.
+Updated: 2026-10-26.
 
 ## Now
+
+- Lane C (sorting and money, briefs 0300–0314, plan in 0300): taxonomy, pro-rata split and VAT return rows done (#20); rule seeds, cascade, VAT treatment, ledgers next.
 
 - ISDOC read without AI (0075–0077, shoebox #3): ISDOC in a PDF, `.isdoc` or `.isdocx` skips Haiku; same checks; page says "No AI was used".
 - Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.

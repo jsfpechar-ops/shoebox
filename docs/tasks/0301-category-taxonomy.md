@@ -1,6 +1,6 @@
 # 0301: Category taxonomy in the domain (04 §3.1) and `deriveDeductibility`
 
-Status: todo
+Status: done
 Ticket: P1-CAT-01 (taxonomy part), P0-DB-11 (domain list the DB seed will mirror) | Depends on: none | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -1,6 +1,6 @@
 # 0309: `epo.dphdp3_row_map` and `epo.kh_routing` as typed rule data, `resolveDphdp3Rows`, `resolveKhSection`
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-02 (a) | Depends on: none | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

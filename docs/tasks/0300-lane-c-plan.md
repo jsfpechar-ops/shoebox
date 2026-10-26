@@ -1,6 +1,6 @@
 # 0300: lane C plan (sorting and money)
 
-Status: plan | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
+Status: in-progress | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Lane C owns briefs 0300–0399 and migrations 0040–0049. It never touches `apps/web` screens (lane D), intake/ingestion (lane A) or extraction/validation checks (lane B). All wave-1 code is pure (`packages/domain`) except two migrations.
 
 ## Wave 1 (briefs written, executor Haiku 5.5)
