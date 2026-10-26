@@ -44,12 +44,17 @@ export interface UploadDeps {
   putFile(path: string, bytes: Uint8Array, contentType: string): Promise<void>; // an existing object is not an error
   insertSourceFile(row: SourceFileInsert): Promise<{ id: string; created: boolean }>; // created false = same org+sha256 existed
   findDocumentBySource(sourceFileId: string): Promise<string | null>;
+  /** Restarts the read when the existing document could not be read; true when it did. */
+  restartIfFailed(orgId: string, documentId: string): Promise<boolean>;
   insertDocument(row: {
     orgId: string;
     sourceFileId: string;
+    uploadBatchId: string;
     receivedDate: string;
   }): Promise<string>;
-  enqueueRead(orgId: string, documentId: string): Promise<void>;
+  /** Queues the sorting job for the drop (doc.split). */
+  enqueueSort(orgId: string, batchId: string): Promise<void>;
+  newBatchId(): string;
   today(): string; // Prague date YYYY-MM-DD
 }
 
@@ -75,6 +80,8 @@ export async function uploadDocuments(
   files: readonly UploadFile[],
 ): Promise<UploadItem[]> {
   const items: UploadItem[] = [];
+  const batchId = deps.newBatchId();
+  let queued = 0;
   for (const file of files) {
     if (file.bytes.byteLength === 0) {
       items.push({ fileName: file.name, status: 'rejected', reason: 'empty' });
@@ -105,21 +112,30 @@ export async function uploadDocuments(
     if (!source.created) {
       const existing = await deps.findDocumentBySource(source.id);
       if (existing !== null) {
-        items.push({ fileName: file.name, status: 'duplicate', documentId: existing });
+        const restarted = await deps.restartIfFailed(ctx.orgId, existing);
+        items.push({
+          fileName: file.name,
+          status: restarted ? 'accepted' : 'duplicate',
+          documentId: existing,
+        });
         continue;
       }
     }
     const documentId = await deps.insertDocument({
       orgId: ctx.orgId,
       sourceFileId: source.id,
+      uploadBatchId: batchId,
       receivedDate: deps.today(),
     });
-    try {
-      await deps.enqueueRead(ctx.orgId, documentId);
-    } catch {
-      // The queue is down: the document stays `received` and is still accepted.
-    }
+    queued += 1;
     items.push({ fileName: file.name, status: 'accepted', documentId });
+  }
+  if (queued > 0) {
+    try {
+      await deps.enqueueSort(ctx.orgId, batchId);
+    } catch {
+      // The queue is down: the documents stay `received` and are still accepted.
+    }
   }
   return items;
 }

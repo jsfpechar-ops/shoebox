@@ -276,7 +276,7 @@ create index on documents (org_id, issue_date);
 create unique index documents_semantic_dedupe on documents (org_id, partner_id, document_number, total_gross)
   where deleted_at is null and status not in ('duplicate','supporting') and document_number is not null
     and not semantic_dedupe_exempt;
-create unique index documents_source_page on documents (source_file_id, page_from) where deleted_at is null;
+-- documents_source_page (source_file_id, page_from) dropped in 0062: page sorting makes several documents per file page; see document_pages.
 create unique index documents_import_row on documents (import_id, import_row) where import_id is not null;
 create index documents_retention on documents (retention_until) where finalized_at is not null;
 create index documents_register on documents (org_id, coalesce(duzp, issue_date, received_date) desc, id)   -- = M09 doc_date; immutable expression
@@ -327,6 +327,22 @@ create index on ingest_items (org_id, batch_id);
 create index on ingest_items (org_id, state) where state in ('pending_upload','uploaded','processing');
 create index on ingest_items (org_id, body_sha256) where body_sha256 is not null;
 create index on ingest_items (org_id, inbound_email_id);
+
+create table document_pages (                                       -- pages of a document across files (page sorting, 0060)
+  org_id uuid not null references organizations(id) on delete cascade,
+  document_id uuid not null references documents(id) on delete cascade,
+  position smallint not null check (position >= 1),
+  source_file_id uuid not null references source_files(id) on delete cascade,
+  file_page smallint not null check (file_page >= 1),               -- 1 for an image
+  region text not null default '',                                  -- '' whole page; else 'top','left',…
+  supplier_key text not null default '', doc_number text not null default '',  -- page look-over hints
+  label_n smallint, label_of smallint,                              -- printed "page n of m"
+  has_totals boolean not null default false, starts_document boolean not null default true,
+  primary key (document_id, position)
+);                                                                  -- no rows = the whole source file
+create index on document_pages (org_id, source_file_id);
+-- Fixes (0061, security invoker): separate_document_pages(document_id) → uuid[]; join_documents(document_id, other_id) → uuid[].
+-- documents.upload_batch_id uuid (0060): the files of one upload drop; indexed (org_id, upload_batch_id).
 
 create table document_links (
   org_id uuid not null references organizations(id) on delete cascade,

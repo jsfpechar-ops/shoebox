@@ -85,6 +85,16 @@ export const reviewQuestionFactory: TenantFactory = (ctx, overrides) => ({
   ...overrides,
 });
 
+/** `document_pages` has no `id`: its key is (document_id, position). */
+export const documentPageFactory: TenantFactory = (ctx, overrides) => ({
+  org_id: ctx.orgId,
+  document_id: ctx.ids.next(),
+  position: 1,
+  source_file_id: ctx.ids.next(),
+  file_page: 1,
+  ...overrides,
+});
+
 /** Table name → factory, in insert order; registered in `factories/index.ts`. */
 export const documentDetailFactories: ReadonlyArray<readonly [string, TenantFactory<Row>]> = [
   ['document_links', documentLinkFactory],
@@ -94,4 +104,5 @@ export const documentDetailFactories: ReadonlyArray<readonly [string, TenantFact
   ['extraction_runs', extractionRunFactory],
   ['validation_results', validationResultFactory],
   ['review_questions', reviewQuestionFactory],
+  ['document_pages', documentPageFactory],
 ];

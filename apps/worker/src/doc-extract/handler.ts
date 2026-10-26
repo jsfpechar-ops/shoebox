@@ -1,5 +1,6 @@
 import {
   loadDocumentForRead,
+  loadDocumentPages,
   type ReadingWrite,
   recordFailedRead,
   saveDocumentReading,
@@ -9,6 +10,7 @@ import { type Clock, createCzRules, parseLegalDate, pragueToday } from '@shoebox
 import {
   AnthropicHttpError,
   applyExactData,
+  buildPartsRequest,
   buildProtoRequest,
   type DocumentScan,
   ISDOC_READER_VERSION,
@@ -20,12 +22,14 @@ import {
   type ProtoExtraction,
   ProtoParseError,
   parseProtoExtraction,
+  type ReadPart,
   readIsdoc,
   scanDocument,
 } from '@shoebox/extraction';
 import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
 import { runProtoChecks } from '@shoebox/validation';
 import type { TenantHandler } from '../registry';
+import { partsOf } from './parts';
 import {
   documentPatchOf,
   fieldsOf,
@@ -37,6 +41,8 @@ import {
 
 export interface ReadingStore {
   readonly load: typeof loadDocumentForRead;
+  /** Page sorting (0505): the document's chosen pages; optional so test stores can leave it out. */
+  readonly loadPages?: typeof loadDocumentPages;
   readonly setStatus: typeof setDocumentStatus;
   readonly save: typeof saveDocumentReading;
   readonly fail: typeof recordFailedRead;
@@ -44,6 +50,7 @@ export interface ReadingStore {
 
 export const dbReadingStore: ReadingStore = {
   load: loadDocumentForRead,
+  loadPages: loadDocumentPages,
   setStatus: setDocumentStatus,
   save: saveDocumentReading,
   fail: recordFailedRead,
@@ -137,9 +144,19 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       return onError(error, errorCode(error, 'storage'));
     }
 
-    // Exact data in the file itself (QR codes, PDF text layer): read for PDFs and images only.
+    // Page sorting (0505): a document made of chosen pages is read from those pages only.
+    let parts: ReadPart[] | null = null;
+    try {
+      const pages = store.loadPages ? await store.loadPages(ctx.tx, doc.id) : [];
+      if (pages.length > 0) parts = await partsOf(pages, deps.blobs);
+    } catch (error) {
+      return onError(error, errorCode(error, 'storage'));
+    }
+
+    // Exact data in the file itself (QR codes, PDF text layer): read for PDFs and images only, and
+    // not for a document of chosen pages (the file may hold another invoice's QR code).
     let scan: DocumentScan = NO_SCAN;
-    if (modelType !== null) {
+    if (modelType !== null && parts === null) {
       try {
         scan = await (deps.scan ?? scanDocument)(bytes, mediaType);
       } catch {
@@ -194,7 +211,8 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
 
     let write: ReadingWrite;
     // Step 1: exact data first. An ISDOC (plain, .isdocx or embedded in the PDF) is read without AI.
-    const isdoc = mediaType === 'application/pdf' || isdocOnly ? isdocOf(bytes) : null;
+    const isdoc =
+      parts === null && (mediaType === 'application/pdf' || isdocOnly) ? isdocOf(bytes) : null;
     if (isdoc !== null) {
       try {
         write = toWrite(isdoc.extraction, 'isdoc', {
@@ -220,7 +238,9 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       let response: LlmResponse;
       try {
         response = await deps.llm.complete(
-          buildProtoRequest({ model: deps.model, file: { bytes, mediaType: modelType } }),
+          parts === null
+            ? buildProtoRequest({ model: deps.model, file: { bytes, mediaType: modelType } })
+            : buildPartsRequest({ model: deps.model, parts }),
         );
       } catch (error) {
         return onError(error, errorCode(error, 'error'));

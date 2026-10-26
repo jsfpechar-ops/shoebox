@@ -41,6 +41,7 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-25 [i18n] UI in English for now to save tokens; `en.json` defines the keys and is the default locale; `cs.json` kept dormant (partial, falls back to English) until Josef asks for Czech again. Brief 0050. (owner)
 - 2026-10-25 [onboarding] `/vitejte`: IČO, ARES fills the rest, ≤ 3 chip steps (0060–0064). (owner)
 - 2026-10-25 [test-env] Supabase + one free Render service (web+worker, `deploy/render-test.yaml`); `tsx`; auto sign-in, no login (0055). (owner)
+- 2026-10-26 [ingest] Page sorting (stack.sort + document_pages, pdf-lib) replaces doc.split; briefs 0500-0509. (owner)
 - 2026-10-26 [deps/ops] pdfjs-dist for PDF click-to-fill; XLSX/ZIP without new deps; nightly gpg-encrypted pg_dump via GitHub Action to a Supabase EU bucket + 30-day artifact. (owner "finish it all", lane D)
 - 2026-10-26 [scope] Phase 1: home-screen manifest + audit log of manual fixes. No SEPA file, month lock or PSD2 aggregator; Fio stays Later. (owner)
 - 2026-10-26 [deps] pdfjs-dist, zxing-wasm (03 ADR) for PDF text + QR. (autonomous run)

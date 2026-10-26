@@ -56,8 +56,13 @@ export interface JobRegistry {
   enqueue<P extends { orgId: string }>(
     def: TenantJobDefinition<P>,
     payload: P,
+    options?: { readonly startAfterSeconds?: number },
   ): Promise<string | null>;
-  enqueue<P extends object>(def: SystemJobDefinition<P>, payload: P): Promise<string | null>;
+  enqueue<P extends object>(
+    def: SystemJobDefinition<P>,
+    payload: P,
+    options?: { readonly startAfterSeconds?: number },
+  ): Promise<string | null>;
   /** Creates the queues and dead-letter queues, starts the workers and the crons. */
   start(): Promise<void>;
   /** The registered job names, in registration order. */
@@ -169,12 +174,23 @@ export function createJobRegistry(options: RegistryOptions): JobRegistry {
       });
     },
 
-    async enqueue(def: AnyDefinition, payload: object): Promise<string | null> {
+    async enqueue(
+      def: AnyDefinition,
+      payload: object,
+      options?: { readonly startAfterSeconds?: number },
+    ): Promise<string | null> {
       const data = def.payload.parse(payload);
       await ensureQueue(def);
       if (def.scope === 'tenant') {
         const key = jobKey(def, data as { orgId: string });
-        return boss.send(def.name, data, { id: jobIdFromKey(key), singletonKey: key });
+        const base = { id: jobIdFromKey(key), singletonKey: key };
+        return boss.send(
+          def.name,
+          data,
+          options?.startAfterSeconds === undefined
+            ? base
+            : { ...base, startAfter: options.startAfterSeconds },
+        );
       }
       return boss.send(def.name, data);
     },
