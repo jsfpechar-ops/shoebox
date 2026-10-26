@@ -66,6 +66,11 @@ export const SELF_ASSESSED_POINT_TREATMENTS: readonly VatTreatment[] = [
 
 type Rules = RuleResolver<typeof RULE_SCHEMAS>;
 
+type PrecedenceClass = 'self_assessed' | 'domestic' | 'issued';
+
+/** Self-assessed beats domestic, domestic beats issued. */
+const PRECEDENCE: readonly PrecedenceClass[] = ['self_assessed', 'domestic', 'issued'];
+
 function parts(date: LegalDate): readonly [number, number, number] {
   const [y = '', m = '', dd = ''] = date.split('-');
   return [Number.parseInt(y, 10), Number.parseInt(m, 10), Number.parseInt(dd, 10)];
@@ -168,7 +173,7 @@ export function computeVatPointDate(
   return null;
 }
 
-/** M04 §4.8 wrapper: kernel plus the payer override, 62-day guard, prepayment and class precedence. */
+/** M04 §4.8 wrapper: kernel plus the payer override, service-span guard, prepayment and class precedence. */
 export function deriveVatPointDate(
   doc: VatPointDocument,
   treatments: readonly VatTreatment[],
@@ -218,14 +223,14 @@ export function deriveVatPointDate(
     return computeVatPointDate(doc, treatment, profile);
   };
 
-  const classOf = (treatment: VatTreatment): number => {
-    if (isSelfAssessed(treatment)) return 0;
-    if (treatment === 'rcv_domestic_vat') return 1;
-    if (treatment.startsWith('iss_')) return 2;
-    return -1;
+  const classOf = (treatment: VatTreatment): PrecedenceClass | null => {
+    if (isSelfAssessed(treatment)) return 'self_assessed';
+    if (treatment === 'rcv_domestic_vat') return 'domestic';
+    if (treatment.startsWith('iss_')) return 'issued';
+    return null;
   };
 
-  for (const wanted of [0, 1, 2]) {
+  for (const wanted of PRECEDENCE) {
     const results: VatPointResult[] = [];
     for (const treatment of treatments) {
       if (classOf(treatment) !== wanted) continue;

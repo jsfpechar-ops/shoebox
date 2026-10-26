@@ -9,3 +9,4 @@ export * from './overview/meters';
 export * from './overview/totals';
 export * from './rules/index';
 export * from './taxonomy/categories';
+export * from './vat/point-date';
