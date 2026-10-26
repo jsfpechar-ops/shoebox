@@ -1,6 +1,6 @@
 # 0314: Drizzle mirror of migration 0041 (`taxLedgerEntries`, `vatLedgerEntries`)
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-01 / P1-LEDG-02 (typed queries) | Depends on: 0313 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 15 tool calls, 35k tokens
 
