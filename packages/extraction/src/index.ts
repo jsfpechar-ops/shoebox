@@ -7,3 +7,4 @@ export * from './llm/client';
 export * from './llm/gemini';
 export * from './llm/provider';
 export * from './proto/schema';
+export * from './qr/payload';

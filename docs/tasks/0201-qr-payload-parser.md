@@ -1,6 +1,6 @@
 # 0201: QR payment and invoice payload parser
 
-Status: todo
+Status: review
 Ticket: P1-EXT-02 (QR part) | Depends on: none | Base commit: 496b1e9 | Branch: task/0201-qr-parser | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0201-report.md
