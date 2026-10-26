@@ -4,6 +4,7 @@ Updated: 2026-10-25.
 
 ## Now
 
+- Lane B reading and checks (0201–0211, #14, #16): QR + PDF text before AI, IČO/DIČ/IBAN checks, blocking math gate, supplier memory with IČO repair, CRPDPH/VIES warnings, ISDOC export (XSD-valid), spreadsheet import core. Next: Pohoda XML after lane C categories; import preview job.
 - ISDOC read without AI (0075–0077, shoebox #3): ISDOC in a PDF, `.isdoc` or `.isdocx` skips Haiku; same checks; page says "No AI was used".
 - Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.
 - Přehled screen done (0070–0074, #98–#106): totals, limit meters, deadlines (holidays + generators seeded in rules), loader, English UI; Czech copy dormant in `packages/i18n/later/`. Not yet seen with real data (e2e covers the empty state only).
