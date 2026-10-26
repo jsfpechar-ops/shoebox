@@ -1,4 +1,5 @@
 export const packageName = '@shoebox/bank' as const;
+export * from './dedupe';
 export * from './detect';
 export * from './normalize';
 export * from './parse';
