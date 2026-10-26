@@ -42,6 +42,7 @@ describe('detailOf', () => {
       label: 'proto.field.total_gross',
       value: '130.00',
       kind: 'money',
+      trust: 'checked',
     });
     expect(detail?.vatLines).toEqual([{ rate: '21.00', base: '100.00', vat: '30.00' }]);
     expect(detail?.file).toEqual({
@@ -98,6 +99,25 @@ describe('detailOf', () => {
     expect(detailOf(doc, [], [], [{ method: 'isdoc' }])?.readBy).toBe('isdoc');
     expect(detailOf(doc, [], [], [{ method: 'llm' }])?.readBy).toBe('model');
     expect(detailOf(doc, [], [])?.readBy).toBeNull();
+  });
+
+  it('marks each value by its source and by the open checks', () => {
+    const detail = detailOf(
+      doc,
+      [],
+      [{ rule_id: 'PROTO_ICO_CHECKSUM', severity: 'warning', params: { messageKey: 'proto.check.ico_checksum.fail' } }],
+      [],
+      [
+        { field_key: 'totals.gross', source: 'isdoc' },
+        { field_key: 'supplier.ico', source: 'isdoc' },
+        { field_key: 'document.number', source: 'llm' },
+      ],
+    );
+    expect(detail?.fields.find((f) => f.label === 'proto.field.total_gross')?.trust).toBe('exact');
+    expect(detail?.fields.find((f) => f.label === 'proto.field.supplier_ico')?.trust).toBe('check');
+    expect(detail?.fields.find((f) => f.label === 'proto.field.document_number')?.trust).toBe(
+      'checked',
+    );
   });
 
   it('returns null for a malformed document', () => {
