@@ -225,6 +225,14 @@ export function jobIdFromKey(key: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+/** M01 §4.1.2: turn one stored inbound e-mail into documents. Enqueued by the inbound-email webhook. */
+export const emailReceivedJob = defineTenantJob({
+  name: 'email.received',
+  payload: tenantPayload({ inboundEmailId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.inboundEmailId,
+});
+
 /** M02: read one document (Haiku 5.5), then run the checks. Enqueued by the upload API. */
 export const docExtractJob = defineTenantJob({
   name: 'doc.extract',
