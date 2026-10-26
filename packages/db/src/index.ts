@@ -10,7 +10,6 @@ export * from './imports';
 export * from './inbound-email';
 export * from './ledger-rebuild';
 export * from './match-store';
-export { MIGRATIONS_FOLDER, MIGRATIONS_SCHEMA, runMigrations } from './migrate';
 export * from './podklady';
 export { type RateLimitDb, rateLimitHit } from './rate-limit';
 export * from './rls-catalog';

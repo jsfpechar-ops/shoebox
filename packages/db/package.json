@@ -13,6 +13,10 @@
       "types": "./src/health.ts",
       "default": "./src/health.ts"
     },
+    "./migrate": {
+      "types": "./src/migrate.ts",
+      "default": "./src/migrate.ts"
+    },
     "./inbound-email": {
       "types": "./src/inbound-email.ts",
       "default": "./src/inbound-email.ts"
