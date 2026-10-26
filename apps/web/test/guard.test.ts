@@ -14,6 +14,7 @@ describe('isPublicPath (deny by default, M12 §4.5 V1.4)', () => {
       '/api/health',
       '/manifest.webmanifest',
       '/icon.svg',
+      '/api/inbound-email',
     ]);
     for (const path of ['/prihlaseni', '/auth/callback', '/api/health', '/auth/callback/']) {
       expect(isPublicPath(path), path).toBe(true);

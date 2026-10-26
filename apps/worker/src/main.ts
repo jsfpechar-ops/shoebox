@@ -2,6 +2,7 @@
 import { logger } from '@shoebox/platform';
 import { registerDocExtract } from './doc-extract/register';
 import { registerDocSplit } from './doc-split/register';
+import { registerEmailReceived } from './email-received/register';
 import { registerTrashPurge } from './retention/trash-purge';
 import { loadWorkerConfig, startWorker } from './worker';
 
@@ -9,6 +10,7 @@ const worker = await startWorker(loadWorkerConfig(process.env), {
   logger,
   register: (registry, db) => {
     registerDocExtract(registry, process.env, logger);
+    registerEmailReceived(registry, process.env, logger);
     registerDocSplit(registry, process.env, logger);
     registerTrashPurge(registry, db, process.env, logger);
   },
