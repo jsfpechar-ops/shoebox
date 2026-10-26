@@ -28,7 +28,10 @@ function fakeFetch(status: number) {
   return { fn: fn as typeof fetch, calls };
 }
 
-const env = { INBOUND_URL: 'https://app.example.test/api/inbound-email', INBOUND_WEBHOOK_SECRET: SECRET };
+const env = {
+  INBOUND_URL: 'https://app.example.test/api/inbound-email',
+  INBOUND_WEBHOOK_SECRET: SECRET,
+};
 
 describe('signBody', () => {
   it('matches the app format t=<unix>,v1=<hmac of "t.text">', async () => {

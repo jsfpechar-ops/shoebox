@@ -50,11 +50,7 @@ export async function forwardEmail(
   }
   const body = await new Response(message.raw).arrayBuffer();
   const sha = toHex(await crypto.subtle.digest('SHA-256', body));
-  const signature = await signBody(
-    env.INBOUND_WEBHOOK_SECRET,
-    `${message.to}\n${sha}`,
-    nowSeconds,
-  );
+  const signature = await signBody(env.INBOUND_WEBHOOK_SECRET, `${message.to}\n${sha}`, nowSeconds);
   const response = await doFetch(env.INBOUND_URL, {
     method: 'POST',
     headers: {
