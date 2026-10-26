@@ -151,6 +151,7 @@ export function createReserveNightlyHandler(
       await deps.enqueue<PodkladyReserveRefreshPayload>(podkladyReserveRefreshJob, {
         orgId,
         reason: 'nightly',
+        nonce: Date.now(),
       });
     }
     deps.logger.info(
