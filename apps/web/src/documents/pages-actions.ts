@@ -58,11 +58,37 @@ export async function answerSameInvoiceAction(form: FormData): Promise<void> {
   await supabase
     .from('review_questions')
     .update({
-      answer: { same: false },
+      answer: { value: 'no' },
       answered_by: auth.userId,
       answered_at: new Date().toISOString(),
     })
     .eq('id', question)
     .eq('org_id', auth.orgId);
   revalidatePath(`/inbox/${id}`);
+}
+
+/**
+ * Called by the review deck after it stored the answer of a `same_invoice` question:
+ * "yes" joins this document after the one before it and reads it again; "no" needs nothing.
+ */
+export async function reactToSameInvoice(orgId: string, questionId: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { data: q, error } = await supabase
+    .from('review_questions')
+    .select('document_id, payload, answer')
+    .eq('id', questionId)
+    .eq('org_id', orgId)
+    .eq('kind', 'same_invoice')
+    .maybeSingle();
+  if (error || !q) return;
+  const answer = q.answer as { value?: unknown } | null;
+  const other = (q.payload as { other_document_id?: unknown } | null)?.other_document_id;
+  if (answer?.value !== 'yes' || typeof other !== 'string' || typeof q.document_id !== 'string') return;
+  const { data, error: joinError } = await supabase.rpc('join_documents', {
+    p_document_id: other,
+    p_other_id: q.document_id,
+  });
+  if (joinError || !Array.isArray(data)) return;
+  await readAgain(orgId, data as string[]);
+  revalidatePath('/inbox');
 }
