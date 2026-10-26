@@ -1,6 +1,6 @@
 import type { LegalDate } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
-import { Badge, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
+import { Badge, Button, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
 import Link from 'next/link';
 import { requireActiveRole } from '../../../../src/auth/org-context';
 import { AutoRefresh } from '../../../../src/documents/auto-refresh';
@@ -8,6 +8,7 @@ import { EDITABLE, editKeyOf } from '../../../../src/documents/correction';
 import { loadDocumentDetail } from '../../../../src/documents/detail-data';
 import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
+import { readAgainAction } from '../../../../src/documents/read-again-actions';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,6 +57,16 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           <p className="text-body">{t('doc.detail.reading')}</p>
           <AutoRefresh active />
         </>
+      ) : detail.status === 'failed' ? (
+        <Card className="flex flex-col gap-4 p-6">
+          <p className="text-body">{t('doc.detail.failed')}</p>
+          {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (
+            <form action={readAgainAction}>
+              <input type="hidden" name="id" value={detail.id} />
+              <Button type="submit">{t('doc.read_again.button')}</Button>
+            </form>
+          ) : null}
+        </Card>
       ) : (
         <>
           <Card className="flex flex-col gap-4 p-6">
