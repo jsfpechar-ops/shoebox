@@ -3,6 +3,7 @@ export * from './doc-split';
 export * from './document-categorize';
 export * from './document-pages';
 export * from './document-reading';
+export * from './filings';
 export { createDbPing, type DbPing } from './health';
 export * from './inbound-email';
 export * from './ledger-rebuild';
