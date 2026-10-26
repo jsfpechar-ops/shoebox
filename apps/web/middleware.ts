@@ -104,6 +104,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  // Pages and API routes. Not the immutable build assets (they are content-hashed and must stay cacheable).
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Pages and API routes. Not the immutable build assets (content-hashed, cacheable) nor the manifest and icon: browsers fetch the manifest without cookies, so it only ever got a 303 to the login page.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest).*)'],
 };
