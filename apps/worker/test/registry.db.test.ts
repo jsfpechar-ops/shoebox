@@ -1,4 +1,5 @@
-import { createTenantDb, organizations, runMigrations, type TenantDb } from '@shoebox/db';
+import { createTenantDb, organizations, type TenantDb } from '@shoebox/db';
+import { runMigrations } from '@shoebox/db/migrate';
 import { defineTenantJob, documentStagePayload } from '@shoebox/pipeline';
 import { PgBoss } from 'pg-boss';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

@@ -5,7 +5,7 @@ import { t } from '@shoebox/i18n';
 import { Button, LegalDateText, MoneyText } from '@shoebox/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type KeyboardEvent, useEffect, useId, useRef } from 'react';
+import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { answerQuestionAction } from './review-actions';
 import { keyAction, optionText, type ReviewCard as ReviewCardData } from './review-deck';
 
@@ -13,6 +13,13 @@ export interface ReviewCardDocument {
   title: string | null;
   total: { value: string; currency: string } | null;
   issueDate: LegalDate | null;
+}
+
+/** The request text of a `mailto:` URL (its decoded body), '' when it has none. */
+function mailtoBody(mailto: string): string {
+  const query = mailto.split('?')[1] ?? '';
+  const raw = new URLSearchParams(query.replace(/\+/g, '%2B')).get('body');
+  return raw ?? '';
 }
 
 interface ReviewCardProps {
@@ -29,6 +36,7 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
   const sectionRef = useRef<HTMLElement>(null);
   const formRefs = useRef<(HTMLFormElement | null)[]>([]);
   const headingId = useId();
+  const [copied, setCopied] = useState(false);
   const suggestedOption =
     card.type === 'question'
       ? card.payload.options.find((option) => option.value === card.payload.suggested)
@@ -37,6 +45,21 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
   useEffect(() => {
     sectionRef.current?.focus();
   }, []);
+
+  const mailto =
+    card.type === 'question' && card.kind === 'missing_document'
+      ? card.payload.params.mailto
+      : undefined;
+  const copyRequest = async () => {
+    if (typeof mailto !== 'string') return;
+    try {
+      await navigator.clipboard.writeText(mailtoBody(mailto));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
@@ -88,7 +111,15 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
       {card.type === 'question' ? (
         <>
           <h2 id={headingId} className="text-title">
-            {t(card.payload.question, card.payload.params)}
+            {t(
+              card.payload.question,
+              card.kind === 'missing_document' && card.payload.params.counterparty === ''
+                ? {
+                    ...card.payload.params,
+                    counterparty: t('review.missing_document.unknown_counterparty'),
+                  }
+                : card.payload.params,
+            )}
           </h2>
           <div className="flex flex-col gap-3">
             {card.payload.options.map((option, index) => {
@@ -114,6 +145,16 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
               );
             })}
           </div>
+          {typeof mailto === 'string' && (
+            <div className="flex flex-wrap items-center gap-3">
+              <a href={mailto} className="text-body underline">
+                {t('review.missing_document.ask_supplier')}
+              </a>
+              <Button variant="secondary" onClick={() => void copyRequest()}>
+                {copied ? t('review.missing_document.copied') : t('review.missing_document.copy')}
+              </Button>
+            </div>
+          )}
           {suggestedOption !== undefined && (
             <p className="text-body">
               {t('review.suggested', { label: optionText(suggestedOption) })}

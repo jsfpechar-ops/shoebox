@@ -43,6 +43,6 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-26 [deps/ops] pdfjs-dist (PDF click-to-fill); XLSX/ZIP without deps; gpg-encrypted backups by GitHub Action: nightly pg_dump to a Supabase EU bucket + 30-day artifact, weekly org-files as artifact only. (owner "finish it all", lane D)
 - 2026-10-26 [scope] Phase 1: home-screen manifest + audit log of manual fixes. No SEPA file, month lock or PSD2 aggregator; Fio stays Later. (owner)
 - 2026-10-26 [deps] zxing-wasm (QR), pdfjs-dist (PDF text), exceljs (import, 22 D-12). (autonomous)
-- 2026-10-26 [deps] postal-mime 4.0.5 (worker e-mail intake). (orch.)
-- 2026-10-26 [bank] Statements via Inbox upload; unknown account auto-created; PII allowlist covers apps/*/test. (orch.)
+- 2026-10-26 [deps/bank] postal-mime 4.0.5; statements via Inbox upload, unknown account auto-created. (orch.)
+- 2026-10-26 [bank] Matcher: no deps; overpay = partial; FÚ 705/2866/721 verified.
 - 2026-10-26 [auth] No download re-confirm (no TOTP); P3-VAT-12 aal2 dropped. (coord.)

@@ -50,6 +50,8 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Typecheck
         run: pnpm typecheck
+      - name: Web production build (next build)
+        run: pnpm --filter @shoebox/web build
 
   unit:
     needs: setup

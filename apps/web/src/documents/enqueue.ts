@@ -1,5 +1,7 @@
 import {
   bankImportStatementJob,
+  bankMatchDecideJob,
+  bankRadarRefreshJob,
   type CategorizeTrigger,
   docCategorizeJob,
   docExtractJob,
@@ -121,6 +123,34 @@ export async function enqueueBankImport(orgId: string, sourceFileId: string): Pr
   const payload = bankImportStatementJob.payload.parse({ orgId, sourceFileId });
   const key = jobKey(bankImportStatementJob, payload);
   await (await boss()).send(bankImportStatementJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `bank.match.decide`: the owner's tap on a suggested payment. One job per suggestion. */
+export async function enqueueMatchDecision(
+  orgId: string,
+  suggestionId: string,
+  decision: 'accept' | 'reject',
+  userId: string,
+): Promise<void> {
+  const payload = bankMatchDecideJob.payload.parse({ orgId, suggestionId, decision, userId });
+  const key = jobKey(bankMatchDecideJob, payload);
+  await (await boss()).send(bankMatchDecideJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `bank.radar.refresh` for the org (one job per org and minute). */
+export async function enqueueRadarRefresh(orgId: string): Promise<void> {
+  const payload = bankRadarRefreshJob.payload.parse({
+    orgId,
+    at: new Date().toISOString().slice(0, 16).replace(':', '-'),
+  });
+  const key = jobKey(bankRadarRefreshJob, payload);
+  await (await boss()).send(bankRadarRefreshJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });

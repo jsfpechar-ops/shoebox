@@ -31,6 +31,7 @@ export interface BankImportDeps {
     insertImport: typeof insertStatementImport;
     insertTransactions: typeof insertStatementTransactions;
   };
+  readonly enqueueMatch?: (orgId: string, statementImportId: string) => Promise<unknown>;
 }
 
 const FIO_BANK_CODE = '2010';
@@ -197,6 +198,7 @@ export function createBankImportHandler(
 
     const seqs = dedupeSeqs(statement.txs);
     const rows = statement.txs.map((t, i) => toTxRow(t, account, seqs[i] ?? 0));
-    await deps.store.insertTransactions(tx, orgId, account.id, importId, rows);
+    const result = await deps.store.insertTransactions(tx, orgId, account.id, importId, rows);
+    if (result.inserted > 0) await deps.enqueueMatch?.(orgId, importId);
   };
 }

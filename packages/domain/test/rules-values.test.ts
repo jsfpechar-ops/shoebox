@@ -20,6 +20,7 @@ const rules = createCzRules();
 /** The keys P0-DOM-05 seeds; the other law keys are seeded by the module ticket that reads them. */
 const SEEDED_KEYS: readonly RuleKey[] = [
   'asset.capitalization_threshold',
+  'bank.authority_accounts',
   'calendar.cz_public_holidays',
   'cash.payment_limit',
   'deadlines.generators',
@@ -94,8 +95,8 @@ describe('seed files (06 §2)', () => {
   it('seeds exactly the P0-DOM-05 keys in both years', () => {
     expect([...new Set(RULES_CZ_2025.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
     expect([...new Set(RULES_CZ_2026.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
-    expect(RULES_CZ_2025).toHaveLength(31);
-    expect(RULES_CZ_2026).toHaveLength(32);
+    expect(RULES_CZ_2025).toHaveLength(32);
+    expect(RULES_CZ_2026).toHaveLength(33);
   });
 
   it('2025 segments span the calendar year; 2026 segments start on 2026-01-01', () => {
@@ -104,7 +105,7 @@ describe('seed files (06 §2)', () => {
       expect(entry.valid_to).toBe('2025-12-31');
     }
     expect(RULES_CZ_2026.every((entry) => entry.valid_from >= '2026-01-01')).toBe(true);
-    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(31);
+    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(32);
   });
 
   it('every seeded key resolves on every day of 2025 and 2026 and not before', () => {
