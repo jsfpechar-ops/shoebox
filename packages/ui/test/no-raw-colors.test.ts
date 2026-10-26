@@ -6,7 +6,12 @@ import { describe, expect, it } from 'vitest';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const scanned = ['apps/web', 'packages/ui'];
-const allowed = new Set(['packages/ui/src/tokens.css']);
+// The web app manifest and its icon cannot read CSS tokens (07 tokens: background, foreground, focus).
+const allowed = new Set([
+  'packages/ui/src/tokens.css',
+  'apps/web/app/manifest.ts',
+  'apps/web/app/icon.svg',
+]);
 const skipDirs = new Set(['node_modules', 'dist', '.next', '.turbo', 'coverage']);
 const extensions = /\.(ts|tsx|js|jsx|mjs|cjs|css|html|svg|mdx)$/;
 

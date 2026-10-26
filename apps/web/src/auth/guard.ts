@@ -1,7 +1,13 @@
 import { DEFAULT_AFTER_LOGIN, isIdle, LOGIN_PATH, loginUrl } from './session';
 
-/** Reachable without a session: the login page, the magic-link callback, the health probe. Everything else needs a user. */
-export const PUBLIC_PATHS = [LOGIN_PATH, '/auth/callback', '/api/health'] as const;
+/** Reachable without a session: the login page, the magic-link callback, the health probe, the web app manifest and its icon. Everything else needs a user. */
+export const PUBLIC_PATHS = [
+  LOGIN_PATH,
+  '/auth/callback',
+  '/api/health',
+  '/manifest.webmanifest',
+  '/icon.svg',
+] as const;
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
