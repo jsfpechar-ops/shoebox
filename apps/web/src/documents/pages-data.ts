@@ -72,3 +72,47 @@ export async function loadPagesView(
 
   return { pages, question: openQuestion };
 }
+
+export interface JoinCandidate {
+  readonly id: string;
+  readonly label: string; // supplier name, else the file name, else the received date
+}
+
+interface CandidateRow {
+  readonly id: string;
+  readonly partner_snapshot: { readonly name?: unknown } | null;
+  readonly received_date: string | null;
+  readonly source_files: { readonly original_filename?: unknown } | null;
+}
+
+/**
+ * Up to 20 other documents of the org to join into this one: not deleted, not finalized, not this
+ * one, newest first (documents: id, partner_snapshot, received_date, created_at,
+ * source_files(original_filename)). A query error → [].
+ */
+export async function loadJoinCandidates(
+  supabase: SupabaseLike,
+  orgId: string,
+  documentId: string,
+): Promise<JoinCandidate[]> {
+  const result = await supabase
+    .from('documents')
+    .select('id, partner_snapshot, received_date, source_files(original_filename)')
+    .eq('org_id', orgId)
+    .is('deleted_at', null)
+    .neq('status', 'finalized')
+    .neq('id', documentId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (result.error) return [];
+
+  const rows = (result.data ?? []) as unknown as CandidateRow[];
+  return rows.map((row) => {
+    const name = row.partner_snapshot?.name;
+    const file = row.source_files?.original_filename;
+    let label = row.received_date ?? '';
+    if (typeof file === 'string' && file !== '') label = file;
+    if (typeof name === 'string' && name !== '') label = name;
+    return { id: row.id, label };
+  });
+}

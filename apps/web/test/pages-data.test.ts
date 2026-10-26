@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadPagesView } from '../src/documents/pages-data';
+import { loadJoinCandidates, loadPagesView } from '../src/documents/pages-data';
 
 type Result = { data: unknown; error: unknown };
 
@@ -9,7 +9,7 @@ function fakeSupabase(results: Record<string, Result>) {
     from(table: string) {
       const result = results[table] ?? { data: null, error: { message: 'no table' } };
       const chain: Record<string, unknown> = {};
-      for (const name of ['select', 'eq', 'is', 'order', 'limit']) chain[name] = () => chain;
+      for (const name of ['select', 'eq', 'neq', 'is', 'order', 'limit']) chain[name] = () => chain;
       chain.maybeSingle = async () => result;
       // biome-ignore lint/suspicious/noThenProperty: the fake query is awaited like a Supabase builder.
       chain.then = (resolve: (r: Result) => unknown) => Promise.resolve(result).then(resolve);
@@ -64,5 +64,44 @@ describe('loadPagesView', () => {
   it('shows nothing when a query fails', async () => {
     const view = await loadPagesView(fakeSupabase({}), 'doc-1');
     expect(view).toEqual({ pages: [], question: null });
+  });
+});
+
+describe('loadJoinCandidates', () => {
+  it('labels each document by supplier, else file name, else date', async () => {
+    const list = await loadJoinCandidates(
+      fakeSupabase({
+        documents: {
+          data: [
+            {
+              id: 'd1',
+              partner_snapshot: { name: 'Supplier X' },
+              received_date: '2026-10-20',
+              source_files: null,
+            },
+            {
+              id: 'd2',
+              partner_snapshot: null,
+              received_date: '2026-10-21',
+              source_files: { original_filename: 'p2.jpg' },
+            },
+            {
+              id: 'd3',
+              partner_snapshot: { name: '' },
+              received_date: '2026-10-22',
+              source_files: null,
+            },
+          ],
+          error: null,
+        },
+      }),
+      'org',
+      'doc-1',
+    );
+    expect(list).toEqual([
+      { id: 'd1', label: 'Supplier X' },
+      { id: 'd2', label: 'p2.jpg' },
+      { id: 'd3', label: '2026-10-22' },
+    ]);
   });
 });
