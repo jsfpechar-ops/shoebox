@@ -1,6 +1,6 @@
 # 0327: Přehled from ledgers (b): the loader reads `tax_ledger_entries` (`apps/web`, query only)
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-03 ("ledgers feed Přehled") | Depends on: 0326 (merged), 0313 (tables exist) | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 45k tokens
 

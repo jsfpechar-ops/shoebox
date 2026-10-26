@@ -1,6 +1,6 @@
 # 0317: P1-CAT-04a job definitions (`doc.categorize`, `ledger.*`) and the categorize DB I/O
 
-Status: todo
+Status: done
 Ticket: P1-CAT-04, P1-LEDG-03 | Depends on: 0314 (Drizzle ledgers; only for `packages/db` typecheck) | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 

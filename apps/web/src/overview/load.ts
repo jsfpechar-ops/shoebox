@@ -1,5 +1,11 @@
-import { createCzRules, type LegalDate, type OverviewDocument } from '@shoebox/domain';
+import {
+  createCzRules,
+  type LedgerTotalsEntry,
+  type LegalDate,
+  type OverviewDocument,
+} from '@shoebox/domain';
 import { createSupabaseServerClient } from '../supabase/server';
+import { LEDGER_SELECT, toLedgerEntry } from './ledger';
 import {
   DOCUMENTS_SELECT,
   type OverviewProfile,
@@ -12,9 +18,10 @@ import { buildOverviewView, type OverviewView } from './view';
 interface LoadedRows {
   readonly profile: OverviewProfile | null;
   readonly documents: readonly OverviewDocument[];
+  readonly ledgerEntries: readonly LedgerTotalsEntry[];
 }
 
-const NO_DATA: LoadedRows = { profile: null, documents: [] };
+const NO_DATA: LoadedRows = { profile: null, documents: [], ledgerEntries: [] };
 
 /**
  * The Přehled data of one org for `asOf` (server only). Every query is org-scoped and runs under the
@@ -53,6 +60,14 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
       )
       .limit(5000);
 
+    const ledgerResult = await supabase
+      .from('tax_ledger_entries')
+      .select(LEDGER_SELECT)
+      .eq('org_id', orgId)
+      .gte('entry_date', `${year}-01-01`)
+      .lte('entry_date', asOf)
+      .limit(20000);
+
     if (settingsResult.error === null) {
       const settings = settingsResult.data?.settings as { insurance_reminders?: unknown } | null;
       insuranceSelfPaid = settings?.insurance_reminders !== false;
@@ -73,7 +88,15 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
       }
     }
 
-    rows = { profile, documents };
+    const ledgerEntries: LedgerTotalsEntry[] = [];
+    if (ledgerResult.error === null && Array.isArray(ledgerResult.data)) {
+      for (const row of ledgerResult.data) {
+        const entry = toLedgerEntry(row);
+        if (entry !== null) ledgerEntries.push(entry);
+      }
+    }
+
+    rows = { profile, documents, ledgerEntries };
   } catch {
     // Any throw (no session, no PostgREST, network) is no data: the screen shows its empty state.
     rows = NO_DATA;
@@ -82,6 +105,7 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
   return buildOverviewView({
     profile: rows.profile,
     documents: rows.documents,
+    ledgerEntries: rows.ledgerEntries,
     asOf,
     rules: createCzRules(),
   });

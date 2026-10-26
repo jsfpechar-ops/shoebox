@@ -1,6 +1,6 @@
 # 0318: P1-CAT-04b answers → user fields, and review-question payloads (pure, `apps/worker`)
 
-Status: todo
+Status: done
 Ticket: P1-CAT-04 | Depends on: 0317 (types), 0303 (merged) | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 55k tokens
 
