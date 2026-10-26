@@ -4,6 +4,7 @@ Updated: 2026-10-26.
 
 ## Now
 
+- Gap to Competitor A (0600–0603): Overview shows waiting for you, read automatically %, bills to pay + Mark as paid; value marks (exact / checked / please check, deterministic); one-tap matching total after a fix; PDF highlight where a value came from. Not yet seen in a browser.
 - 0514–0516: free pre-check skips clear non-invoices (0 tokens); bad answers fail at once. Epic CLS still to build.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.

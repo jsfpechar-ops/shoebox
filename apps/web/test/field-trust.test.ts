@@ -7,7 +7,12 @@ const gross = new Set(['totals.gross']);
 describe('trustOf', () => {
   it('a value the user typed is checked, whatever else holds', () => {
     expect(
-      trustOf({ source: 'user', value: '130.00', failedOrWarnedFields: gross, fieldKey: 'totals.gross' }),
+      trustOf({
+        source: 'user',
+        value: '130.00',
+        failedOrWarnedFields: gross,
+        fieldKey: 'totals.gross',
+      }),
     ).toBe('checked');
     expect(trustOf({ source: 'user', value: '', failedOrWarnedFields: none, fieldKey: 'x' })).toBe(
       'checked',
@@ -24,7 +29,12 @@ describe('trustOf', () => {
 
   it('a flagged value from the file is not exact any more', () => {
     expect(
-      trustOf({ source: 'isdoc', value: '130.00', failedOrWarnedFields: gross, fieldKey: 'totals.gross' }),
+      trustOf({
+        source: 'isdoc',
+        value: '130.00',
+        failedOrWarnedFields: gross,
+        fieldKey: 'totals.gross',
+      }),
     ).toBe('check');
   });
 
@@ -36,13 +46,23 @@ describe('trustOf', () => {
 
   it('a flagged AI value is to be checked', () => {
     expect(
-      trustOf({ source: 'llm', value: '130.00', failedOrWarnedFields: gross, fieldKey: 'totals.gross' }),
+      trustOf({
+        source: 'llm',
+        value: '130.00',
+        failedOrWarnedFields: gross,
+        fieldKey: 'totals.gross',
+      }),
     ).toBe('check');
   });
 
   it('an unflagged AI value is checked', () => {
     expect(
-      trustOf({ source: 'llm', value: '130.00', failedOrWarnedFields: none, fieldKey: 'totals.gross' }),
+      trustOf({
+        source: 'llm',
+        value: '130.00',
+        failedOrWarnedFields: none,
+        fieldKey: 'totals.gross',
+      }),
     ).toBe('checked');
   });
 
@@ -58,7 +78,10 @@ describe('trustOf', () => {
 
 describe('fieldsFlagged', () => {
   it('maps open check rules to the fields they concern', () => {
-    const flagged = fieldsFlagged([{ rule_id: 'PROTO_VAT_SUM' }, { rule_id: 'PROTO_ICO_CHECKSUM' }]);
+    const flagged = fieldsFlagged([
+      { rule_id: 'PROTO_VAT_SUM' },
+      { rule_id: 'PROTO_ICO_CHECKSUM' },
+    ]);
     expect([...flagged].sort()).toEqual(
       ['supplier.ico', 'totals.gross', 'totals.net', 'totals.vat'].sort(),
     );

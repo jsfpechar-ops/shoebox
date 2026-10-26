@@ -105,7 +105,13 @@ describe('detailOf', () => {
     const detail = detailOf(
       doc,
       [],
-      [{ rule_id: 'PROTO_ICO_CHECKSUM', severity: 'warning', params: { messageKey: 'proto.check.ico_checksum.fail' } }],
+      [
+        {
+          rule_id: 'PROTO_ICO_CHECKSUM',
+          severity: 'warning',
+          params: { messageKey: 'proto.check.ico_checksum.fail' },
+        },
+      ],
       [],
       [
         { field_key: 'totals.gross', source: 'isdoc' },

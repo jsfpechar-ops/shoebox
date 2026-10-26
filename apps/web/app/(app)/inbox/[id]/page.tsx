@@ -26,7 +26,11 @@ import { createSupabaseServerClient } from '../../../../src/supabase/server';
 function TrustMark({ trust }: { trust: Trust }) {
   const Icon = trust === 'exact' ? CheckCheck : trust === 'checked' ? Check : TriangleAlert;
   const tone =
-    trust === 'exact' ? 'text-success' : trust === 'check' ? 'text-warning' : 'text-muted-foreground';
+    trust === 'exact'
+      ? 'text-success'
+      : trust === 'check'
+        ? 'text-warning'
+        : 'text-muted-foreground';
   return (
     <span className={`inline-flex items-center gap-1 text-body ${tone}`}>
       <Icon aria-hidden="true" className="size-4 shrink-0" />

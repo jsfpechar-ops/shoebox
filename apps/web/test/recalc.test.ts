@@ -31,7 +31,9 @@ describe('recalcSuggestion', () => {
   });
 
   it('returns null when a value is missing', () => {
-    expect(recalcSuggestion({ ...base, 'totals.vat': undefined } as never, 'totals.net')).toBeNull();
+    expect(
+      recalcSuggestion({ ...base, 'totals.vat': undefined } as never, 'totals.net'),
+    ).toBeNull();
     expect(recalcSuggestion({ ...base, 'totals.gross': '' }, 'totals.net')).toBeNull();
   });
 
@@ -42,12 +44,19 @@ describe('recalcSuggestion', () => {
 
   it('keeps 2-decimal precision', () => {
     expect(
-      recalcSuggestion({ 'totals.net': '100.10', 'totals.vat': '21.02', 'totals.gross': '1' }, 'totals.net'),
+      recalcSuggestion(
+        { 'totals.net': '100.10', 'totals.vat': '21.02', 'totals.gross': '1' },
+        'totals.net',
+      ),
     ).toEqual({ editKey: 'totals.gross', value: '121.12' });
   });
 
   it('allows negatives for a credit note with a negative gross', () => {
-    const credit = { 'totals.net': '-1000.00', 'totals.vat': '-210.00', 'totals.gross': '-1200.00' };
+    const credit = {
+      'totals.net': '-1000.00',
+      'totals.vat': '-210.00',
+      'totals.gross': '-1200.00',
+    };
     expect(recalcSuggestion({ ...credit, 'totals.net': '-1000.00' }, 'totals.net')).toEqual({
       editKey: 'totals.gross',
       value: '-1210.00',
