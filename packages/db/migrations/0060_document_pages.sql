@@ -5,7 +5,7 @@ create table document_pages (
   org_id uuid not null references organizations(id) on delete cascade,
   document_id uuid not null references documents(id) on delete cascade,
   position smallint not null check (position >= 1),
-  source_file_id uuid not null references source_files(id),
+  source_file_id uuid not null references source_files(id) on delete cascade,
   file_page smallint not null check (file_page >= 1),       -- 1-based page in the file; 1 for an image
   region text not null default '',                           -- '' = the whole page; else where ('top', 'left')
   supplier_key text not null default '',                     -- page look-over: IČO, or casefolded supplier name

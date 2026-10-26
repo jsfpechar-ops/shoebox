@@ -15,7 +15,7 @@ export const documentPages = pgTable(
     position: smallint('position').notNull(),
     sourceFileId: uuid('source_file_id')
       .notNull()
-      .references(() => sourceFiles.id),
+      .references(() => sourceFiles.id, { onDelete: 'cascade' }),
     filePage: smallint('file_page').notNull(),
     region: text('region').notNull().default(''),
     supplierKey: text('supplier_key').notNull().default(''),
