@@ -3,6 +3,7 @@ export * from './clock/index';
 export * from './dates/index';
 export * from './enums/index';
 export * from './fx';
+export * from './income-tax/totals';
 export * from './ledgers/allocate';
 export * from './ledgers/tax';
 export * from './money/index';

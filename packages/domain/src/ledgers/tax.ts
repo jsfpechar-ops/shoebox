@@ -90,7 +90,7 @@ export const BOOKABLE_CLASSES: readonly DocumentClass[] = [
   'platform_statement',
 ];
 
-export const LEDGER_ALGO_VERSION = 1;
+export const LEDGER_ALGO_VERSION = 2;
 
 // TODO(rules:validation.tol.sum): replace with the rule value once lane B seeds the key.
 const REMAINDER_TOLERANCE = '0.01';
@@ -137,13 +137,13 @@ export function buildTaxLedgerEntries(input: TaxLedgerInput): TaxLedgerEntryDraf
   const profile = profileAt(vatDate);
   const vatIsCost = !(profile.vatStatus === 'platce' && doc.deductionAllowed);
 
+  // K-C01: for a deducting payer the non-deductible VAT of the private share is private, never a
+  // business cost (M04 §4.11.2, deduction_pct = share), so the basis is the net alone.
   const basisOf = (l: TaxLedgerLine): Money => {
     if (l.lineType === 'rounding') return l.gross ?? zero;
     const base = l.net ?? l.gross ?? zero;
     const vat = l.vat ?? zero;
-    const keepShare = hundred.minus(l.businessSharePct).div(hundred);
-    const vatPart = vatIsCost ? vat : vat.multiply(keepShare);
-    return base.add(vatPart);
+    return vatIsCost ? base.add(vat) : base;
   };
 
   const basis = new Map<string, Money>();
