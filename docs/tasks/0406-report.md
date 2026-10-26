@@ -1,29 +1,41 @@
 # 0406 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 
-- `packages/i18n/messages/en.json`: 27 `manual.*` keys added after `trash.error.save` (commit `0406 step 1`).
+- `packages/i18n/messages/en.json`: `manual.*` keys (step 1; `manual.substitute.note` reused).
+- `apps/web/src/documents/manual-entry.ts` (new, pure parser and row builders).
+- `apps/web/test/manual-entry.test.ts` (new, from the brief, ISO date).
+- `apps/web/src/documents/manual-entry-actions.ts` (new, `'use server'`).
+- `apps/web/src/documents/manual-entry-form.tsx` (new, `'use client'`).
+- `apps/web/app/(app)/inbox/new/page.tsx` (new).
+- `apps/web/app/(app)/inbox/page.tsx`: one `Link` after `UploadDropzone`.
+
+Commits: `0406 step 1` to `0406 step 7`. Not pushed, no branch, no PR.
 
 ## Commands
 
-- Step 1 check: `python3 -c "import json; json.load(...)"` parsed OK (402 keys).
-- Steps 2 to 7: not run.
+- `pnpm --filter @shoebox/web test -- manual-entry`: 27 files, 186 tests passed. The filter did not limit the run; the whole web suite ran.
+- `pnpm --filter @shoebox/web typecheck`: clean (no output).
+- `pnpm --filter @shoebox/i18n test`: 3 files, 24 tests passed.
+- `pnpm exec biome check apps/web packages/i18n`: one error left, `apps/web/app/(app)/inbox/[id]/page.tsx:135` `noImgElement`. Not in this brief and not touched.
 
-## Done and left
+## Checklist (§7)
 
-Done: steps 1 (partly, see Deviations). Left: steps 2 to 7.
+- [x] manual-entry tests pass; typecheck 0; biome clean for the files of this brief.
 
 ## Deviations
 
-- Step 1: `manual.substitute.note` already exists in `en.json` (line 109, with near-identical text). The brief's duplicate key was not added. The existing key is used instead.
-- Step 2 STOP: the brief's stop condition applies. `normalizeInput('date', '9. 9. 2026')` does not return `2026-09-09`. `normalizeInput` (in `apps/web/src/documents/correction.ts`) accepts only ISO `YYYY-MM-DD` via `isLegalDate` and returns `{ ok: false, error: 'doc.fix.error.date' }` for `9. 9. 2026`. The test in brief §4 step 2 (`base.date = '9. 9. 2026'`, expecting `date: '2026-09-09'`) therefore cannot pass as written. The test was not changed.
+- Step 1: `manual.substitute.note` already existed; the duplicate was not added.
+- Step 3: `redirect()` runs after the `try` block (success path sets the id), so no error helper was added.
+- Step 7: `biome check --write` reformatted my new files, including the test file (formatting only, no assertion changed).
+- The vitest name filter did not narrow the run (see Commands).
 
 ## Questions
 
-- Should the parser accept Czech `D. M. YYYY` dates by converting them to ISO before `normalizeInput('date', …)`, or should the test base use `2026-09-09`? The brief forbids editing the test, so the owner or orchestrator must decide.
+None.
 
 ## Owner steps left
 
-None. No push, no merge, no PR.
+None for this brief. Open the PR from `claude/project-thread-yn56ih` into `phase/0` when ready.
