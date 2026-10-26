@@ -48,31 +48,72 @@ function sheetXml(rows: readonly (readonly XlsxCell[])[]): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${body}</sheetData></worksheet>`;
 }
 
-const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`;
-const ROOT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
-const WORKBOOK_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`;
+const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+const SHEET_CONTENT_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml';
+const WORKSHEET_REL =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet';
+const ROOT_RELS = `${XML_HEADER}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
 
-function workbookXml(sheetName: string): string {
-  const name = escapeXml(sheetName.replace(/[[\]:*?/\\]/g, ' ').slice(0, 31)) || 'Sheet1';
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${name}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+function contentTypesXml(sheetCount: number): string {
+  const sheets = Array.from(
+    { length: sheetCount },
+    (_, i) =>
+      `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="${SHEET_CONTENT_TYPE}"/>`,
+  ).join('');
+  return `${XML_HEADER}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets}</Types>`;
+}
+
+function workbookRelsXml(sheetCount: number): string {
+  const rels = Array.from(
+    { length: sheetCount },
+    (_, i) =>
+      `<Relationship Id="rId${i + 1}" Type="${WORKSHEET_REL}" Target="worksheets/sheet${i + 1}.xml"/>`,
+  ).join('');
+  return `${XML_HEADER}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`;
+}
+
+function sheetTitle(sheetName: string): string {
+  return escapeXml(sheetName.replace(/[[\]:*?/\\]/g, ' ').slice(0, 31)) || 'Sheet1';
+}
+
+function workbookXml(sheetNames: readonly string[]): string {
+  const sheets = sheetNames
+    .map((name, i) => `<sheet name="${sheetTitle(name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`)
+    .join('');
+  return `${XML_HEADER}<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets}</sheets></workbook>`;
 }
 
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+export interface XlsxSheet {
+  readonly name: string;
+  readonly rows: readonly (readonly XlsxCell[])[];
+}
+
+/** A workbook with one sheet per entry, in order. Sheet names are cut to 31 characters. */
+export function createXlsxWorkbook(sheets: readonly XlsxSheet[], at: Date): Uint8Array {
+  if (sheets.length === 0) throw new Error('createXlsxWorkbook needs at least one sheet');
+  const enc = new TextEncoder();
+  return createZip(
+    [
+      { name: '[Content_Types].xml', data: enc.encode(contentTypesXml(sheets.length)) },
+      { name: '_rels/.rels', data: enc.encode(ROOT_RELS) },
+      { name: 'xl/workbook.xml', data: enc.encode(workbookXml(sheets.map((sheet) => sheet.name))) },
+      { name: 'xl/_rels/workbook.xml.rels', data: enc.encode(workbookRelsXml(sheets.length)) },
+      ...sheets.map((sheet, i) => ({
+        name: `xl/worksheets/sheet${i + 1}.xml`,
+        data: enc.encode(sheetXml(sheet.rows)),
+      })),
+    ],
+    at,
+  );
+}
 
 export function createXlsx(
   sheetName: string,
   rows: readonly (readonly XlsxCell[])[],
   at: Date,
 ): Uint8Array {
-  const enc = new TextEncoder();
-  return createZip(
-    [
-      { name: '[Content_Types].xml', data: enc.encode(CONTENT_TYPES) },
-      { name: '_rels/.rels', data: enc.encode(ROOT_RELS) },
-      { name: 'xl/workbook.xml', data: enc.encode(workbookXml(sheetName)) },
-      { name: 'xl/_rels/workbook.xml.rels', data: enc.encode(WORKBOOK_RELS) },
-      { name: 'xl/worksheets/sheet1.xml', data: enc.encode(sheetXml(rows)) },
-    ],
-    at,
-  );
+  return createXlsxWorkbook([{ name: sheetName, rows }], at);
 }
