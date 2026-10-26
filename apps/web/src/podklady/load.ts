@@ -5,6 +5,8 @@ import {
   type PodkladyRows,
   readPodkladyRows,
   readReserveEstimate,
+  readTaxpayerHeaderAt,
+  type TaxpayerHeaderRow,
 } from '@shoebox/db';
 import {
   buildPodkladySummary,
@@ -12,8 +14,10 @@ import {
   EMPTY_ANSWERS,
   LEDGER_ALGO_VERSION,
   type MemberRole,
+  type PodkladySummary,
   pragueToday,
 } from '@shoebox/domain';
+import { isPartialXmlAvailable } from '@shoebox/tax-xml';
 import { podkladyDb } from './db';
 import { buildPodkladyPreview } from './preview';
 import type { PodkladyPreviewView, TaxReserveView } from './view';
@@ -25,15 +29,20 @@ export function hasPodkladyData(rows: PodkladyRows): boolean {
   return rows.entries.length > 0;
 }
 
-/** The live preview of one year: summary and readiness are computed now, never stored. */
-export async function loadPodkladyPreview(
-  orgId: string,
-  year: number,
-  role: MemberRole,
-): Promise<PodkladyPreviewView> {
-  const { rows, latest } = await podkladyDb().withTenant(orgId, async (tx) => ({
+function partialAvailable(year: number, rules: ReturnType<typeof createCzRules>): boolean {
+  try {
+    return isPartialXmlAvailable(year, rules);
+  } catch {
+    return false;
+  }
+}
+
+async function loadCore(orgId: string, year: number) {
+  const rules = createCzRules();
+  const { rows, latest, profileAtYearEnd } = await podkladyDb().withTenant(orgId, async (tx) => ({
     rows: await readPodkladyRows(tx, orgId, year, BigInt(LEDGER_ALGO_VERSION)),
     latest: await latestPodkladyFiling(tx, orgId, year),
+    profileAtYearEnd: await readTaxpayerHeaderAt(tx, orgId, `${year}-12-31`),
   }));
   const summary = buildPodkladySummary(
     {
@@ -47,12 +56,35 @@ export async function loadPodkladyPreview(
       transactions: rows.transactions,
       readiness: rows.readiness,
       answers: EMPTY_ANSWERS,
-      partialXmlAvailable: false, // TODO(0367): isPartialXmlAvailable(year) once the web app may import @shoebox/tax-xml
+      partialXmlAvailable: partialAvailable(year, rules),
     },
-    createCzRules(),
+    rules,
     pragueToday(clock),
   );
-  return buildPodkladyPreview(summary, latest, role, rows.ledgerHash);
+  return { summary, latest, ledgerHash: rows.ledgerHash, profileAtYearEnd };
+}
+
+/** Summary, ledger hash and the header profile of one year (used by the partial XML route). */
+export async function loadPodkladySummary(
+  orgId: string,
+  year: number,
+): Promise<{
+  summary: PodkladySummary;
+  ledgerHash: string;
+  profileAtYearEnd: TaxpayerHeaderRow | null;
+}> {
+  const { summary, ledgerHash, profileAtYearEnd } = await loadCore(orgId, year);
+  return { summary, ledgerHash, profileAtYearEnd };
+}
+
+/** The live preview of one year: summary and readiness are computed now, never stored. */
+export async function loadPodkladyPreview(
+  orgId: string,
+  year: number,
+  role: MemberRole,
+): Promise<PodkladyPreviewView> {
+  const { summary, latest, ledgerHash } = await loadCore(orgId, year);
+  return buildPodkladyPreview(summary, latest, role, ledgerHash);
 }
 
 const NONE: TaxReserveView = {
