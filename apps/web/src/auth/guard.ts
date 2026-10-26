@@ -7,6 +7,7 @@ export const PUBLIC_PATHS = [
   '/api/health',
   '/manifest.webmanifest',
   '/icon.svg',
+  '/api/inbound-email',
 ] as const;
 
 export function isPublicPath(pathname: string): boolean {
