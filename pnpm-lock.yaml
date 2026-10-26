@@ -230,6 +230,9 @@ importers:
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../domain
+      '@shoebox/validation':
+        specifier: workspace:*
+        version: link:../validation
       drizzle-orm:
         specifier: 0.45.3
         version: 0.45.3(pg@8.23.1)(postgres@3.4.9)

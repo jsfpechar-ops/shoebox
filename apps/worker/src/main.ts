@@ -5,6 +5,7 @@ import { registerDocCategorize } from './categorize/register';
 import { registerDocExtract } from './doc-extract/register';
 import { registerDocSplit } from './doc-split/register';
 import { registerEmailReceived } from './email-received/register';
+import { registerImportRun } from './import-run/register';
 import { registerLedgerJobs } from './ledger/register';
 import { registerTrashPurge } from './retention/trash-purge';
 import { loadWorkerConfig, startWorker } from './worker';
@@ -17,6 +18,7 @@ const worker = await startWorker(loadWorkerConfig(process.env), {
     registerEmailReceived(registry, process.env, logger);
     registerBankImport(registry, process.env, logger);
     registerDocSplit(registry, process.env, logger);
+    registerImportRun(registry, process.env, logger);
     registerTrashPurge(registry, db, process.env, logger);
     registerLedgerJobs(registry, db, logger);
   },
