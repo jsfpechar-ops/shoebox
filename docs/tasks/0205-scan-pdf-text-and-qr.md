@@ -1,6 +1,6 @@
 # 0205: Scan a file for its text layer and QR codes
 
-Status: todo
+Status: review
 Ticket: P1-EXT-02 (QR decode) + P1-EXT-03 (text layer) | Depends on: 0201 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0205-report.md
