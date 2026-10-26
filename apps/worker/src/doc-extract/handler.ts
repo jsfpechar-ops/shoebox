@@ -25,6 +25,8 @@ import {
   type ProtoExtraction,
   ProtoParseError,
   parseProtoExtraction,
+  pdfPageCount,
+  precheckDocument,
   type ReadPart,
   readIsdoc,
   scanDocument,
@@ -37,6 +39,7 @@ import { defaultRegistryDeps, type RegistryDeps, registryRows } from './registry
 import {
   documentPatchOf,
   fieldsOf,
+  precheckWriteOf,
   statusAfterRead,
   type VatRates,
   validationRowsOf,
@@ -72,6 +75,7 @@ export interface DocExtractDeps {
   readonly store?: ReadingStore; // default dbReadingStore
   readonly enqueueMatch?: (orgId: string, documentId: string, trigger: string) => Promise<unknown>; // bank.match.document on ready (M07 §4.6.1)
   readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
+  readonly countPages?: (bytes: Uint8Array) => Promise<number>; // default pdfPageCount
   readonly registries?: RegistryDeps; // default defaultRegistryDeps()
 }
 
@@ -211,8 +215,10 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
 
     // Page sorting (0505): a document made of chosen pages is read from those pages only.
     let parts: ReadPart[] | null = null;
+    let pageRows = 0;
     try {
       const pages = store.loadPages ? await store.loadPages(ctx.tx, doc.id) : [];
+      pageRows = pages.length;
       if (pages.length > 0) parts = await partsOf(pages, deps.blobs);
     } catch (error) {
       return onError(error, errorCode(error, 'storage'), true);
@@ -322,7 +328,30 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       await store.fail(ctx.tx, { ...run, error: 'isdoc_unreadable', final: true });
       return;
     } else {
-      // Step 2: no ISDOC, so the model reads the page.
+      // Step 2: free pre-check (0516). A clear non-invoice, or a file too long or large, costs no tokens.
+      let pageCount: number | null = parts === null ? null : pageRows;
+      if (parts === null && mediaType === 'application/pdf') {
+        try {
+          pageCount = await (deps.countPages ?? pdfPageCount)(bytes);
+        } catch {
+          pageCount = null;
+        }
+      }
+      const byteLength =
+        parts === null ? bytes.length : parts.reduce((n, p) => n + p.bytes.length, 0);
+      const verdict = precheckDocument({ byteLength, pageCount, scan });
+      if (verdict.kind === 'skip') {
+        try {
+          await store.save(
+            ctx.tx,
+            precheckWriteOf({ orgId: doc.orgId, documentId: doc.id }, verdict, ctx.attempt),
+          );
+        } catch (error) {
+          return onError(error, errorCode(error, 'error'), true);
+        }
+        return;
+      }
+      // Step 3: no ISDOC and not skipped, so the model reads the page.
       let response: LlmResponse;
       try {
         response = await deps.llm.complete(
