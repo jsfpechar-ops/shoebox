@@ -10,7 +10,6 @@ import {
   type MergedOverviewTotals,
   mergeOverviewTotals,
   type OverviewDocument,
-  type OverviewTotals,
   upcomingDeadlines,
 } from '@shoebox/domain';
 import type { OverviewProfile } from './rows';
