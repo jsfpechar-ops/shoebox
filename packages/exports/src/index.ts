@@ -1,5 +1,11 @@
 export const packageName = '@shoebox/exports' as const;
 export * from './isdoc/build';
+export {
+  buildPodkladyPdf,
+  formatKc,
+  podkladyPdfLines,
+  transliterate,
+} from './podklady-pdf';
 export * from './pohoda/build';
 export * from './pohoda/mapping';
 export * from './pohoda/types';
