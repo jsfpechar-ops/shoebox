@@ -19,6 +19,9 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@shoebox/domain": "workspace:*",
+    "@shoebox/validation": "workspace:*",
+    "exceljs": "4.4.0",
     "zod": "4.6.5"
   }
 }

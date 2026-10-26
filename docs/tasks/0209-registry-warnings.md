@@ -1,6 +1,6 @@
 # 0209: Registry warnings: unreliable payer, unpublished account, invalid EU VAT ID
 
-Status: todo
+Status: review
 Ticket: P1-VAL-04 (rules D, proto subset) | Depends on: 0202, 0204, 0208 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0209-report.md
