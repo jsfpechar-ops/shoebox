@@ -43,3 +43,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-25 [test-env] Supabase + one free Render service (web+worker, `deploy/render-test.yaml`); `tsx`; auto sign-in, no login (0055). (owner)
 - 2026-10-26 [scope] Phase 1: home-screen manifest + audit log of manual fixes. No SEPA file, month lock or PSD2 aggregator; Fio stays Later. (owner)
 - 2026-10-26 [deps] pdfjs-dist, zxing-wasm (03 ADR) for PDF text + QR. (autonomous run)
+- 2026-10-26 [deps] exceljs 4.4.0 for spreadsheet import (22 D-12 default). (autonomous run)
