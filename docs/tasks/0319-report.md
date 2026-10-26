@@ -25,3 +25,16 @@ None ticked.
 
 ## Owner steps left
 None.
+
+## Update: signatures read (coordinator authorized)
+Read-only, for the next session. Status stays blocked: no code written.
+- `SummaryInput` (domain/taxonomy/summary.ts): asOf, subject{user,llm,vendorHint}, dominant{categoryCode,taxEffect,deductibility,businessSharePct,vatTreatment,vatRatePct}, otherTaxEffects, servicePeriodFrom/To, duzp, issueDate, recurringCategories, vatStatus, deductionAllowed, vatPeriod. Other fields may exist before line 40; not read.
+- `VatTreatmentInput` / `VatTreatmentLine` / `VatTreatmentParty` / `VatTreatmentFlags` (domain/vat/treatment.ts) read in full; `VatTreatmentResult` = {treatment, ambiguous?, provisional?, note?}.
+- `deriveVatPointDate(doc: VatPointDocument, treatments, profileAt: ProfileAt, payments: PaymentEvidenceDate[], rules)` returns `VatPointResult | null` ({date, rule}); `resolveVatPeriod(profile, date)`.
+- `resolveFxRate(currency, date, rates: FxRateRow[], rule: CnbRateRule, maxLookbackDays)` returns `FxRate | null` (perUnit: Decimal). `CnbRateRule` not read.
+- `applyAnswers` returns `UserLineField[]` ({position, key, value}). `openKinds` returns ReadonlySet<string>.
+- `buildQuestions(cascade, existing, ctx: QuestionContext)` returns {asked: PlannedQuestion[], deferred}. QuestionContext: merchant, lines[{lineId,position,description,grossCzk}], extraLineKinds, thresholdCzk, suggested, topCategories, maxQuestions. `QuestionKind` in apps/worker/src/categorize/answers.ts.
+- `CategorizeRequestInput` (extraction run.ts): model, document, business, lines: CategorizeRequestLine[], resolved, categories: CategorizeCategory[], fewShots?. `CategorizeOutput` / `CategorizeLineOutput` (schema.ts) read in full.
+- DB write types (db document-categorize.ts): CategorizationLineWrite, FieldWrite (source 'llm'|'rule'|'vendor_memory'|'derived'|'user', confidence string|null), QuestionWrite {kind,payload}, RunWrite.
+- Money: `Money.parse(text, currency)`, `negate`, `abs`, `multiply`, `divide`, `compare`, `equals`, `isZero`, `toFixed2`, `toString`. `createCzRules` in domain/rules/cz/index.ts; `parseLegalDate` in domain/dates/index.ts.
+- Not yet read: CascadeInput assembly details beyond the brief, `CategorizeRequestLine` use, `resolveFxRate` rule type, `QuestionPayload`.
