@@ -1,4 +1,6 @@
 export const packageName = '@shoebox/extraction' as const;
+export * from './categorize/run';
+export * from './categorize/schema';
 export * from './exact/apply';
 export * from './isdoc/find';
 export * from './isdoc/map';

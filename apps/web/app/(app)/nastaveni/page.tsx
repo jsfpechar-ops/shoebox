@@ -6,7 +6,9 @@ import type { ReactNode } from 'react';
 import { requireActiveRole } from '../../../src/auth/org-context';
 import { HelpTip } from '../../../src/overview/help-tip';
 import { loadBankView } from '../../../src/settings/bank-data';
+import { ForgetVendorButton } from '../../../src/settings/forget-vendor-button';
 import { loadSettings } from '../../../src/settings/settings-data';
+import { loadVendorMemory } from '../../../src/settings/vendor-memory-data';
 import { createSupabaseServerClient } from '../../../src/supabase/server';
 
 export const metadata: Metadata = { title: t('settings.title') };
@@ -36,6 +38,8 @@ export default async function SettingsPage() {
         )
       : null;
   const bank = auth.ok && supabase ? await loadBankView(supabase, auth.orgId) : null;
+  const vendors = auth.ok && supabase ? await loadVendorMemory(supabase, auth.orgId) : null;
+  const canForget = auth.ok && (auth.role === 'owner' || auth.role === 'member');
 
   return (
     <div className="flex flex-col gap-6">
@@ -130,6 +134,31 @@ export default async function SettingsPage() {
                     ))}
                   </ul>
                 </>
+              )}
+            </Card>
+          )}
+
+          {vendors === null ? null : (
+            <Card className="flex flex-col gap-4 p-6">
+              <h2 className="flex items-center gap-1 text-card-title">
+                {t('settings.vendors.title')}
+                <HelpTip term={t('settings.vendors.title')} text={t('settings.vendors.help')} />
+              </h2>
+              {vendors.length === 0 ? (
+                <p className="text-body">{t('settings.vendors.none')}</p>
+              ) : (
+                <dl className="flex flex-col gap-4">
+                  {vendors.map((v) => (
+                    <Row key={v.id} label={v.supplier}>
+                      <span className="flex flex-wrap items-center justify-end gap-2">
+                        {v.pinned
+                          ? t('settings.vendors.always', { category: v.category })
+                          : v.category}
+                        {canForget ? <ForgetVendorButton id={v.id} supplier={v.supplier} /> : null}
+                      </span>
+                    </Row>
+                  ))}
+                </dl>
               )}
             </Card>
           )}

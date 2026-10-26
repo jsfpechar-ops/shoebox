@@ -2,6 +2,7 @@ import { addDays, compareLegalDates, type Deadline } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
 import { focusRing } from '@shoebox/ui';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { formatCzkWhole, formatDue, periodLabel } from './format';
 import { HelpTip } from './help-tip';
 import { LimitMeterBar } from './limit-meter';
@@ -164,7 +165,15 @@ function Deadlines({ view, upcoming }: { view: OverviewView; upcoming: readonly 
 }
 
 /** Přehled (M11 §5.2): next payment, limit meters, totals, deadlines and one way to the accountant. */
-export function OverviewScreen({ view }: { view: OverviewView }) {
+export function OverviewScreen({
+  view,
+  vat,
+  tax,
+}: {
+  view: OverviewView;
+  vat?: ReactNode;
+  tax?: ReactNode;
+}) {
   const horizon = addDays(view.asOf, WINDOW_DAYS);
   const upcoming = view.deadlines.filter(
     (deadline) => compareLegalDates(deadline.due, horizon) <= 0,
@@ -174,6 +183,8 @@ export function OverviewScreen({ view }: { view: OverviewView }) {
     <div className="grid gap-6">
       <h1 className="text-title">{t('overview.title')}</h1>
       <NextPayment view={view} upcoming={upcoming} />
+      {vat}
+      {tax}
       {empty ? (
         <section aria-labelledby="empty-title" className={card}>
           <h2 id="empty-title" className="text-card-title">

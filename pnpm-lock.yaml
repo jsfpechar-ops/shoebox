@@ -107,6 +107,9 @@ importers:
       '@shoebox/registries':
         specifier: workspace:*
         version: link:../../packages/registries
+      '@shoebox/tax-xml':
+        specifier: workspace:*
+        version: link:../../packages/tax-xml
       '@shoebox/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -174,9 +177,15 @@ importers:
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@shoebox/exports':
+        specifier: workspace:*
+        version: link:../../packages/exports
       '@shoebox/extraction':
         specifier: workspace:*
         version: link:../../packages/extraction
+      '@shoebox/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@shoebox/pipeline':
         specifier: workspace:*
         version: link:../../packages/pipeline
@@ -186,6 +195,9 @@ importers:
       '@shoebox/registries':
         specifier: workspace:*
         version: link:../../packages/registries
+      '@shoebox/tax-xml':
+        specifier: workspace:*
+        version: link:../../packages/tax-xml
       '@shoebox/validation':
         specifier: workspace:*
         version: link:../../packages/validation
@@ -230,6 +242,9 @@ importers:
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../domain
+      '@shoebox/validation':
+        specifier: workspace:*
+        version: link:../validation
       drizzle-orm:
         specifier: 0.45.3
         version: 0.45.3(pg@8.23.1)(postgres@3.4.9)
@@ -271,9 +286,15 @@ importers:
 
   packages/exports:
     dependencies:
+      '@pdf-lib/fontkit':
+        specifier: 1.1.1
+        version: 1.1.1
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../domain
+      pdf-lib:
+        specifier: 1.17.1
+        version: 1.17.1
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -358,7 +379,14 @@ importers:
         version: 4.1.11(@types/node@22.20.5)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.5)(jiti@2.7.0)(tsx@4.23.15)
 
   packages/tax-xml:
+    dependencies:
+      '@shoebox/domain':
+        specifier: workspace:*
+        version: link:../domain
     devDependencies:
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1323,6 +1351,9 @@ packages:
 
   '@oxc-project/types@0.154.0':
     resolution: {integrity: sha512-KYOUGQFlLWR+s4QMV2Q9ko38TZm7EdO87Qm7rvZLqk/webse/cDjtyxKhg/47l0byCbs/k46LT8qc4PKjAikzA==}
+
+  '@pdf-lib/fontkit@1.1.1':
+    resolution: {integrity: sha512-KjMd7grNapIWS/Dm0gvfHEilSyAmeLvrEGVcqLGi0VYebuqqzTbgF29efCx7tvx+IEbG3zQciRSWl3GkUSvjZg==}
 
   '@pdf-lib/standard-fonts@1.0.0':
     resolution: {integrity: sha512-hU30BK9IUN/su0Mn9VdlVKsWBS6GyhVfqjwl1FjZN4TxP6cCw0jP2w7V3Hf5uX7M0AZJ16vey9yE0ny7Sa59ZA==}
@@ -4807,6 +4838,10 @@ snapshots:
   '@noble/hashes@1.8.0': {}
 
   '@oxc-project/types@0.154.0': {}
+
+  '@pdf-lib/fontkit@1.1.1':
+    dependencies:
+      pako: 1.0.11
 
   '@pdf-lib/standard-fonts@1.0.0':
     dependencies:

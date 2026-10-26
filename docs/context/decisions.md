@@ -19,7 +19,7 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-18 [domain] Credit notes are stored with negative amounts (M02 normalizes); VAT ledger has one entry per document × treatment × rate; M09 is the only writer of `obligations`; one turnover function (M09) and one tax-reserve function (M06). Reason: one implementation per concept. (orchestrator)
 - 2026-10-18 [ux] Business/personal chips are Firemní / Soukromé / Napůl everywhere (02, M04, M10 aligned with 07). (orchestrator)
 - 2026-10-18 [maintenance] Yearly upkeep ≈ 20–28.5 days (law 8–13, product and platform 12–15.5); accepting it is D-10. (orchestrator, proposed)
-- 2026-10-18 [deps] Phase 0 dependencies approved (P0-OWN-01): pnpm 10, Turborepo, Biome 2, Vitest, fast-check, Playwright + @axe-core/playwright, dependency-cruiser, Renovate, gitleaks, decimal.js, zod, @supabase/ssr + Supabase CLI, Tailwind 4, Inter self-hosted, pino, Sentry SDK, OpenTelemetry SDK, ts-morph. Reasons per line: [archive](../archive/decisions-2026.md). (owner, P0-OWN-01)
+- 2026-10-18 [deps] Phase 0 deps: pnpm 10, Turborepo, Biome 2, Vitest, fast-check, Playwright + @axe-core/playwright, dependency-cruiser, Renovate, gitleaks, decimal.js, zod, @supabase/ssr + Supabase CLI, Tailwind 4, Inter self-hosted, pino, Sentry SDK, OpenTelemetry SDK, ts-morph. [archive](../archive/decisions-2026.md). (owner, P0-OWN-01)
 - 2026-10-18 [repo] Add `packages/platform` (logger, telemetry, webhook, budget wiring) to the ADR-010 layout. Reason: one shared place for web and worker wiring, M12 §6. (owner, P0-OWN-01)
 - 2026-10-18 [workflow] The 60k checkpoint, 100k hard stop and tool-call caps apply to executors (Haiku, escalated Sonnet) only; orchestrators have no cap but keep one chat per ticket. (owner)
 - 2026-10-18 [workflow] Phase run is led by Opus 5.5 (all reviews); briefs for HIGH-risk tickets plus REPO-01/02, PII-02, EVAL-02 and GATE tickets are written by a Fable 5.1 subagent that only writes briefs. Stops at a ticket end near the usage limit. Reason: brief quality decides Haiku success. (owner)
@@ -29,7 +29,7 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-18 [stack] Keep the current stack (Supabase EU, Cloud Run, Cloudflare inbound, SES EU; LLM changed below); alternatives rejected. Reason: `research/infra-ecosystems-2026.md`, `research/infra-review-fable-2026.md`. D-07 = SES; revisit Cloudflare Email Service at GA (by 2027-04). (owner, phase run)
 - 2026-10-18 [deps] UI dependencies for P0-UI-02 approved: react + react-dom + @types/react + @types/react-dom 19.3.0, radix-ui 1.6.7, lucide-react 1.51.0, sonner 2.0.8 (shadcn base per 07 §6; local `cn()` instead of cva/clsx/tailwind-merge), axe-core 4.13.0 for component a11y tests. (owner, phase run)
 - 2026-10-18 [deps] postgres (postgres.js) 3.4.9 as the Postgres driver for Drizzle (drizzle-orm, drizzle-kit; Drizzle is in the [stack] line). Reason: P0-DB-01, standard Drizzle driver, no native build. (owner, phase run)
-- 2026-10-18 [stack] LLM via the Anthropic Claude API directly instead of Vertex AI `eu`; hard rule 4 "EU regions only" waived for the LLM only. Reason: simpler, no cloud premium. Needs Anthropic DPA + SCCs/DPF, sub-processor listing (22 L-03), ZDR. Vertex `eu` is the fallback for EU-only customers. (owner, phase run)
+- 2026-10-18 [stack] LLM via the Anthropic Claude API directly instead of Vertex AI `eu`; hard rule 4 "EU regions only" waived for the LLM only. Needs Anthropic DPA + SCCs/DPF, sub-processor listing (22 L-03), ZDR. Vertex `eu` is the fallback for EU-only customers. (owner, phase run)
 - 2026-10-18 [stack] Cloud Run, Artifact Registry, log bucket in `europe-west1` (Tier 1, −20 % vs Frankfurt); EU rule kept. Reason: `research/infra-review-no-eu-rule-2026.md`. (owner)
 - 2026-10-18 [deps] `@tailwindcss/postcss` 4.3.3 counted under "Tailwind 4" (its Next.js integration); Playwright pinned 1.56.1 to match the preinstalled Chromium. (orchestrator; owner may veto)
 - 2026-10-18 [deps] pg-boss 12.35.1; supabase-js 2.117.2, zod 4.6.5; @sentry/node 11.4.0 (dataCollection off), @opentelemetry/api 1.9.1, sdk-node 0.222.0. (owner)
@@ -45,3 +45,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-26 [deps] zxing-wasm (QR), pdfjs-dist (PDF text), exceljs (import, 22 D-12). (autonomous)
 - 2026-10-26 [deps/bank] postal-mime 4.0.5; statements via Inbox upload, unknown account auto-created. (orch.)
 - 2026-10-26 [bank] Matcher: no deps; overpay = partial; FÚ 705/2866/721 verified.
+- 2026-10-26 [auth] No download re-confirm (no TOTP); P3-VAT-12 aal2 dropped. (coord.)

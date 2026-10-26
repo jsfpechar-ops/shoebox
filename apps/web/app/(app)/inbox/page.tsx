@@ -99,9 +99,14 @@ export default async function InboxPage({
         </ul>
       </nav>
       <UploadDropzone />
-      <Link href="/inbox/new" className="text-body underline">
-        {t('manual.cta')}
-      </Link>
+      <div className="flex flex-wrap gap-4">
+        <Link href="/inbox/new" className="text-body underline">
+          {t('manual.cta')}
+        </Link>
+        <Link href="/inbox/import" className="text-body underline">
+          {t('import.cta')}
+        </Link>
+      </div>
       {tab === 'trash' ? (
         <>
           <p className="text-body">{t('trash.note')}</p>

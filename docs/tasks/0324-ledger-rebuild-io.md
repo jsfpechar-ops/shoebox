@@ -1,6 +1,6 @@
 # 0324: P1-LEDG-03a ledger rebuild DB I/O: inputs, locked delete+insert, build_version, stage_version hash
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-03 | Depends on: 0314 (merged), 0317 (profile/fx row types) | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 

@@ -13,6 +13,7 @@ import {
   TAX_PROCEDURE_ACT,
 } from './deadlines';
 import { CZ_DPHDP3_ROW_MAP, CZ_KH_ROUTING } from './epo';
+import { CZ_EPO_FORMS, CZ_SIMPLE_PERIOD_POLICY } from './vat-phase3';
 
 const VALID_FROM = '2025-01-01';
 const VALID_TO = '2025-12-31';
@@ -30,6 +31,9 @@ const KH_METHODOLOGY =
 /** EPO: published structure of the DPHDP3 form (přiznání k DPH), rows and XML attributes. [verify] */
 const DPHDP3_STRUCTURE =
   'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_detail.faces?zkratka=DPHDP3';
+/** EPO: published list of the XML structures (DPHDP3, DPHKH1, DPHSHV). [verify] */
+const EPO_STRUCTURES =
+  'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_seznam.faces';
 /** Finanční správa: paušální daň for 2025 (bands, monthly advances, income ceilings). */
 const PAUSALNI_DAN_2025 =
   'https://financnisprava.gov.cz/cs/dane/dane/dan-z-prijmu/pausalni-dan/informace-k-institutu-pausalni-dane-pro-rok-2025';
@@ -126,6 +130,19 @@ export const RULES_CZ_2025: readonly RuleEntryInput[] = [
   // ZDPH § 47 and příloha č. 2: none of the seeded categories is a reduced-rate service by default
   // (06 §2.1: `[]`, "[verify per service]" in M04 §4.2).
   { ...base('vat.reduced_rate_categories', `${ZDPH}#p47`, []), verified_at: '2026-10-26' },
+  // M05 §4.3 simple-period policy (version 2026.1), §4.4 rounding (D-11 default), §4.5 SH rounding,
+  // §4.11 amendment windows (TA-10 defaults), §4.8 EPO form versions (CTF §1.1, dated 11. 8. 2026).
+  {
+    ...base('vat.simple_period_policy', `${ZDPH}#p101`, CZ_SIMPLE_PERIOD_POLICY),
+    verified_at: '2026-10-26',
+  },
+  base('vat.return_rounding', `${ZDPH}#p37`, 'sum_entries_then_round'),
+  base('vat.shv_rounding', `${ZDPH}#p102`, 'ceil'),
+  base('vat.amendment_windows', `${ZDPH}#p141`, {
+    dp3_dodatecne_due: 'end_of_month_after_discovery',
+    kh_nasledne_working_days: 5,
+  }),
+  { ...base('epo.forms', EPO_STRUCTURES, CZ_EPO_FORMS), verified_at: '2026-10-26' },
   // DPHDP3 row map (M05 §4.2 step 8, research/czech-tax-filings.md §2). Rows 40/41/42/50 carry
   // `confirmed: false` until Phase 3 checks their attrs against the XSD; see cz/epo.ts.
   { ...base('epo.dphdp3_row_map', DPHDP3_STRUCTURE, CZ_DPHDP3_ROW_MAP), verified_at: '2026-10-26' },
@@ -174,6 +191,18 @@ export const RULES_CZ_2025: readonly RuleEntryInput[] = [
   // Social: ČSSZ 2025 (29.2 % of the minimum base 16 295 Kč = 4 759 Kč). Health: VZP, minimum base
   // 23 278,50 Kč → 3 143 Kč (https://www.vzp.cz/platci/informace/osvc/osvc-minimalni-vyse-zaloh).
   base('insurance.min_advances', CSSZ_2025, { social: 4_759, health: 3_143 }),
+  // ZDP § 16 odst. 1: 15 % up to 36 × the average wage (46 557 Kč), 23 % above. [verify] the nařízení vlády for 2025 not checked.
+  base('income_tax.rates', `${ZDP}#p16`, { r1: 15, r2: 23, threshold_annual: 1_676_052 }),
+  // ZDP § 35ba odst. 1 písm. a): basic credit for the taxpayer, 30 840 Kč.
+  base('income_tax.credits', `${ZDP}#p35ba`, { taxpayer: 30_840 }),
+  // Social: zákon č. 589/1992 Sb. § 7 odst. 1 písm. e) bod 1 (29,2 %), § 5b odst. 1 (base 55 % from 2024).
+  // Health: zákon č. 592/1992 Sb. § 2 odst. 1 (13,5 %), § 3a odst. 1 (base 50 %). Source shown: social.
+  base('insurance.rates', 'https://www.zakonyprolidi.cz/cs/1992-589#p5b', {
+    social_pct: 29.2,
+    social_base_pct: 55,
+    health_pct: 13.5,
+    health_base_pct: 50,
+  }),
   // ZDP § 26 odst. 2 písm. a): tangible movable assets with an entry price above 80 000 Kč (since 2021).
   base('asset.capitalization_threshold', `${ZDP}#p26`, 80_000),
   // Zákon č. 254/2004 Sb. § 4 odst. 1: payments above 270 000 Kč per day and counterparty are cashless.

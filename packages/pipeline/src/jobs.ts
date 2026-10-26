@@ -30,6 +30,7 @@ export const JOB_NAMES = [
   'expected.sweep',
   'import.spreadsheet.parse',
   'import.spreadsheet.run',
+  'import.spreadsheet.undo',
   // Ledger jobs (M04)
   'ledger.rebuild_document',
   'ledger.rebuild_transaction',
@@ -41,6 +42,8 @@ export const JOB_NAMES = [
   'vat.workbook.generate',
   'vat.amendment.detect',
   'podklady.generate',
+  'podklady.reserve.refresh',
+  'podklady.reserve.nightly',
   'obligations.generate',
   'obligations.nightly',
   'notifications.evaluate',
@@ -225,6 +228,14 @@ export const retentionTrashPurgeJob = defineSystemJob({
   cron: '30 3 * * *',
 });
 
+/** 06 §3: nightly EPO structure and XSD drift check (log alert; detection only). */
+export const opsDriftMonitorsJob = defineSystemJob({
+  name: 'ops.drift_monitors',
+  payload: z.strictObject({}),
+  cron: '15 4 * * *',
+  retry: { retryLimit: 0 },
+});
+
 /** A UUID (version-5 layout) derived from an idempotency key: same key, same pg-boss job id. */
 export function jobIdFromKey(key: string): string {
   const bytes = createHash('sha1').update(`shoebox.job:${key}`).digest().subarray(0, 16);
@@ -304,3 +315,200 @@ export const docSplitJob = defineTenantJob({
   entityId: (payload) => payload.batchId,
 });
 export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;
+
+/** M01 §4.13: import the valid rows of one uploaded spreadsheet, 200 rows per run. Enqueues itself for the next 200. */
+export const importSpreadsheetRunJob = defineTenantJob({
+  name: 'import.spreadsheet.run',
+  payload: tenantPayload({ importId: z.uuid(), fromRow: z.number().int().min(0) }),
+  version: 1,
+  entityId: (payload) => `${payload.importId}:${payload.fromRow}`,
+  retry: { retryLimit: 2 },
+});
+export type ImportSpreadsheetRunPayload = z.infer<typeof importSpreadsheetRunJob.payload>;
+
+/** M01 §6: undo one spreadsheet import. The worker runs it (it needs the tenant transaction); the route checks the 30 days. */
+export const importSpreadsheetUndoJob = defineTenantJob({
+  name: 'import.spreadsheet.undo',
+  payload: tenantPayload({ importId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.importId,
+});
+export type ImportSpreadsheetUndoPayload = z.infer<typeof importSpreadsheetUndoJob.payload>;
+
+export const CATEGORIZE_TRIGGERS = [
+  'pipeline',
+  'question_answered',
+  'vendor_memory_changed',
+  'prior_changed',
+  'profile_changed',
+  'catalog_upgrade',
+  'user_reprocess',
+] as const;
+export type CategorizeTrigger = (typeof CATEGORIZE_TRIGGERS)[number];
+export const LEDGER_REASONS = [
+  'categorized',
+  'status_changed',
+  'revised',
+  'deleted',
+  'partner_changed',
+  'payment_link',
+  'profile_changed',
+  'fx_imported',
+  'rules_changed',
+  'verify',
+] as const;
+export type LedgerReason = (typeof LEDGER_REASONS)[number];
+export const ORG_REBUILD_REASONS = ['profile_changed', 'rules_changed', 'manual'] as const;
+
+/** Id-safe key part (no ':' or whitespace). */
+const nonceField = z.number().int().min(0).optional();
+
+export const docCategorizePayload = tenantPayload({
+  documentId: z.uuid(),
+  revision: z.number().int().min(1),
+  trigger: z.enum(CATEGORIZE_TRIGGERS),
+  nonce: nonceField,
+});
+export type DocCategorizePayload = z.infer<typeof docCategorizePayload>;
+/** M04 §4.6: cascade → LLM → VAT → questions → summary → status; enqueues ledger.rebuild_document. Version = categorize stage version. */
+export const docCategorizeJob = defineTenantJob({
+  name: 'doc.categorize',
+  payload: docCategorizePayload,
+  version: 1,
+  entityId: (p) =>
+    `${p.documentId}-${p.revision}-${p.trigger}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+});
+
+export const ledgerRebuildDocumentPayload = tenantPayload({
+  documentId: z.uuid(),
+  reason: z.enum(LEDGER_REASONS),
+  nonce: nonceField,
+});
+export type LedgerRebuildDocumentPayload = z.infer<typeof ledgerRebuildDocumentPayload>;
+/** M04 §4.13: rebuild both ledgers for one document under an advisory lock; no-op when the input hash is unchanged. */
+export const ledgerRebuildDocumentJob = defineTenantJob({
+  name: 'ledger.rebuild_document',
+  payload: ledgerRebuildDocumentPayload,
+  version: 1,
+  entityId: (p) => `${p.documentId}-${p.reason}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+});
+
+export const ledgerRebuildOrgPayload = tenantPayload({
+  from: z.iso.date().optional(),
+  reason: z.enum(ORG_REBUILD_REASONS),
+  nonce: nonceField,
+});
+export type LedgerRebuildOrgPayload = z.infer<typeof ledgerRebuildOrgPayload>;
+/** M04 §4.13: enqueues ledger.rebuild_document for the org's documents (issue_date order, batches of 200). */
+export const ledgerRebuildOrgJob = defineTenantJob({
+  name: 'ledger.rebuild_org',
+  payload: ledgerRebuildOrgPayload,
+  version: 1,
+  entityId: (p) =>
+    `org-${p.reason}-${p.from ?? 'all'}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+  retry: { retryLimit: 1 },
+});
+
+export const ledgerVerifyPayload = z.strictObject({
+  samplePct: z.number().min(0).max(100).default(1),
+});
+export type LedgerVerifyPayload = z.infer<typeof ledgerVerifyPayload>;
+/** M04 §4.13 determinism check: nightly dry-run rebuild of a sample; any diff is logged as an alert. */
+export const ledgerVerifyJob = defineSystemJob({
+  name: 'ledger.verify',
+  payload: ledgerVerifyPayload,
+  cron: '45 3 * * *',
+  retry: { retryLimit: 0 },
+});
+
+/** M05 §6: evaluate the VAT obligations of one period for one family (IO or PAYER). */
+export const vatPeriodEvaluatePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  family: z.enum(['IO', 'PAYER']),
+});
+export type VatPeriodEvaluatePayload = z.infer<typeof vatPeriodEvaluatePayload>;
+export const vatPeriodEvaluateJob = defineTenantJob({
+  name: 'vat.period.evaluate',
+  payload: vatPeriodEvaluatePayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M05 §6: generate one filing (radne, opravne, dodatecne, nasledne) for a period. */
+export const vatFilingGeneratePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  kind: z.enum(['radne', 'opravne', 'dodatecne', 'nasledne']),
+  amendsFilingId: z.uuid().optional(),
+  discoveredOn: z.iso.date().optional(),
+  requestedBy: z.uuid(),
+});
+export type VatFilingGeneratePayload = z.infer<typeof vatFilingGeneratePayload>;
+export const vatFilingGenerateJob = defineTenantJob({
+  name: 'vat.filing.generate',
+  payload: vatFilingGeneratePayload,
+  version: 1,
+  entityId: (p) => `${p.periodStart}:${p.kind}`,
+});
+
+/** M05 §6: build the period workbook (xlsx). */
+export const vatWorkbookGeneratePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  requestedBy: z.uuid().optional(),
+});
+export type VatWorkbookGeneratePayload = z.infer<typeof vatWorkbookGeneratePayload>;
+export const vatWorkbookGenerateJob = defineTenantJob({
+  name: 'vat.workbook.generate',
+  payload: vatWorkbookGeneratePayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M05 §6: detect whether a period needs an amendment (opravne) after a ledger change. */
+export const vatAmendmentDetectPayload = tenantPayload({
+  periodStart: z.iso.date(),
+});
+export type VatAmendmentDetectPayload = z.infer<typeof vatAmendmentDetectPayload>;
+export const vatAmendmentDetectJob = defineTenantJob({
+  name: 'vat.amendment.detect',
+  payload: vatAmendmentDetectPayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M06 §6: build the annual podklady (PDF + XLSX) for one tax year; idempotent per ledger hash and answers version. */
+export const podkladyGeneratePayload = tenantPayload({
+  year: z.number().int().min(2024),
+  answersVersion: z.number().int().min(0),
+  requestedBy: z.uuid(),
+});
+export type PodkladyGeneratePayload = z.infer<typeof podkladyGeneratePayload>;
+export const podkladyGenerateJob = defineTenantJob({
+  name: 'podklady.generate',
+  payload: podkladyGeneratePayload,
+  version: 1,
+  entityId: (p) => `${p.year}-${p.answersVersion}`,
+});
+
+export const PODKLADY_RESERVE_REASONS = ['ledger_rebuilt', 'nightly', 'profile_changed'] as const;
+
+/** M06 §6: recompute the tax reserve and the income-tax obligations of one org. */
+export const podkladyReserveRefreshPayload = tenantPayload({
+  reason: z.enum(PODKLADY_RESERVE_REASONS),
+});
+export type PodkladyReserveRefreshPayload = z.infer<typeof podkladyReserveRefreshPayload>;
+export const podkladyReserveRefreshJob = defineTenantJob({
+  name: 'podklady.reserve.refresh',
+  payload: podkladyReserveRefreshPayload,
+  version: 1,
+  entityId: (p) => `reserve-${p.reason}`,
+});
+
+export const podkladyReserveNightlyPayload = z.strictObject({});
+export type PodkladyReserveNightlyPayload = z.infer<typeof podkladyReserveNightlyPayload>;
+/** M06 §6: nightly 02:30 Europe/Prague fan-out of podklady.reserve.refresh over the active organizations. */
+export const podkladyReserveNightlyJob = defineSystemJob({
+  name: 'podklady.reserve.nightly',
+  payload: podkladyReserveNightlyPayload,
+  cron: '30 2 * * *',
+  retry: { retryLimit: 0 },
+});

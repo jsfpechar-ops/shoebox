@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Pisemnost nazevSW="Shoebox" verzeSW="0.0.0">
+  <DPHKH1 verzePis="03.01">
+    <VetaD dokument="KH1" k_uladis="DPH" khdph_forma="B" rok="2026" mesic="9" d_poddp="20.10.2026"/>
+    <VetaP c_ufo="451" c_pracufo="2003" dic="7801011229" typ_ds="F" jmeno="Jan" prijmeni="Novák" ulice="Vinohradská" c_pop="1" naz_obce="Praha" psc="13000" stat="ČESKÁ REPUBLIKA" email="jan@example.com"/>
+    <VetaA2 c_radku="1" k_stat="NL" vatid_dod="805734958B01" c_evid_dd="1637922054" dppd="03.09.2026" zakl_dane1="11549.94" dan1="2425.49"/>
+    <VetaA4 c_radku="1" dic_odb="12345678" c_evid_dd="2026-0001" dppd="10.09.2026" zakl_dane1="10000.00" dan1="2100.00" kod_rezim_pl="0" zdph_44="N"/>
+    <VetaA4 c_radku="2" dic_odb="12345678" c_evid_dd="2026-0003" dppd="12.09.2026" zakl_dane1="8264.47" dan1="1735.54" kod_rezim_pl="0" zdph_44="N"/>
+    <VetaA5 zakl_dane1="8264.46" dan1="1735.54"/>
+    <VetaB2 c_radku="1" dic_dod="87654321" c_evid_dd="2026090001" dppd="02.09.2026" zakl_dane1="10711.44" dan1="2249.40" pomer="N" zdph_44="N"/>
+    <VetaB2 c_radku="2" dic_dod="87654321" c_evid_dd="DOB-7" dppd="15.09.2026" zakl_dane1="-9917.36" dan1="-2082.64" pomer="N" zdph_44="N"/>
+    <VetaB3 zakl_dane1="990.08" dan1="207.92"/>
+    <VetaC obrat23="26529.00" pln23="1784.00" celk_zd_a2="11550.00"/>
+  </DPHKH1>
+</Pisemnost>

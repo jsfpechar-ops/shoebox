@@ -1,11 +1,19 @@
 import {
   bankImportStatementJob,
   bankMatchDecideJob,
+  type CategorizeTrigger,
+  docCategorizeJob,
   docExtractJob,
   docSplitJob,
   emailReceivedJob,
+  importSpreadsheetRunJob,
+  importSpreadsheetUndoJob,
   jobIdFromKey,
   jobKey,
+  podkladyGenerateJob,
+  type VatFilingGeneratePayload,
+  vatFilingGenerateJob,
+  vatWorkbookGenerateJob,
 } from '@shoebox/pipeline';
 import { PgBoss } from 'pg-boss';
 
@@ -69,6 +77,46 @@ export async function enqueueEmailReceived(orgId: string, inboundEmailId: string
   });
 }
 
+/** Queues `import.spreadsheet.run` for one parsed spreadsheet, 200 data rows per run from `fromRow`. */
+export async function enqueueImportRun(
+  orgId: string,
+  importId: string,
+  fromRow: number,
+): Promise<void> {
+  const payload = importSpreadsheetRunJob.payload.parse({ orgId, importId, fromRow });
+  const key = jobKey(importSpreadsheetRunJob, payload);
+  await (await boss()).send(importSpreadsheetRunJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `doc.categorize` for a user action; `nonce` keeps two quick answers from collapsing into one job. */
+export async function enqueueDocCategorize(
+  orgId: string,
+  documentId: string,
+  revision: number,
+  trigger: CategorizeTrigger,
+  nonce: number = Date.now(),
+): Promise<void> {
+  const payload = docCategorizeJob.payload.parse({ orgId, documentId, revision, trigger, nonce });
+  const key = jobKey(docCategorizeJob, payload);
+  await (await boss()).send(docCategorizeJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `import.spreadsheet.undo` for one import (the worker soft-deletes its untouched documents). */
+export async function enqueueImportUndo(orgId: string, importId: string): Promise<void> {
+  const payload = importSpreadsheetUndoJob.payload.parse({ orgId, importId });
+  const key = jobKey(importSpreadsheetUndoJob, payload);
+  await (await boss()).send(importSpreadsheetUndoJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
 /** Queues `bank.import.statement` for one stored statement file; a second call for the same file is a no-op. */
 export async function enqueueBankImport(orgId: string, sourceFileId: string): Promise<void> {
   const payload = bankImportStatementJob.payload.parse({ orgId, sourceFileId });
@@ -92,4 +140,43 @@ export async function enqueueMatchDecision(
     id: jobIdFromKey(key),
     singletonKey: key,
   });
+}
+
+/** Queues `vat.filing.generate` for one period and kind; the key makes a second identical request a no-op. Returns the job id. */
+export async function enqueueVatFilingGenerate(
+  orgId: string,
+  input: Omit<VatFilingGeneratePayload, 'orgId'>,
+): Promise<string> {
+  const payload = vatFilingGenerateJob.payload.parse({ ...input, orgId });
+  const key = jobKey(vatFilingGenerateJob, payload);
+  const id = jobIdFromKey(key);
+  await (await boss()).send(vatFilingGenerateJob.name, payload, { id, singletonKey: key });
+  return id;
+}
+
+/** Queues `vat.workbook.generate` for one period. Returns the job id. */
+export async function enqueueVatWorkbookGenerate(
+  orgId: string,
+  periodStart: string,
+  requestedBy?: string,
+): Promise<string> {
+  const payload = vatWorkbookGenerateJob.payload.parse({ orgId, periodStart, requestedBy });
+  const key = jobKey(vatWorkbookGenerateJob, payload);
+  const id = jobIdFromKey(key);
+  await (await boss()).send(vatWorkbookGenerateJob.name, payload, { id, singletonKey: key });
+  return id;
+}
+
+/** Queues `podklady.generate` for one tax year and answers version; the key makes a second identical request a no-op. */
+export async function enqueuePodkladyGenerate(
+  orgId: string,
+  year: number,
+  answersVersion: number,
+  requestedBy: string,
+): Promise<string> {
+  const payload = podkladyGenerateJob.payload.parse({ orgId, year, answersVersion, requestedBy });
+  const key = jobKey(podkladyGenerateJob, payload);
+  const id = jobIdFromKey(key);
+  await (await boss()).send(podkladyGenerateJob.name, payload, { id, singletonKey: key });
+  return id;
 }
