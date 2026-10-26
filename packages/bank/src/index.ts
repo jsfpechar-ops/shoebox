@@ -6,4 +6,5 @@ export * from './parse';
 export * from './parsers/camt053';
 export * from './parsers/gpc';
 export * from './parsers/mt940';
+export * from './matcher/index';
 export type * from './types';
