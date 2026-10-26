@@ -1,0 +1,120 @@
+name: Nightly backup
+
+# Encrypted backups (decisions 2026-10-26). Nightly: pg_dump of the Supabase database, two copies:
+# Supabase Storage bucket `backups` (EU, db-<weekday>.dump.gpg, 7 rotating files) and a 30-day artifact.
+# Restore: gpg --decrypt db-Mon.dump.gpg > db.dump; pg_restore --no-owner -d "$TARGET_URL" db.dump
+# Weekly (Sunday): every original file in the bucket org-files, as a 30-day artifact only (free plan: 1 GB).
+# Restore files: gpg --decrypt files.tar.gpg | tar -x; then upload the files/ tree back to org-files.
+on:
+  schedule:
+    - cron: '30 2 * * *'
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 2 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Secrets present?
+        id: check
+        run: |
+          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::notice::Backup secrets are not set yet; nothing to do."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install pg_dump 17
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+      - name: Dump and encrypt
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          umask 077
+          /usr/lib/postgresql/17/bin/pg_dump --format=custom --no-owner --no-privileges \
+            --schema=public --schema=auth --schema=storage --schema=app \
+            --file=db.dump "$BACKUP_DATABASE_URL"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 --output db.dump.gpg db.dump
+          rm -f db.dump
+          echo "Encrypted dump: $(stat -c %s db.dump.gpg) bytes"
+      - name: Copy to Supabase Storage (EU)
+        if: steps.check.outputs.ready == 'true' && env.SUPABASE_URL != ''
+        run: |
+          set -euo pipefail
+          name="db-$(date -u +%a).dump.gpg"
+          curl --fail --silent --show-error -X POST \
+            "$SUPABASE_URL/storage/v1/object/backups/$name" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "x-upsert: true" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @db.dump.gpg > /dev/null
+          echo "Stored backups/$name"
+      - name: Keep a 30-day artifact
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: db.dump.gpg
+          retention-days: 30
+          if-no-files-found: error
+
+  files:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * 0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Secrets present?
+        id: check
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ] || [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::notice::File backup secrets are not set yet; nothing to do."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.check.outputs.ready == 'true'
+      - name: Download, pack and encrypt
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          umask 077
+          node scripts/backup-storage.mjs org-files files
+          tar -cf files.tar files
+          rm -rf files
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 --output files.tar.gpg files.tar
+          rm -f files.tar
+          echo "Encrypted files: $(stat -c %s files.tar.gpg) bytes"
+      - name: Keep a 30-day artifact
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: files-backup-${{ github.run_id }}
+          path: files.tar.gpg
+          retention-days: 30
+          if-no-files-found: error

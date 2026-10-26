@@ -2,7 +2,7 @@
 // handlers on `app_worker` through withTenant, the ops.heartbeat cron and `/healthz` (M12 §4.2).
 
 import type { Server } from 'node:http';
-import { closeDb, configureDb } from '@shoebox/db';
+import { closeDb, configureDb, type TenantDb } from '@shoebox/db';
 import { opsHeartbeatJob } from '@shoebox/pipeline';
 import type { Logger } from '@shoebox/platform';
 import { PgBoss } from 'pg-boss';
@@ -43,7 +43,7 @@ export function loadWorkerConfig(env: Record<string, string | undefined>): Worke
 export interface StartOptions {
   readonly logger: Pick<Logger, 'info' | 'warn' | 'error'>;
   /** Registers the module jobs before the queues start. */
-  readonly register?: (registry: JobRegistry) => void;
+  readonly register?: (registry: JobRegistry, db: TenantDb) => void;
   readonly pollingIntervalSeconds?: number;
 }
 
@@ -79,7 +79,7 @@ export async function startWorker(
   registry.registerSystem(opsHeartbeatJob, async () => {
     health.recordCronTick();
   });
-  options.register?.(registry);
+  options.register?.(registry, db);
   await registry.start();
   const server = await startHealthServer(health, config.port);
   logger.info('worker started');

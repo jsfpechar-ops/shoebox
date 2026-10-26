@@ -2,8 +2,20 @@
   "version": "7",
   "dialect": "postgresql",
   "entries": [
-    { "idx": 0, "version": "7", "when": 1760745600000, "tag": "0001_enums", "breakpoints": true },
-    { "idx": 1, "version": "7", "when": 1760745600001, "tag": "0002_tenancy", "breakpoints": true },
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1760745600000,
+      "tag": "0001_enums",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760745600001,
+      "tag": "0002_tenancy",
+      "breakpoints": true
+    },
     {
       "idx": 2,
       "version": "7",
@@ -56,14 +68,56 @@
     {
       "idx": 9,
       "version": "7",
-      "when": 1792977561072,
-      "tag": "0040_categories_seed",
+      "when": 1792974294370,
+      "tag": "0050_audit_document",
       "breakpoints": true
     },
     {
       "idx": 10,
       "version": "7",
-      "when": 1792978291051,
+      "when": 1792975810960,
+      "tag": "0060_document_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792975810961,
+      "tag": "0061_document_page_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792976786147,
+      "tag": "0062_documents_many_per_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792977000000,
+      "tag": "0051_backups_bucket",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792977600000,
+      "tag": "0052_purge_trash",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792979529209,
+      "tag": "0040_categories_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792979529210,
       "tag": "0041_ledgers",
       "breakpoints": true
     }

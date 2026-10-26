@@ -8,7 +8,14 @@ const stale = String(NOW - IDLE_TIMEOUT_MS - 1);
 
 describe('isPublicPath (deny by default, M12 §4.5 V1.4)', () => {
   it('only the login page, the callback and the health probe are public', () => {
-    expect(PUBLIC_PATHS).toEqual(['/prihlaseni', '/auth/callback', '/api/health']);
+    expect(PUBLIC_PATHS).toEqual([
+      '/prihlaseni',
+      '/auth/callback',
+      '/api/health',
+      '/manifest.webmanifest',
+      '/icon.svg',
+      '/api/inbound-email',
+    ]);
     for (const path of ['/prihlaseni', '/auth/callback', '/api/health', '/auth/callback/']) {
       expect(isPublicPath(path), path).toBe(true);
     }

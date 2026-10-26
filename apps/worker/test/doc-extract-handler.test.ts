@@ -203,4 +203,73 @@ describe('doc.extract handler', () => {
     expect(failures).toEqual([{ error: 'unsupported_type', final: true }]);
     expect(llm.requests).toEqual([]);
   });
+
+  it('reads a sorted document from its chosen pages in one call', async () => {
+    const { store, saved } = fakeStore({ mimeType: 'image/jpeg' });
+    const llm = llmReturning(wire());
+    const sorted: ReadingStore = {
+      ...store,
+      loadPages: async () => [
+        {
+          position: 1,
+          sourceFileId: 'f1',
+          storagePath: 'a',
+          mimeType: 'image/jpeg',
+          filePage: 1,
+          region: '',
+        },
+        {
+          position: 2,
+          sourceFileId: 'f2',
+          storagePath: 'b',
+          mimeType: 'image/png',
+          filePage: 1,
+          region: '',
+        },
+      ],
+    };
+    await createDocExtractHandler({ llm, blobs, model: 'claude-haiku-5-5', clock, store: sorted })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    const content = llm.requests[0]?.messages[0]?.content ?? [];
+    expect(content.map((b) => b.type)).toEqual(['image', 'image', 'text', 'text']);
+    expect(saved).toHaveLength(1);
+  });
+
+  it('checks the total against the payment QR amount and stores it as a field', async () => {
+    const { store, saved } = fakeStore();
+    await createDocExtractHandler({
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => ({ text: null, textGood: false, qrTexts: ['SPD*1.0*AM:999.00'] }),
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(saved[0]?.status).toBe('needs_review');
+    expect(saved[0]?.validations).toContainEqual(
+      expect.objectContaining({ ruleId: 'PROTO_QR_AMOUNT', severity: 'blocking' }),
+    );
+    expect(saved[0]?.fields).toContainEqual({
+      fieldKey: 'qr.amount',
+      valueText: '999.00',
+      source: 'qr',
+    });
+  });
+
+  it('saves the reading as before when the scan throws', async () => {
+    const { store, saved } = fakeStore();
+    await createDocExtractHandler({
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => {
+        throw new Error('scan failed');
+      },
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(saved[0]?.status).toBe('ready');
+  });
 });

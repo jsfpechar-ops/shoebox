@@ -27,6 +27,7 @@
     "@shoebox/platform": "workspace:*",
     "@shoebox/validation": "workspace:*",
     "pg-boss": "12.35.1",
+    "postal-mime": "4.0.5",
     "tsx": "4.23.15",
     "zod": "4.6.5"
   }

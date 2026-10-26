@@ -1,4 +1,5 @@
 export const packageName = '@shoebox/extraction' as const;
+export * from './exact/apply';
 export * from './isdoc/find';
 export * from './isdoc/map';
 export * from './isdoc/xml';
@@ -6,4 +7,11 @@ export * from './llm/anthropic';
 export * from './llm/client';
 export * from './llm/gemini';
 export * from './llm/provider';
+export * from './pdf/pages';
 export * from './proto/schema';
+export * from './qr/payload';
+export * from './scan/scan';
+export * from './sort/group';
+export * from './sort/page-map';
+export * from './sort/read-parts';
+export * from './text/identifiers';

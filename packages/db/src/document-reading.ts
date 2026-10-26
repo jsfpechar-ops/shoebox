@@ -7,6 +7,7 @@ import {
 } from './schema/document-details';
 import { documents, sourceFiles } from './schema/documents';
 import { organizations } from './schema/tenancy';
+import { markIfSemanticDuplicate } from './semantic-dedupe';
 import type { TenantTx } from './tenant';
 
 export interface DocumentForRead {
@@ -51,7 +52,11 @@ export interface ReadingWrite {
     base: string;
     vat: string;
   }[];
-  readonly fields: readonly { fieldKey: string; valueText: string; source: 'llm' | 'isdoc' }[];
+  readonly fields: readonly {
+    fieldKey: string;
+    valueText: string;
+    source: 'llm' | 'isdoc' | 'qr' | 'pdf_text';
+  }[];
   readonly validations: readonly {
     ruleId: string;
     ruleVersion: number;
@@ -194,6 +199,10 @@ export async function saveDocumentReading(tx: TenantTx, write: ReadingWrite): Pr
         })),
       )
       .onConflictDoNothing();
+  }
+
+  if (write.status !== 'supporting') {
+    await markIfSemanticDuplicate(tx, orgId, documentId);
   }
 
   return runId;

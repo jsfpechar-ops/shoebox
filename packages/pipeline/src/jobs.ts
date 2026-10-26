@@ -216,6 +216,13 @@ export const opsHeartbeatJob = defineSystemJob({
   retry: { retryLimit: 0 },
 });
 
+/** M12 §4.6: hard-delete documents trashed more than 30 days ago (never retained ones). */
+export const retentionTrashPurgeJob = defineSystemJob({
+  name: 'retention.trash_purge',
+  payload: z.strictObject({}),
+  cron: '30 3 * * *',
+});
+
 /** A UUID (version-5 layout) derived from an idempotency key: same key, same pg-boss job id. */
 export function jobIdFromKey(key: string): string {
   const bytes = createHash('sha1').update(`shoebox.job:${key}`).digest().subarray(0, 16);
@@ -225,6 +232,14 @@ export function jobIdFromKey(key: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+/** M01 §4.1.2: turn one stored inbound e-mail into documents. Enqueued by the inbound-email webhook. */
+export const emailReceivedJob = defineTenantJob({
+  name: 'email.received',
+  payload: tenantPayload({ inboundEmailId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.inboundEmailId,
+});
+
 /** M02: read one document (Haiku 5.5), then run the checks. Enqueued by the upload API. */
 export const docExtractJob = defineTenantJob({
   name: 'doc.extract',
@@ -232,3 +247,12 @@ export const docExtractJob = defineTenantJob({
   version: 1,
   entityId: (payload) => payload.documentId,
 });
+
+/** M01 page sorting (replaces §4.7): sort the pages of one upload drop into documents, then queue their reads. */
+export const docSplitJob = defineTenantJob({
+  name: 'doc.split',
+  payload: tenantPayload({ batchId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.batchId,
+});
+export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;

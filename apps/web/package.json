@@ -21,6 +21,7 @@
   "dependencies": {
     "@shoebox/db": "workspace:*",
     "@shoebox/domain": "workspace:*",
+    "@shoebox/exports": "workspace:*",
     "@shoebox/i18n": "workspace:*",
     "@shoebox/pipeline": "workspace:*",
     "@shoebox/platform": "workspace:*",
@@ -31,6 +32,7 @@
     "@supabase/supabase-js": "2.117.2",
     "lucide-react": "1.51.0",
     "next": "15.5.27",
+    "pdfjs-dist": "6.4.299",
     "pg-boss": "12.35.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
