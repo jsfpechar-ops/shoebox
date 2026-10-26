@@ -90,7 +90,7 @@ jobs:
         run: |
           set_secrets=$(for s in $SECRETS; do printf '%s=%s:latest,' "$s" "$s"; done)
           gcloud run deploy shoebox-test --project "$PROJECT" --region "$WEB_REGION" --image "$WEB_IMAGE" \
-            --allow-unauthenticated --min-instances 0 --max-instances 1 --memory 512Mi --cpu 1 \
+            --allow-unauthenticated --min-instances 0 --max-instances 1 --cpu-boost --memory 512Mi --cpu 1 \
             --set-env-vars "APP_ENV=test,SHOEBOX_LLM_PROVIDER=anthropic,SHOEBOX_LLM_MODEL=claude-haiku-5-5,APP_URL=https://shoebox-test-$PROJECT_NUMBER.$WEB_REGION.run.app" \
             --set-secrets "${set_secrets%,}"
           URL=$(gcloud run services describe shoebox-test --project "$PROJECT" --region "$WEB_REGION" --format 'value(status.url)')
