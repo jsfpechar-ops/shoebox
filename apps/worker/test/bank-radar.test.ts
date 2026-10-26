@@ -69,7 +69,7 @@ function setup(txs: RadarTxRow[], now = TODAY_MS) {
     loadSupplierSender: async () => 'Alza <fakturace@alza.example>',
   };
   const handler = createBankRadarRefreshHandler({ store, clock: { now: () => now } });
-  const run = () => handler({ orgId: ORG }, ctx);
+  const run = () => handler({ orgId: ORG, at: 'x' }, ctx);
   return { w, run };
 }
 const answer = (w: World, value: string) => {

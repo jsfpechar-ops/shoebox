@@ -305,11 +305,11 @@ describe('M06 podklady jobs', () => {
 });
 
 describe('bank radar jobs (M07 §4.8)', () => {
-  it('bank.radar.refresh is a singleton per org', () => {
-    const payload = { orgId: '11111111-1111-4111-8111-111111111111' };
+  it('bank.radar.refresh keys on the request time', () => {
+    const payload = { orgId: '11111111-1111-4111-8111-111111111111', at: '2026-10-26T10-00' };
     expect(bankRadarRefreshJob.payload.parse(payload)).toEqual(payload);
     expect(jobKey(bankRadarRefreshJob, payload)).toBe(
-      `${payload.orgId}:bank.radar.refresh:refresh:1`,
+      `${payload.orgId}:bank.radar.refresh:2026-10-26T10-00:1`,
     );
   });
   it('bank.radar.nightly is a system cron', () => {

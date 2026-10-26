@@ -513,12 +513,12 @@ export const podkladyReserveNightlyJob = defineSystemJob({
   retry: { retryLimit: 0 },
 });
 
-/** M07 §4.8: materialise the missing-documents radar of one organization as review questions. Singleton per org. */
+/** M07 §4.8: materialise the missing-documents radar of one organization as review questions. `at` (minute or nightly-date) makes the job id per request. */
 export const bankRadarRefreshJob = defineTenantJob({
   name: 'bank.radar.refresh',
-  payload: tenantPayload({}),
+  payload: tenantPayload({ at: z.string().min(1).max(32) }),
   version: 1,
-  entityId: () => 'refresh',
+  entityId: (p) => p.at,
 });
 export type BankRadarRefreshPayload = z.infer<typeof bankRadarRefreshJob.payload>;
 

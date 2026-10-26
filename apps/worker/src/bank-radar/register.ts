@@ -49,7 +49,11 @@ export function registerBankRadar(
             .filter((row) => row.deletedAt === null)
             .map((row) => row.id),
         ),
-      enqueue: (orgId) => registry.enqueue(bankRadarRefreshJob, { orgId }),
+      enqueue: (orgId) =>
+        registry.enqueue(bankRadarRefreshJob, {
+          orgId,
+          at: `nightly-${new Date().toISOString().slice(0, 10)}`,
+        }),
     }),
   );
   logger.info({}, 'bank.radar registered');

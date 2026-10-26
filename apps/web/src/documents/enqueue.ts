@@ -143,9 +143,12 @@ export async function enqueueMatchDecision(
   });
 }
 
-/** Queues `bank.radar.refresh` for the org (singleton: a second call while one is queued is a no-op). */
+/** Queues `bank.radar.refresh` for the org (one job per org and minute). */
 export async function enqueueRadarRefresh(orgId: string): Promise<void> {
-  const payload = bankRadarRefreshJob.payload.parse({ orgId });
+  const payload = bankRadarRefreshJob.payload.parse({
+    orgId,
+    at: new Date().toISOString().slice(0, 16).replace(':', '-'),
+  });
   const key = jobKey(bankRadarRefreshJob, payload);
   await (await boss()).send(bankRadarRefreshJob.name, payload, {
     id: jobIdFromKey(key),
