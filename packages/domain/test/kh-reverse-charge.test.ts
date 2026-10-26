@@ -106,7 +106,9 @@ describe('computeKh § 92a sections', () => {
   });
   it('a § 92a document without a code throws (the classifier must have refused it)', () => {
     const noCode = (id: string): KhDocumentInfo | undefined =>
-      id === 'sub-1' ? { duzp: d('2026-09-10'), partnerCountry: 'CZ', rcCommodityCodes: [] } : DOCS[id];
+      id === 'sub-1'
+        ? { duzp: d('2026-09-10'), partnerCountry: 'CZ', rcCommodityCodes: [] }
+        : DOCS[id];
     expect(() => computeKh(ENTRIES, dp3, noCode)).toThrow(/kod_pred_pl/);
   });
 });

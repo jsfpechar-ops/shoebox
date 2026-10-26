@@ -164,7 +164,8 @@ function deriveIssued(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreatme
   if (isB2c) {
     if (!isPayer) return { treatment: 'iss_no_vat' };
     // ZDPH § 92a: the customer must be a payer (CZ DIČ); B2C or no DIČ → ordinary output VAT.
-    const reverseCharge = line.rcCommodityCode !== null && customer?.czDic !== null && customer?.czDic !== undefined;
+    const reverseCharge =
+      line.rcCommodityCode !== null && customer?.czDic !== null && customer?.czDic !== undefined;
     return { treatment: reverseCharge ? 'iss_domestic_reverse_charge' : 'iss_domestic_vat' };
   }
 

@@ -119,10 +119,14 @@ const RC_TREATMENTS: ReadonlySet<string> = new Set([
 ]);
 const rcCommodity: SimpleCheckFn = (ctx) => {
   const docs = ctx.input.documents.filter((d) => {
-    const rcLines = d.lines.filter((l) => l.vatTreatment !== null && RC_TREATMENTS.has(l.vatTreatment));
+    const rcLines = d.lines.filter(
+      (l) => l.vatTreatment !== null && RC_TREATMENTS.has(l.vatTreatment),
+    );
     const codes = new Set(d.lines.map((l) => l.rcCommodityCode).filter((c) => c !== null));
     const codeOnOtherLine = d.lines.some(
-      (l) => l.rcCommodityCode !== null && !(l.vatTreatment !== null && RC_TREATMENTS.has(l.vatTreatment)),
+      (l) =>
+        l.rcCommodityCode !== null &&
+        !(l.vatTreatment !== null && RC_TREATMENTS.has(l.vatTreatment)),
     );
     if (!ctx.isPayer) return codes.size > 0;
     if (rcLines.length === 0) return codes.size > 0;

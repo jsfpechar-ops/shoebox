@@ -157,7 +157,7 @@ export function computeDphdp3(
     if (!isZeroValue(r44)) rows['44'] = r44;
     const inputRows = [...new Set(map.filter((m) => m.side === 'input').map((m) => m.row))];
     tax46 = inputRows
-      .filter((row) => Number(row) >= 40 && Number(row) <= 42)
+      .filter((row) => Number.parseInt(row, 10) >= 40 && Number.parseInt(row, 10) <= 42)
       .reduce((acc, row) => acc.add(get(row).tax), Money.zero(CZK))
       .add(r43.tax)
       .add(r44.tax);
@@ -167,7 +167,10 @@ export function computeDphdp3(
   const returnRows = [
     ...new Set(
       map
-        .filter((m) => m.side === 'output' && Number(m.row) <= 13 && m.statuses.includes(status))
+        .filter(
+          (m) =>
+            m.side === 'output' && Number.parseInt(m.row, 10) <= 13 && m.statuses.includes(status),
+        )
         .map((m) => m.row),
     ),
   ];

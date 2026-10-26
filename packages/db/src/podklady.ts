@@ -6,7 +6,9 @@ import {
   type AnnualTotalsEntry,
   type AssetLineInput,
   BOOKABLE_CLASSES,
+  type Currency,
   CZK,
+  convertToCzk,
   type LegalDate,
   Money,
   type PodkladyAnswers,
@@ -16,9 +18,7 @@ import {
   parseLegalDate,
   type ReadinessInput,
   resolveFxRate,
-  convertToCzk,
   round2,
-  type Currency,
   type VatNoteInput,
 } from '@shoebox/domain';
 import { eq, sql } from 'drizzle-orm';
@@ -245,14 +245,19 @@ export async function readPodkladyRows(
   );
   // ZDP § 38: foreign amounts enter the podklady in CZK. documents.fx_rate is the per-unit ČNB rate
   // set at categorization; without it, the ČNB fixing of the payment date (fx_rates) is used.
-  const foreignCurrencies = [...new Set(personalRows.map((r) => r.currency).filter((c) => c !== 'CZK'))];
+  const foreignCurrencies = [
+    ...new Set(personalRows.map((r) => r.currency).filter((c) => c !== 'CZK')),
+  ];
   const fxRows =
     foreignCurrencies.length === 0
       ? []
       : await rowsOf<{ rate_date: string; currency: string; amount: number; rate: string }>(
           tx,
           sql`select rate_date::text, currency, amount, rate::text from fx_rates
-              where currency in (${sql.join(foreignCurrencies.map((c) => sql`${c}`), sql`, `)})
+              where currency in (${sql.join(
+                foreignCurrencies.map((c) => sql`${c}`),
+                sql`, `,
+              )})
                 and rate_date between (${yearStart}::date - ${fxMaxLookbackDays}::int) and ${yearEnd}::date
               order by rate_date`,
         );
@@ -289,7 +294,11 @@ export async function readPodkladyRows(
       privateUseFxMissing.push(r.document_id);
       continue;
     }
-    personalDocuments.push({ documentId: r.document_id, paidAt, amountCzk: round2(convertToCzk(foreign, fx)) });
+    personalDocuments.push({
+      documentId: r.document_id,
+      paidAt,
+      amountCzk: round2(convertToCzk(foreign, fx)),
+    });
   }
   const partialRows = await rowsOf<{
     document_id: string;

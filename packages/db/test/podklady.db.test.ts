@@ -130,9 +130,9 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
       expect(readiness.businessFlagUnknown.sum.toFixed2()).toBe('3000.00');
       expect(privateUse.partialShareLines.map((l) => l.lineId)).toEqual([L_SMALL]);
       expect(privateUse.partialShareLines[0]?.totalCzk.toFixed2()).toBe('3000.00');
-      expect(privateUse.personalDocuments.find((p) => p.documentId === D_EUR)?.amountCzk.toFixed2()).toBe(
-        '2500.00',
-      );
+      expect(
+        privateUse.personalDocuments.find((p) => p.documentId === D_EUR)?.amountCzk.toFixed2(),
+      ).toBe('2500.00');
       expect(privateUseFxMissing).toEqual([]);
     });
 
