@@ -17,8 +17,8 @@ import {
   multiDocumentScore,
   type OwnAccount,
   scoreBatch,
-  toHalere,
   type TxView,
+  toHalere,
   windowKindOf,
 } from '@shoebox/bank';
 import type {
@@ -32,9 +32,9 @@ import type {
   MatchDocRow,
   MatchTxRow,
   PaymentLinkInsert,
+  SuggestionInsert,
   setDocumentPaidAt,
   setTransactionMatch,
-  SuggestionInsert,
   syncOpenSuggestions,
   TenantTx,
 } from '@shoebox/db';
@@ -333,10 +333,7 @@ export async function runMatch(
       ctx.aliases.find((a) => a.kind === 'account' && keys.includes(a.value))?.partnerId;
     if (partnerId === undefined) continue;
     const items = docs
-      .filter(
-        (d) =>
-          d.partnerId === partnerId && isEligible(t, d) && d.currency === t.currency,
-      )
+      .filter((d) => d.partnerId === partnerId && isEligible(t, d) && d.currency === t.currency)
       .sort((a, b) => (a.dueDate ?? '9999-12-31').localeCompare(b.dueDate ?? '9999-12-31'))
       .slice(0, cfg.subsetSum.maxDocs);
     const subsets = findSubsetSum(
@@ -357,7 +354,14 @@ export async function runMatch(
       chosenDocs.length;
     const messageHasAll = chosenDocs.every((d) => messageHasDocKey(t.message, d));
     const score = multiDocumentScore(
-      { account: true, alias: false, nameSim: 0, meanDateFactor, unique: chosen.unique, messageHasAll },
+      {
+        account: true,
+        alias: false,
+        nameSim: 0,
+        meanDateFactor,
+        unique: chosen.unique,
+        messageHasAll,
+      },
       cfg,
     );
     if (score >= cfg.autoThreshold) {
@@ -447,9 +451,11 @@ export async function runMatch(
   };
 }
 
-export function createBankMatchTransactionsHandler(
-  deps: BankMatchDeps,
-): TenantHandler<{ orgId: string; transactionIds?: string[]; statementImportId?: string }> {
+export function createBankMatchTransactionsHandler(deps: BankMatchDeps): TenantHandler<{
+  orgId: string;
+  transactionIds?: string[] | undefined;
+  statementImportId?: string | undefined;
+}> {
   return async (payload, ctx) => {
     if (payload.statementImportId === undefined && payload.transactionIds === undefined) return;
     await runMatch(
