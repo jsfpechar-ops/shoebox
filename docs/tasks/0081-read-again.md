@@ -1,6 +1,6 @@
 # 0081: "Read again" for a document that could not be read
 
-Status: todo
+Status: in-progress
 Ticket: Page sorting (owner request 2026-10-26, proposal https://claude.ai/artifact/BAej5jjZ6mcbXh6EEupUPQ) | Depends on: none | Base commit: 496b1e9 | Branch: claude/project-thread-z0dj04 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

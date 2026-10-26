@@ -23,10 +23,18 @@ function boss(): Promise<PgBoss> {
   return started;
 }
 
-/** Queues `doc.extract` with the worker's idempotency key: a second call for the same document is a no-op. */
-export async function enqueueDocExtract(orgId: string, documentId: string): Promise<void> {
+/**
+ * Queues `doc.extract` with the worker's idempotency key: a second call for the same document is a no-op.
+ * `retry` (any unique string) makes a new job for a document whose read failed.
+ */
+export async function enqueueDocExtract(
+  orgId: string,
+  documentId: string,
+  retry?: string,
+): Promise<void> {
   const payload = docExtractJob.payload.parse({ orgId, documentId });
-  const key = jobKey(docExtractJob, payload);
+  const base = jobKey(docExtractJob, payload);
+  const key = retry === undefined ? base : `${base}:retry:${retry}`;
   await (await boss()).send(docExtractJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
