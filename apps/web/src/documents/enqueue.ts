@@ -9,6 +9,7 @@ import {
   importSpreadsheetUndoJob,
   jobIdFromKey,
   jobKey,
+  podkladyGenerateJob,
   type VatFilingGeneratePayload,
   vatFilingGenerateJob,
   vatWorkbookGenerateJob,
@@ -147,5 +148,19 @@ export async function enqueueVatWorkbookGenerate(
   const key = jobKey(vatWorkbookGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(vatWorkbookGenerateJob.name, payload, { id, singletonKey: key });
+  return id;
+}
+
+/** Queues `podklady.generate` for one tax year and answers version; the key makes a second identical request a no-op. */
+export async function enqueuePodkladyGenerate(
+  orgId: string,
+  year: number,
+  answersVersion: number,
+  requestedBy: string,
+): Promise<string> {
+  const payload = podkladyGenerateJob.payload.parse({ orgId, year, answersVersion, requestedBy });
+  const key = jobKey(podkladyGenerateJob, payload);
+  const id = jobIdFromKey(key);
+  await (await boss()).send(podkladyGenerateJob.name, payload, { id, singletonKey: key });
   return id;
 }

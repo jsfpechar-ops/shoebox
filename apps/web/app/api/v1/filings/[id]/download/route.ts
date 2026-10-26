@@ -35,7 +35,9 @@ export async function GET(
         ? [filing]
         : await loadBundle(supabase, auth.orgId, filing.bundleId);
   const hash =
-    filing === null ? '' : await currentLedgerHash(supabase, auth.orgId, filing.periodStart);
+    filing === null || filing.type === 'PODKLADY_DPFO'
+      ? ''
+      : await currentLedgerHash(supabase, auth.orgId, filing.periodStart);
   const decision = decideDownload(filing, bundle, hash, format);
   if (!decision.ok) return Response.json({ error: decision.error }, { status: decision.status });
   if (filing === null) return Response.json({ error: 'not_found' }, { status: 404 });
@@ -77,6 +79,17 @@ export async function GET(
         ...headers,
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="DPH-${filing.periodStart}.zip"`,
+      },
+    });
+  }
+  if (decision.contentType !== undefined) {
+    const file = entries[0];
+    if (file === undefined) return Response.json({ error: 'not_generated' }, { status: 409 });
+    return new Response(new Uint8Array(file.data), {
+      headers: {
+        ...headers,
+        'Content-Type': decision.contentType,
+        'Content-Disposition': `attachment; filename="${decision.paths[0]?.name ?? 'podklady'}"`,
       },
     });
   }
