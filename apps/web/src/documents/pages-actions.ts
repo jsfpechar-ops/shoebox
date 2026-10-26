@@ -93,3 +93,21 @@ export async function reactToSameInvoice(orgId: string, questionId: string): Pro
   await readAgain(orgId, data as string[]);
   revalidatePath('/inbox');
 }
+
+/** "Add a missing page": the chosen document's pages go after this one's; it is read again. */
+export async function addPageAction(form: FormData): Promise<void> {
+  const auth = await requireActiveRole(['owner', 'member']);
+  if (!auth.ok) return;
+  const id = field(form, 'id');
+  const other = field(form, 'other');
+  if (id === '' || other === '' || id === other) return;
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc('join_documents', {
+    p_document_id: id,
+    p_other_id: other,
+  });
+  if (error || !Array.isArray(data)) return;
+  await readAgain(auth.orgId, data as string[]);
+  revalidatePath('/inbox');
+  revalidatePath(`/inbox/${id}`);
+}
