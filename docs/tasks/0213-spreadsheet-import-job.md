@@ -1,6 +1,6 @@
 # 0213: Spreadsheet import run job
 
-Status: ready
+Status: todo
 Ticket: P2-IMP-02 (part 2) | Depends on: 0211, 0212 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0213-report.md
