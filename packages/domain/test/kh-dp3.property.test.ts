@@ -139,8 +139,8 @@ describe('KH ↔ DPHDP3 properties (M05 §9, 1 000 runs)', () => {
         expect(absLe(kh.c.pln23, sumKh(b23, 'zaklDane1'), '0.50')).toBe(true);
         expect(absLe(kh.c.pln5, sumKh(b23, 'zaklDane2'), '0.50')).toBe(true);
         // P3
-        const k = ['3', '4', '5', '6', '12', '13'].filter(
-          (r) => !dphdp3Row(dp3, r).base.isZero(),
+        const k = ['3', '4', '5', '6', '12', '13'].filter((r) =>
+          entries.some((e) => e.dphdp3Rows.includes(r)),
         ).length;
         expect(
           absLe(
@@ -202,7 +202,9 @@ describe('KH ↔ DPHDP3 properties (M05 §9, 1 000 runs)', () => {
             (row) => Number.parseInt(row, 10) >= 40 && Number.parseInt(row, 10) <= 46,
           ),
         ).toBe(false);
-        expect(dp3.row64.equals(dp3.row62)).toBe(true);
+        const nonNeg = (m: Money) => (m.isNegative() ? ZERO : m);
+        expect(dp3.row64.equals(nonNeg(dp3.row62.subtract(dp3.row63)))).toBe(true);
+        expect(dp3.row65.equals(nonNeg(dp3.row63.subtract(dp3.row62)))).toBe(true);
         expect(reconcileKhDp3(dp3, null).ok).toBe(true);
       }),
       { numRuns: 300 },
@@ -222,7 +224,8 @@ describe('KH ↔ DPHDP3 properties (M05 §9, 1 000 runs)', () => {
         };
         expect(run(shuffled)).toBe(run(a));
         // P8: same per-rate sums per document → identical DP3 and KH rows (evidence numbers differ per part, so compare without them)
-        const strip = (s: string) => s.replace(/"cEvidDd":"[^"]*"/g, '');
+        const strip = (s: string) =>
+          s.replace(/"cEvidDd":"[^"]*"/g, '').replace(/"entryCount":\d+/g, '');
         expect(strip(run(b))).toBe(strip(run(a)));
       }),
       { numRuns: 300 },

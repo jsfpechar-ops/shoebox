@@ -4,34 +4,32 @@ Status: blocked
 
 ## Done
 
-- Step 1: `packages/domain/src/vat/reconcile.ts` created, `export * from './vat/reconcile';` appended to `packages/domain/src/index.ts`. Commit 645d4df.
-- Step 2: `packages/domain/test/kh-dp3.property.test.ts` created verbatim, except `Number(row)` changed to `Number.parseInt(row, 10)` (Biome). Commit 3d5aa61, red.
-- Biome `--write` applied (formatting only). Typecheck clean. `pnpm depcruise`: no violations.
-- Steps 1 to 3 done. Acceptance (§7) not met: 3 of 4 properties fail.
+- Step 1: `packages/domain/src/vat/reconcile.ts` and index export. Commit 645d4df, amended in the follow-up commit.
+- Step 2: `packages/domain/test/kh-dp3.property.test.ts`. Brief text plus `Number.parseInt` (Biome) and the approved amendments below.
+- Typecheck clean. `pnpm depcruise`: no violations. Biome: clean.
 
-## Commands (last lines)
+## Orchestrator-approved spec amendments (applied)
 
-- `pnpm --filter @shoebox/domain test -- kh-dp3`: Tests 3 failed, 1 passed (the tamper test passes). Ran the whole domain suite because the `--` filter is not honored; only this file was run afterwards.
-- `pnpm exec vitest run test/kh-dp3.property.test.ts`: `Tests 3 failed | 1 passed (4)`.
-- `pnpm --filter @shoebox/domain typecheck`: clean.
-- `pnpm depcruise`: no dependency violations found (583 modules).
+1. P3: k = number of DP3 source rows in {3,4,5,6,12,13} that have at least one entry (test: entries; reconcile: `dp3.raw` keys). The earlier rule (non-zero DP3 rows) failed on rows that round to zero.
+2. P6: ř.64 = max(ř.62 − ř.63, 0) and ř.65 = max(ř.63 − ř.62, 0), in the test and in the reconcile P6_IO_SHAPE check. Refund periods pass.
+3. P8: compare everything except `entryCount`.
 
-## Counterexamples (fast-check, verbatim)
+## Test result
 
-1. P1–P5, payer. `[[{"kind":"eu_service","rate":"standard","parts":[1],"sign":1,"big":false,"idx":0}]]`. Issue: `P3_A2_SUM`. Cause: DP3 row 5 base rounds 0.01 CZK to 0, so k (non-zero DP3 rows) = 0 and the tolerance is 0.00, while the A2 sum is 0.01. The brief's k definition is wrong for rows that round to zero. Suggested fix (owner or orchestrator decision): count source rows with at least one entry (keys in `dp3.raw` within {3,4,5,6,12,13}), not non-zero DP3 rows. A later run (`iss_domestic` + `eu_goods`, 0.01 CZK parts) was not analysed. P2 to P5 for payers are not verified past P3, since fast-check stops at the first counterexample.
-2. P6, IO. Shrunk input: one `eu_service` standard entry, base -2.36 CZK. Diagnostic: row62 -1.00, row63 0.00, row64 0.00, row65 1.00. Cause: a net-negative (refund) period puts the amount in ř.65, so "ř.64 = ř.62" fails. `reconcileKhDp3` P6 check flags it too (`P6_IO_SHAPE`, "row64 0.00 vs row62 -1.00"). Suggested: P6 expects ř.64 = max(ř.62 − ř.63, 0) and ř.65 accordingly, or the generator is limited to positive net periods.
-3. P7/P8. `[[{"kind":"iss_domestic","rate":"standard","parts":[1,1],"sign":1,"big":false,"idx":0}],0]`. P7 passed. P8 differs only in `entryCount` (1 vs 2) in both `dp3` and `kh`, which is the input count, not a tax figure. Suggested: exclude `entryCount` from the P8 comparison. This is outside the brief's allowed relaxation (dan/tax haléře only).
+`pnpm exec vitest run test/kh-dp3.property.test.ts`: 3 passed, 1 failed (P7/P8).
+P1–P5 (payer) and P6 (IO) pass. The reconcile tamper test passes.
+
+## Remaining failure (not relaxed)
+
+P8, counterexample `[[{"kind":"iss_domestic","rate":"standard","parts":[1216998,1085922],"sign":1,"big":false,"idx":0}],0]`.
+The only visible difference is `dan1` in KH: 0.00 expected (unsplit) vs 0.01 received (split). Hand check: 23029.20 × 21% = 4836.13 unsplit; split parts 2555.70 + 2280.44 = 4836.14. This is the per-part tax rounding the brief anticipated. P8 requires identical tax, so it fails.
+
+Decision needed from the orchestrator: (a) relax P8 for `dan1`/`dan2` to within 0.01 per split part, as the brief allowed, or (b) change the property to document-level tax (compute KH tax from the document total), which is a 0334 change. No relaxation made without approval.
 
 ## Deviations
 
-- Biome fix in the test (`Number` to `Number.parseInt`), formatting applied to both new files.
-- P5 derived-row check (43/44) applied to payers only; IO has no deduction rows by design (`dphdp3.ts` derives them only for `platce`).
-- P1 mirrors checked exactly for all five Věta C values, as the brief's P1 text says.
-
-## Questions
-
-- Decide the three test-spec fixes above (P3 k definition, P6 ř.64/65 expectation, P8 `entryCount`). No test or source file was edited to make them pass.
-- Commit 3d5aa61 is red on purpose. Do not merge the branch until the brief is amended.
+- Biome `Number` fix in the test.
+- P5 derived-row check (43/44) for payers only, as in dphdp3.ts.
 
 ## Owner steps left
 

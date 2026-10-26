@@ -53,9 +53,16 @@ export function reconcileKhDp3(
     if (deductionRows.length > 0) {
       issues.push(issue('P6_IO_SHAPE', `rows present: ${deductionRows.join(',')}`));
     }
-    if (!dp3.row64.equals(dp3.row62)) {
+    // ř.64 = max(ř.62 − ř.63, 0), ř.65 = max(ř.63 − ř.62, 0): a refund period carries ř.65.
+    const nonNeg = (m: Money) => (m.isNegative() ? ZERO : m);
+    const expect64 = nonNeg(dp3.row62.subtract(dp3.row63));
+    const expect65 = nonNeg(dp3.row63.subtract(dp3.row62));
+    if (!dp3.row64.equals(expect64) || !dp3.row65.equals(expect65)) {
       issues.push(
-        issue('P6_IO_SHAPE', `row64 ${dp3.row64.toFixed2()} vs row62 ${dp3.row62.toFixed2()}`),
+        issue(
+          'P6_IO_SHAPE',
+          `row64 ${dp3.row64.toFixed2()} vs ${expect64.toFixed2()}, row65 ${dp3.row65.toFixed2()} vs ${expect65.toFixed2()}`,
+        ),
       );
     }
   } else if (kh === null) {
@@ -106,9 +113,9 @@ export function reconcileKhDp3(
       }
     }
 
-    // P3: Věta C celkZdA2 against the A2 rows, tolerance 0.50 per non-zero source row.
-    const nonZeroRows = A2_SOURCE_ROWS.filter((code) => !row(code).base.isZero()).length;
-    const a2Tolerance = Money.parse(((nonZeroRows * 50) / 100).toFixed(2), CZK);
+    // P3: Věta C celkZdA2 against the A2 rows, tolerance 0.50 per source row that has entries.
+    const sourceRows = A2_SOURCE_ROWS.filter((code) => dp3.raw[code] !== undefined).length;
+    const a2Tolerance = Money.parse(((sourceRows * 50) / 100).toFixed(2), CZK);
     const a2Sum = sumKh(kh.a2, 'zaklDane1').add(sumKh(kh.a2, 'zaklDane2'));
     if (!withinTolerance(kh.c.celkZdA2, a2Sum, a2Tolerance)) {
       issues.push(
