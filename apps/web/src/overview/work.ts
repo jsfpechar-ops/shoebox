@@ -1,4 +1,12 @@
-import { compareLegalDates, type LegalDate, Money } from '@shoebox/domain';
+import {
+  compareLegalDates,
+  DIRECTION_VALUES,
+  DOCUMENT_STATUS_VALUES,
+  type LegalDate,
+  Money,
+  parseLegalDate,
+} from '@shoebox/domain';
+import { z } from 'zod';
 
 /** A document as the work and bills cards see it (money stays a decimal string, ADR-007). */
 export interface WorkRow {
@@ -112,4 +120,56 @@ export function computeBillsToPay(rows: readonly WorkRow[], asOf: LegalDate): Bi
     ).toFixed2();
   }
   return { items: bills.slice(0, MAX_BILLS), count: bills.length, totalCzk };
+}
+
+/** PostgREST select for the work and bills cards (numeric cast to text, ADR-007). */
+export const WORK_SELECT =
+  'id, status, direction, due_date, paid_at, total_gross::text, currency, document_number, partner_snapshot, document_fields(source, is_current)';
+
+const workRowSchema = z.object({
+  id: z.string(),
+  status: z.enum(DOCUMENT_STATUS_VALUES),
+  direction: z.enum(DIRECTION_VALUES).nullable(),
+  due_date: z.string().nullable(),
+  paid_at: z.string().nullable(),
+  total_gross: z
+    .string()
+    .regex(/^-?\d+(\.\d+)?$/)
+    .nullable(),
+  currency: z.string().length(3),
+  document_number: z.string().nullable(),
+  partner_snapshot: z.unknown(),
+  document_fields: z.array(z.object({ source: z.string(), is_current: z.boolean() })).nullable(),
+});
+
+/** Maps one `documents` row to a `WorkRow`; null when it does not parse. */
+export function toWorkRow(row: unknown): WorkRow | null {
+  const parsed = workRowSchema.safeParse(row);
+  if (!parsed.success) return null;
+  const d = parsed.data;
+  let dueDate: LegalDate | null = null;
+  if (d.due_date !== null) {
+    try {
+      dueDate = parseLegalDate(d.due_date);
+    } catch {
+      return null;
+    }
+  }
+  const snapshot = d.partner_snapshot;
+  const name =
+    typeof snapshot === 'object' && snapshot !== null && 'name' in snapshot
+      ? (snapshot as { name: unknown }).name
+      : null;
+  return {
+    id: d.id,
+    status: d.status,
+    direction: d.direction,
+    dueDate,
+    paidAt: d.paid_at,
+    totalGross: d.total_gross,
+    currency: d.currency,
+    documentNumber: d.document_number,
+    partnerName: typeof name === 'string' && name !== '' ? name : null,
+    hasUserField: (d.document_fields ?? []).some((f) => f.is_current && f.source === 'user'),
+  };
 }

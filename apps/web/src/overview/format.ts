@@ -13,6 +13,17 @@ export function formatCzkWhole(amount: Money): string {
   return CZK_WHOLE.format(amount.toFixed2() as unknown as number);
 }
 
+/** An exact decimal string with its currency, e.g. "1 234,50 Kč" (never a float computation). */
+export function formatMoneyText(amount: string, currency: string): string {
+  try {
+    return new Intl.NumberFormat('cs-CZ', { style: 'currency', currency }).format(
+      amount as unknown as number,
+    );
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
+
 function parts(date: LegalDate): { year: number; month: number; day: number } {
   const [year = 0, month = 0, day = 0] = date.split('-').map(Number);
   return { year, month, day };
