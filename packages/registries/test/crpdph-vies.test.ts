@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createCrpdphClient, createViesClient, parseCrpdphResponse } from '../src/index';
 
 // Synthetic values in the live answer's shape (hard rule 4).
-const CRPDPH_OK = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Header/><soapenv:Body><StatusNespolehlivySubjektRozsirenyResponse xmlns="http://adis.mfcr.cz/rozhraniCRPDPH/"><status odpovedGenerovana="2026-10-26" statusCode="0" statusText="OK"/><statusSubjektu typSubjektu="PLATCE_DPH" dic="25596641" nespolehlivyPlatce="NE" cisloFu="13"><zverejneneUcty><ucet datumZverejneni="2013-04-09"><standardniUcet predcisli="19" cislo="2000145399" kodBanky="0800"/></ucet><ucet datumZverejneni="2015-08-06" datumZverejneniUkonceni="2020-01-01"><nestandardniUcet cislo="SK2909000000005033845424"/></ucet></zverejneneUcty><nazevSubjektu>TESTOVACI FIRMA S.R.O.     </nazevSubjektu></statusSubjektu><statusSubjektu typSubjektu="NESPOLEHLIVA_OSOBA" dic="00006947" nespolehlivyPlatce="ANO" datumZverejneniNespolehlivosti="2024-05-01" cisloFu="7"><nazevSubjektu>JINA FIRMA</nazevSubjektu></statusSubjektu></StatusNespolehlivySubjektRozsirenyResponse></soapenv:Body></soapenv:Envelope>`;
+const CRPDPH_OK = `<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Header/><soapenv:Body><StatusNespolehlivySubjektRozsirenyResponse xmlns="http://adis.mfcr.cz/rozhraniCRPDPH/"><status odpovedGenerovana="2026-10-26" statusCode="0" statusText="OK"/><statusSubjektu typSubjektu="PLATCE_DPH" dic="25596641" nespolehlivyPlatce="NE" cisloFu="13"><zverejneneUcty><ucet datumZverejneni="2013-04-09"><standardniUcet predcisli="19" cislo="2000145399" kodBanky="0800"/></ucet><ucet datumZverejneni="2015-08-06" datumZverejneniUkonceni="2020-01-01"><nestandardniUcet cislo="SK3112000000198742637541"/></ucet></zverejneneUcty><nazevSubjektu>TESTOVACI FIRMA S.R.O.     </nazevSubjektu></statusSubjektu><statusSubjektu typSubjektu="NESPOLEHLIVA_OSOBA" dic="00006947" nespolehlivyPlatce="ANO" datumZverejneniNespolehlivosti="2024-05-01" cisloFu="7"><nazevSubjektu>JINA FIRMA</nazevSubjektu></statusSubjektu></StatusNespolehlivySubjektRozsirenyResponse></soapenv:Body></soapenv:Envelope>`;
 
 const status = (code: number) =>
   `<Envelope><Body><R><status odpovedGenerovana="2026-10-26" statusCode="${code}" statusText="X"/></R></Body></Envelope>`;
@@ -42,7 +42,7 @@ describe('parseCrpdphResponse', () => {
         {
           datumZverejneni: '2015-08-06',
           datumZverejneniUkonceni: '2020-01-01',
-          ucet: { kind: 'nonstandard', cislo: 'SK2909000000005033845424' },
+          ucet: { kind: 'nonstandard', cislo: 'SK3112000000198742637541' },
         },
       ],
     });
