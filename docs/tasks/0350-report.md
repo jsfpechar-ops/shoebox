@@ -1,6 +1,6 @@
 # 0350 report
 
-Status: blocked
+Status: review
 Done: steps 1 to 3 (createXlsxWorkbook, vat-workbook sheets and tests), step 4 code (worker job, registration, typecheck). Left: step 4 test `apps/worker/test/vat-workbook-job.test.ts` (needs a ledger fixture: copy the profile, entry and document helpers from `apps/worker/test/filing-lifecycle.test.ts`), then step 5 commit.
 
 ## Files changed
