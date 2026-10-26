@@ -131,7 +131,11 @@ describe('dates', () => {
 
 describe('symbolsFromText', () => {
   it('reads slash-separated symbols', () => {
-    expect(symbolsFromText('/VS/1234/KS/0308/SS/00042')).toEqual({ vs: '1234', ks: '308', ss: '42' });
+    expect(symbolsFromText('/VS/1234/KS/0308/SS/00042')).toEqual({
+      vs: '1234',
+      ks: '308',
+      ss: '42',
+    });
   });
 
   it('reads VS: at the start', () => {
