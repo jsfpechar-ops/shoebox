@@ -155,6 +155,13 @@
       "when": 1793056249430,
       "tag": "0063_pipeline_events",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793056476900,
+      "tag": "0064_analytics_views",
+      "breakpoints": true
     }
   ]
 }

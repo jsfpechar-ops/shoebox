@@ -1,6 +1,6 @@
 # 0521: analytics views and CSV export for failure analysis
 
-Status: todo
+Status: review
 Ticket: owner ask 2026-10-26 (failure logging for analytics) | Depends on: 0520 | Base commit: after 0520 | Branch: claude/project-thread-5vgi6d | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -361,7 +361,7 @@ describe.skipIf(DATABASE_URL === undefined)('0064 analytics views', () => {
 });
 ```
 
-8. **Run the db tests locally** (Postgres 16 sandbox, K-P03): if 0520 left it running, reuse it; else `bash packages/db/scripts/local-pg.sh start 2>&1 | tail -5`, export the printed `DATABASE_URL`, then `pnpm --filter @shoebox/db test -- analytics pipeline-events meta 2>&1 | tail -30`. If the sandbox cannot start, say so in the report and rely on CI. If a view fails to create, fix only the SQL in 0064 and say what you changed.
+8. **Run the db tests locally** (Postgres 16 sandbox, K-P03): if 0520 left it running, reuse it; else `bash packages/db/scripts/local-pg.sh start 2>&1 | tail -5`, export the printed `DATABASE_URL`, then `pnpm --filter @shoebox/db test -- analytics pipeline-events test/rls 2>&1 | tail -30`. If the sandbox cannot start, say so in the report and rely on CI. If a view fails to create, fix only the SQL in 0064 and say what you changed.
 
 9. **Edit** `docs/v3/05-data-model.md`: after the `**pipeline_events (0063, brief 0520).**` paragraph add: `**Analytics views (0064, brief 0521).** Schema `analytics`, service role only (no app role has usage): `failure_reasons_weekly`, `field_corrections`, `document_journey`, `ai_cost_weekly`, `supplier_trouble`. Export: `pnpm analytics:export -- --from YYYY-MM-DD --out analytics-out` with a service-role `DATABASE_URL`.`
 

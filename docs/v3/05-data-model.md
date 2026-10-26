@@ -485,6 +485,8 @@ create index on expected_documents (org_id, state, expected_by);
 
 **pipeline_events (0063, brief 0520).** One row per step of a document's life, as codes only (never values): `status` from the trigger `app.log_document_status()` on every insert and status change, `read` and `read_failed` from the worker (`saveDocumentReading`, `recordFailedRead`), `user_*` from `audit_document()`. Analytics views come in 0064. Read-only for users (§10.2).
 
+**Analytics views (0064, brief 0521).** Schema `analytics`, service role only (no app role has usage): `failure_reasons_weekly`, `field_corrections`, `document_journey`, `ai_cost_weekly`, `supplier_trouble`. Export: `pnpm analytics:export -- --from YYYY-MM-DD --out analytics-out` with a service-role `DATABASE_URL`.
+
 ## 5. Classification support
 
 `categories` is defined in §3 (it must exist before `document_lines`).
