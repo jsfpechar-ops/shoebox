@@ -1,4 +1,4 @@
-export type EpoForm = 'DPHDP3' | 'DPHKH1' | 'DPHSHV';
+export type EpoForm = 'DPHDP3' | 'DPHKH1' | 'DPHSHV' | 'DPFDP7';
 
 export interface VetaRule {
   readonly name: string;
@@ -313,6 +313,50 @@ export const FORM_RULES: Readonly<Record<EpoForm, readonly VetaRule[]>> = {
     },
     { name: 'VetaS', min: 0, max: null, attrs: null, required: [] },
   ],
+  DPFDP7: [
+    {
+      name: 'VetaD',
+      min: 1,
+      max: 1,
+      attrs: [
+        'dokument',
+        'k_uladis',
+        'rok',
+        'dap_typ',
+        'pln_moc',
+        'audit',
+        'c_ufo_cil',
+        'c_pracufo',
+      ],
+      required: ['dokument', 'k_uladis', 'rok', 'dap_typ'],
+    },
+    {
+      name: 'VetaP',
+      min: 1,
+      max: 1,
+      attrs: [
+        'rod_c',
+        'jmeno',
+        'prijmeni',
+        'titul',
+        'email',
+        'c_telef',
+        'naz_obce',
+        'ulice',
+        'c_pop',
+        'psc',
+        'stat',
+      ],
+      required: ['rod_c', 'prijmeni', 'jmeno'],
+    },
+    {
+      name: 'VetaT',
+      min: 1,
+      max: 1,
+      attrs: ['c_nace', 'kc_prij7', 'kc_vyd7', 'pr_sazba', 'vyd7proc'],
+      required: ['kc_prij7'],
+    },
+  ],
 };
 
 const DATE_ATTRS = 'd_poddp|d_zjist|dppd|duzp|dup|d_narozeni|zdobd_od|zdobd_do';
@@ -333,6 +377,9 @@ export const VALUE_PATTERNS: ReadonlyArray<{
   { form: 'DPHDP3', attr: new RegExp(`^(${DPHDP3_AMOUNT_ATTRS.join('|')})$`), value: /^-?\d+$/ },
   { form: 'DPHKH1', attr: /^(zakl_dane|dan|obrat|pln|rez_pren|celk_zd)/, value: /^-?\d+\.\d{2}$/ },
   { form: 'DPHSHV', attr: /^pln_hodnota$/, value: /^-?\d+$/ },
+  { form: 'DPFDP7', attr: /^rod_c$/, value: /^\d{9,10}$/ },
+  { form: 'DPFDP7', attr: /^(kc_prij7|kc_vyd7)$/, value: /^-?\d+$/ },
+  { form: 'DPFDP7', attr: /^pr_sazba$/, value: /^(80|60|40|30)$/ },
 ];
 
 export interface ParsedVeta {
@@ -349,7 +396,7 @@ export interface ParsedPisemnost {
 }
 
 const NOT_EPO = 'tax-xml: not an EPO document';
-const EPO_FORMS: readonly string[] = ['DPHDP3', 'DPHKH1', 'DPHSHV'];
+const EPO_FORMS: readonly string[] = ['DPHDP3', 'DPHKH1', 'DPHSHV', 'DPFDP7'];
 const NAMED_ENTITIES: Readonly<Record<string, string>> = {
   amp: '&',
   lt: '<',

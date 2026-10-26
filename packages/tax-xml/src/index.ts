@@ -1,4 +1,5 @@
 export const packageName = '@shoebox/tax-xml' as const;
+export * from './dpfdp7-partial';
 export * from './dphdp3';
 export * from './forms';
 export { type KhSerializeOptions, serializeKh } from './kh';
