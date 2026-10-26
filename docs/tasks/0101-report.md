@@ -1,6 +1,6 @@
 # 0101 report: duplicate notice
 
-Status: review
+Status: done
 
 ## Files changed (`git diff --stat`, excluding the brief)
 

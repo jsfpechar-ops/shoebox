@@ -1,6 +1,6 @@
 # 0100 report: semantic dedupe
 
-Status: review
+Status: done
 
 ## Files changed (git diff --stat origin/phase/0)
 

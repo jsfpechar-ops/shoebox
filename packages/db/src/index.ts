@@ -31,3 +31,4 @@ export {
   withServiceRole,
   withTenant,
 } from './tenant';
+export { purgeTrash, type TrashPurge } from './trash-purge';

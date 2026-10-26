@@ -1,6 +1,6 @@
 # 0104: Web endpoint that receives an e-mail
 
-Status: review
+Status: done
 Ticket: P1-ING-06 (webhook part) | Depends on: 0103 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Risk: HIGH (auth)
 

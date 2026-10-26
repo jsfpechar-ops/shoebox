@@ -1,6 +1,6 @@
 # 0105: Worker turns a received e-mail into documents
 
-Status: review
+Status: done
 Ticket: P1-ING-07 (attachments only) | Depends on: 0103 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

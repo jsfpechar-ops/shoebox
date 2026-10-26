@@ -1,6 +1,6 @@
 # 0102 report
 
-Status: review
+Status: done
 
 ## Files changed (vs branch start, steps 1-4)
 - packages/i18n/messages/en.json (+1 key: inbox.upload.heic_unsupported)

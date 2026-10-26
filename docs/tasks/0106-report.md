@@ -1,6 +1,6 @@
 # 0106 report: Cloudflare mail worker
 
-Status: review
+Status: done
 
 ## Files changed (git diff --stat vs 61d818a)
 - apps/email-worker/src/index.ts | 80 + (packageName kept; worker, signBody, forwardEmail, default export)

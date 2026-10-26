@@ -1,6 +1,6 @@
 # 0106: Cloudflare mail worker forwards each e-mail to the app
 
-Status: review
+Status: done
 Ticket: P1-ING-06 (edge part) | Depends on: 0104 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Risk: HIGH (auth)
 

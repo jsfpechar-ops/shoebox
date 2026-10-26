@@ -53,7 +53,7 @@
   "trash.move": "Move to trash",
   "trash.restore": "Restore",
   "trash.title": "Trash",
-  "trash.note": "Documents you moved here do not count in your totals. You can bring them back at any time.",
+  "trash.note": "Documents you moved here are removed for good after 30 days. Until then they do not count in your totals and you can bring them back.",
   "trash.empty": "The trash is empty.",
   "trash.deleted_on": "Moved here on {date}",
   "trash.error.finalized": "We must keep this document for 10 years by law, so it cannot be deleted.",
