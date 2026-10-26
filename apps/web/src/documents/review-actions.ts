@@ -30,7 +30,8 @@ export async function answerQuestionAction(form: FormData): Promise<void> {
       .maybeSingle();
     const payload = question ? parseQuestionPayload(question.payload) : null;
     if (readError || !question || payload === null) redirect('/inbox/review?error=1');
-    if (!payload.options.some((option) => option.value === value)) redirect('/inbox/review?error=1');
+    if (!payload.options.some((option) => option.value === value))
+      redirect('/inbox/review?error=1');
 
     const answer = { value };
     const { error: writeError } = await supabase

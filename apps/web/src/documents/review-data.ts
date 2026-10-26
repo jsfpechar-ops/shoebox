@@ -39,7 +39,8 @@ export async function loadDeck(supabase: SupabaseLike, orgId: string): Promise<R
     for (const raw of Array.isArray(questionRes.data) ? questionRes.data : []) {
       const row = raw as Record<string, unknown>;
       const payload = parseQuestionPayload(row.payload);
-      if (payload === null || typeof row.id !== 'string' || typeof row.created_at !== 'string') continue;
+      if (payload === null || typeof row.id !== 'string' || typeof row.created_at !== 'string')
+        continue;
       questions.push({
         type: 'question',
         id: row.id,
@@ -64,7 +65,12 @@ export async function loadDeck(supabase: SupabaseLike, orgId: string): Promise<R
       if (typeof row.id !== 'string' || typeof row.created_at !== 'string') continue;
       const blocking = blockingByDocument.get(row.id) ?? 0;
       if (blocking > 0) {
-        documents.push({ type: 'document', documentId: row.id, blocking, createdAt: row.created_at });
+        documents.push({
+          type: 'document',
+          documentId: row.id,
+          blocking,
+          createdAt: row.created_at,
+        });
       }
     }
 
@@ -79,7 +85,11 @@ export async function loadCardDocument(
   supabase: SupabaseLike,
   orgId: string,
   id: string,
-): Promise<{ title: string | null; total: { value: string; currency: string } | null; issueDate: LegalDate | null } | null> {
+): Promise<{
+  title: string | null;
+  total: { value: string; currency: string } | null;
+  issueDate: LegalDate | null;
+} | null> {
   try {
     const { data, error } = await supabase
       .from('documents')

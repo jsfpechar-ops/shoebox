@@ -14,10 +14,19 @@ const q = (id: string, documentId: string | null, createdAt: string) => ({
   id,
   documentId,
   kind: 'business_or_personal',
-  payload: parseQuestionPayload(payload) ?? (() => { throw new Error('payload'); })(),
+  payload:
+    parseQuestionPayload(payload) ??
+    (() => {
+      throw new Error('payload');
+    })(),
   createdAt,
 });
-const d = (documentId: string, blocking: number, createdAt: string) => ({ type: 'document' as const, documentId, blocking, createdAt });
+const d = (documentId: string, blocking: number, createdAt: string) => ({
+  type: 'document' as const,
+  documentId,
+  blocking,
+  createdAt,
+});
 
 describe('parseQuestionPayload', () => {
   it('accepts the contract and fills defaults', () => {
@@ -27,7 +36,9 @@ describe('parseQuestionPayload', () => {
   it('rejects other shapes', () => {
     expect(parseQuestionPayload(null)).toBeNull();
     expect(parseQuestionPayload({ ...payload, options: [] })).toBeNull();
-    expect(parseQuestionPayload({ ...payload, options: Array(5).fill(payload.options[0]) })).toBeNull();
+    expect(
+      parseQuestionPayload({ ...payload, options: Array(5).fill(payload.options[0]) }),
+    ).toBeNull();
     expect(parseQuestionPayload({ ...payload, suggested: 'other' })).toBeNull();
     expect(parseQuestionPayload({ ...payload, question: 3 })).toBeNull();
   });
@@ -36,10 +47,24 @@ describe('parseQuestionPayload', () => {
 describe('buildDeck', () => {
   it('questions first, grouped by document, then documents by blocking count', () => {
     const deck = buildDeck(
-      [q('q1', 'A', '2026-10-01T00:00:00Z'), q('q2', 'B', '2026-10-02T00:00:00Z'), q('q3', 'A', '2026-10-03T00:00:00Z')],
-      [d('C', 1, '2026-09-01T00:00:00Z'), d('A', 2, '2026-09-01T00:00:00Z'), d('E', 3, '2026-09-05T00:00:00Z')],
+      [
+        q('q1', 'A', '2026-10-01T00:00:00Z'),
+        q('q2', 'B', '2026-10-02T00:00:00Z'),
+        q('q3', 'A', '2026-10-03T00:00:00Z'),
+      ],
+      [
+        d('C', 1, '2026-09-01T00:00:00Z'),
+        d('A', 2, '2026-09-01T00:00:00Z'),
+        d('E', 3, '2026-09-05T00:00:00Z'),
+      ],
     );
-    expect(deck.map((c) => (c.type === 'question' ? c.id : c.documentId))).toEqual(['q1', 'q3', 'q2', 'E', 'C']);
+    expect(deck.map((c) => (c.type === 'question' ? c.id : c.documentId))).toEqual([
+      'q1',
+      'q3',
+      'q2',
+      'E',
+      'C',
+    ]);
   });
   it('cardAt walks past skipped cards', () => {
     const deck = buildDeck([], [d('C', 1, '2026-09-01T00:00:00Z')]);

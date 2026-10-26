@@ -2,8 +2,8 @@ import { t } from '@shoebox/i18n';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireActiveRole } from '../../../../src/auth/org-context';
-import { loadCardDocument, loadDeck } from '../../../../src/documents/review-data';
 import { ReviewCard } from '../../../../src/documents/review-card';
+import { loadCardDocument, loadDeck } from '../../../../src/documents/review-data';
 import { cardAt } from '../../../../src/documents/review-deck';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
 
@@ -51,7 +51,14 @@ export default async function ReviewPage({
           {t('review.error')}
         </p>
       )}
-      <ReviewCard card={card} doc={doc} position={skip + 1} total={deck.length} skip={skip} />
+      <ReviewCard
+        key={card.type === 'question' ? card.id : card.documentId}
+        card={card}
+        doc={doc}
+        position={skip + 1}
+        total={deck.length}
+        skip={skip}
+      />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type KeyboardEvent, useEffect, useId, useRef } from 'react';
 import { answerQuestionAction } from './review-actions';
-import { type ReviewCard as ReviewCardData, keyAction } from './review-deck';
+import { keyAction, type ReviewCard as ReviewCardData } from './review-deck';
 
 export interface ReviewCardDocument {
   title: string | null;
@@ -29,13 +29,14 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
   const sectionRef = useRef<HTMLElement>(null);
   const formRefs = useRef<(HTMLFormElement | null)[]>([]);
   const headingId = useId();
-  const cardKey = card.type === 'question' ? card.id : card.documentId;
   const suggestedOption =
-    card.type === 'question' ? card.payload.options.find((option) => option.value === card.payload.suggested) : undefined;
+    card.type === 'question'
+      ? card.payload.options.find((option) => option.value === card.payload.suggested)
+      : undefined;
 
   useEffect(() => {
     sectionRef.current?.focus();
-  }, [cardKey]);
+  }, []);
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
@@ -73,6 +74,7 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
   return (
     <section
       ref={sectionRef}
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: the card takes focus so the single-key shortcuts work (WCAG 2.1.4)
       tabIndex={0}
       aria-labelledby={headingId}
       onKeyDown={onKeyDown}
@@ -101,7 +103,11 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
                 >
                   <input type="hidden" name="id" value={card.id} />
                   <input type="hidden" name="value" value={option.value} />
-                  <Button type="submit" variant={suggested ? 'primary' : 'secondary'} className="w-full">
+                  <Button
+                    type="submit"
+                    variant={suggested ? 'primary' : 'secondary'}
+                    className="w-full"
+                  >
                     {`[${index + 1}] ${t(option.label)}`}
                   </Button>
                 </form>
@@ -109,7 +115,9 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
             })}
           </div>
           {suggestedOption !== undefined && (
-            <p className="text-body">{t('review.suggested', { label: t(suggestedOption.label) })}</p>
+            <p className="text-body">
+              {t('review.suggested', { label: t(suggestedOption.label) })}
+            </p>
           )}
         </>
       ) : (

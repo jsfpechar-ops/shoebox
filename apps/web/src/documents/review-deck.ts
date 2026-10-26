@@ -16,7 +16,12 @@ export type ReviewCard =
       readonly payload: QuestionPayload;
       readonly createdAt: string;
     }
-  | { readonly type: 'document'; readonly documentId: string; readonly blocking: number; readonly createdAt: string };
+  | {
+      readonly type: 'document';
+      readonly documentId: string;
+      readonly blocking: number;
+      readonly createdAt: string;
+    };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -29,7 +34,8 @@ export function parseQuestionPayload(raw: unknown): QuestionPayload | null {
 
   const options: { value: string; label: MessageKey }[] = [];
   for (const option of raw.options) {
-    if (!isRecord(option) || typeof option.value !== 'string' || typeof option.label !== 'string') return null;
+    if (!isRecord(option) || typeof option.value !== 'string' || typeof option.label !== 'string')
+      return null;
     options.push({ value: option.value, label: option.label as MessageKey });
   }
 
@@ -58,14 +64,17 @@ export function buildDeck(
   questions: readonly Extract<ReviewCard, { type: 'question' }>[],
   documents: readonly Extract<ReviewCard, { type: 'document' }>[],
 ): ReviewCard[] {
-  const groupKey = (card: Extract<ReviewCard, { type: 'question' }>) => card.documentId ?? `question:${card.id}`;
+  const groupKey = (card: Extract<ReviewCard, { type: 'question' }>) =>
+    card.documentId ?? `question:${card.id}`;
   const firstSeen = new Map<string, string>();
   for (const card of [...questions].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
     const key = groupKey(card);
     if (!firstSeen.has(key)) firstSeen.set(key, card.createdAt);
   }
   const sortedQuestions = [...questions].sort((a, b) => {
-    const byGroup = (firstSeen.get(groupKey(a)) ?? '').localeCompare(firstSeen.get(groupKey(b)) ?? '');
+    const byGroup = (firstSeen.get(groupKey(a)) ?? '').localeCompare(
+      firstSeen.get(groupKey(b)) ?? '',
+    );
     if (byGroup !== 0) return byGroup;
     return a.createdAt.localeCompare(b.createdAt);
   });
