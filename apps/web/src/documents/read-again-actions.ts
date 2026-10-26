@@ -11,7 +11,11 @@ export async function readAgainAction(form: FormData): Promise<void> {
   if (!auth.ok) return;
   const id = form.get('id');
   if (typeof id !== 'string' || id === '') return;
-  await restartFailedRead(supabaseReadAgainDeps(await createSupabaseServerClient()), auth.orgId, id);
+  await restartFailedRead(
+    supabaseReadAgainDeps(await createSupabaseServerClient()),
+    auth.orgId,
+    id,
+  );
   revalidatePath(`/inbox/${id}`);
   revalidatePath('/inbox');
 }
