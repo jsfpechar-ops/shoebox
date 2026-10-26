@@ -63,8 +63,14 @@ const KIND: Record<
 function entriesOf(doc: Doc, split: boolean): VatLedgerEntryDraft[] {
   const k = KIND[doc.kind];
   const parts = split ? doc.parts : [doc.parts.reduce((a, b) => a + b, 0)];
+  const pct = doc.rate === 'standard' ? '21' : '12';
+  // P8 precondition: the parts keep the document's per-rate VAT sum, so the last part takes the rest.
+  const totalVat = vatForRate(czk(doc.parts.reduce((a, b) => a + b, 0) * doc.sign), pct);
+  let vatSoFar = czk(0);
   return parts.map((cents, i) => {
     const base = czk(cents * doc.sign);
+    const vat = i === parts.length - 1 ? totalVat.subtract(vatSoFar) : vatForRate(base, pct);
+    vatSoFar = vatSoFar.add(vat);
     return {
       periodStart: START,
       periodEnd: d('2026-09-30'),
@@ -76,7 +82,7 @@ function entriesOf(doc: Doc, split: boolean): VatLedgerEntryDraft[] {
       vatRateType: doc.rate,
       vatRatePct: doc.rate === 'standard' ? 21 : 12,
       baseCzk: base,
-      vatCzk: vatForRate(base, doc.rate === 'standard' ? '21' : '12'),
+      vatCzk: vat,
       deductionPct: '100',
       currency: 'CZK',
       baseForeign: null,

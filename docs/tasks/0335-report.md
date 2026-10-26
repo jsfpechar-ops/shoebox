@@ -1,6 +1,6 @@
 # 0335 report
 
-Status: blocked
+Status: review (orchestrator: P8 generator now keeps the per-document VAT sum when splitting, the brief precondition)
 
 ## Done
 
