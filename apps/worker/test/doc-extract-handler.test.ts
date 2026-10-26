@@ -473,7 +473,11 @@ describe('doc.extract handler', () => {
       model: 'm',
       clock,
       store,
-      scan: async () => ({ text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901', textGood: true, qrTexts: [] }),
+      scan: async () => ({
+        text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901',
+        textGood: true,
+        qrTexts: [],
+      }),
       countPages: async () => 2,
     })({ orgId: ORG, documentId: DOC }, ctx());
     expect(llm.requests).toEqual([]);
@@ -481,7 +485,9 @@ describe('doc.extract handler', () => {
       status: 'supporting',
       patch: { class: 'bank_statement', classSource: 'rule' },
       run: { method: 'rule', inputTokens: 0 },
-      validations: [{ ruleId: 'PRECHECK_SKIPPED', params: { messageKey: 'precheck.bank_statement' } }],
+      validations: [
+        { ruleId: 'PRECHECK_SKIPPED', params: { messageKey: 'precheck.bank_statement' } },
+      ],
     });
   });
 
@@ -499,7 +505,9 @@ describe('doc.extract handler', () => {
     })({ orgId: ORG, documentId: DOC }, ctx());
     expect(llm.requests).toEqual([]);
     expect(saved[0]?.status).toBe('needs_review');
-    expect(saved[0]?.validations[0]?.params).toMatchObject({ messageKey: 'precheck.too_many_pages' });
+    expect(saved[0]?.validations[0]?.params).toMatchObject({
+      messageKey: 'precheck.too_many_pages',
+    });
   });
 
   it('still reads an invoice', async () => {
@@ -512,7 +520,11 @@ describe('doc.extract handler', () => {
       model: 'm',
       clock,
       store,
-      scan: async () => ({ text: 'FAKTURA - DAŇOVÝ DOKLAD 2026001 12345678901', textGood: true, qrTexts: [] }),
+      scan: async () => ({
+        text: 'FAKTURA - DAŇOVÝ DOKLAD 2026001 12345678901',
+        textGood: true,
+        qrTexts: [],
+      }),
       countPages: async () => 1,
     })({ orgId: ORG, documentId: DOC }, ctx());
     expect(llm.requests).toHaveLength(1);

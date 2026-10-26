@@ -115,7 +115,8 @@ export function precheckDocument(input: PrecheckInput): PrecheckVerdict {
     return skip('bank_statement', 'bank_statement', 'supporting');
   }
   if (hasAny(t, INVOICE_WORDS)) return READ;
-  if (hasAny(t, GOVERNMENT_WORDS)) return skip('government_filing', 'government_filing', 'supporting');
+  if (hasAny(t, GOVERNMENT_WORDS))
+    return skip('government_filing', 'government_filing', 'supporting');
   if (hasAny(t, MARKETING_WORDS)) return skip('not_invoice', 'non_document', 'supporting');
   return READ;
 }

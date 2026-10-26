@@ -1,5 +1,5 @@
-import { Money } from '@shoebox/domain';
 import type { ReadingWrite } from '@shoebox/db';
+import { Money } from '@shoebox/domain';
 import {
   PRECHECK_VERSION,
   type PrecheckVerdict,

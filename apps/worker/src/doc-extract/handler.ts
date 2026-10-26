@@ -31,7 +31,7 @@ import {
   readIsdoc,
   scanDocument,
 } from '@shoebox/extraction';
-import { docExtractJob, type DocumentStagePayload } from '@shoebox/pipeline';
+import { type DocumentStagePayload, docExtractJob } from '@shoebox/pipeline';
 import { icoChecksumValid, icoRepairCandidates, runProtoChecks } from '@shoebox/validation';
 import type { TenantHandler } from '../registry';
 import { partsOf } from './parts';

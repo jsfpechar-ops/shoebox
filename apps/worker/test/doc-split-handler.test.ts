@@ -191,7 +191,11 @@ describe('doc.split handler', () => {
         reads.push(id);
       },
       countPages: async () => 2,
-      scan: async () => ({ text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901', textGood: true, qrTexts: [] }),
+      scan: async () => ({
+        text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901',
+        textGood: true,
+        qrTexts: [],
+      }),
       pick: async (_bytes, list) => new Uint8Array(list),
     });
     await handler({ orgId: ORG, batchId: BATCH }, ctx);

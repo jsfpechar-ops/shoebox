@@ -19,12 +19,12 @@ import {
   pdfPickPages,
   precheckDocument,
   readIsdoc,
-  scanDocument,
   SORT_MAX_PAGES_PER_CALL,
   SORT_PROMPT_VERSION,
-  SPLIT_MAX_PAGES,
   type SortPage,
   type SortPart,
+  SPLIT_MAX_PAGES,
+  scanDocument,
 } from '@shoebox/extraction';
 import type { DocSplitPayload } from '@shoebox/pipeline';
 import type { TenantHandler } from '../registry';

@@ -4,6 +4,7 @@ Updated: 2026-10-26.
 
 ## Now
 
+- Free pre-check before AI (0514–0516): bank statements, office reports and newsletters with a text layer, files over 20 pages or 20 MB are skipped with a message at zero tokens; cut-off/bad model answers fail at once (no 5× retry). Full rule classifier (Epic CLS, M01 §4.8) still to build.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
 - Lane D screens done (0400–0411, PRs #12–#19): Sysel name + app icon, register + Excel, trash, add by hand, review questions, accountant ZIP, settings, PDF click-to-fill, audit_log on fixes, nightly encrypted backup (owner adds 4 secrets). Not yet seen in a browser with real data.
