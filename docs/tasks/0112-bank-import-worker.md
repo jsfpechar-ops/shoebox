@@ -198,7 +198,7 @@ describe('bank.import.statement', () => {
   });
 
   it('asks for the account when the file names none', async () => {
-    const f = fake(bytes(':20:S\n:60F:C260914CZK0,00\n:61:260915C5,00NTRF//R1\n:62F:C260915CZK5,00\n'));
+    const f = fake(bytes(':20:S\n:25:\n:60F:C260914CZK0,00\n:61:260915C5,00NTRF//R1\n:62F:C260915CZK5,00\n'));
     await run(f.deps);
     expect(f.imports[0]).toMatchObject({ format: 'mt940', state: 'needs_account', moneyAccountId: null });
     expect(f.accounts).toEqual([]);
