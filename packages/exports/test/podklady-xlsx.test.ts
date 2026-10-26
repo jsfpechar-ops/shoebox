@@ -134,9 +134,13 @@ describe('podkladySheets S4 (M06 §9, haléře)', () => {
     expect(sheets.map((s) => s.name)).toEqual(PODKLADY_SHEETS.filter((s) => s !== 'Flat-rate tax'));
     expect(sheets.every((s) => s.name.length <= 31)).toBe(true);
   });
-  it('Summary: income 240 000,00; expenses 98 459,81; base 141 540; flat comparison at 60 %; disclaimer text', () => {
+  it('Summary: income 240 000,00; expenses 98 460 (98 459,81 before rounding); base 141 540; flat comparison at 60 %; disclaimer text', () => {
     expect(row('Summary', 'Income')).toEqual(['Income', { num: '240000.00' }]);
-    expect(row('Summary', 'Expenses')).toEqual(['Expenses', { num: '98459.81' }]);
+    expect(row('Summary', 'Expenses')).toEqual(['Expenses', { num: '98460.00' }]);
+    expect(row('Summary', 'Expenses before rounding')).toEqual([
+      'Expenses before rounding',
+      { num: '98459.81' },
+    ]);
     expect(row('Summary', 'Base before adjustments')).toEqual([
       'Base before adjustments',
       { num: '141540.00' },
