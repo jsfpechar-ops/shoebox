@@ -12,6 +12,7 @@ import {
   HOLIDAYS_ACT,
   TAX_PROCEDURE_ACT,
 } from './deadlines';
+import { CZ_DPHDP3_ROW_MAP, CZ_KH_ROUTING } from './epo';
 
 const VALID_FROM = '2026-01-01';
 const VERIFIED_AT = '2026-10-18';
@@ -27,6 +28,9 @@ const AMLR = 'https://eur-lex.europa.eu/eli/reg/2024/1624/oj';
 /** GFŘ methodology for the control statement (A.4/B.2 vs A.5/B.3 split at 10 000 Kč incl. VAT). */
 const KH_METHODOLOGY =
   'https://financnisprava.gov.cz/assets/cs/prilohy/d-seznam-dani/Metodicka_informace_k_vyplneni_KH_20240101.pdf';
+/** EPO: published structure of the DPHDP3 form (přiznání k DPH), rows and XML attributes. [verify] */
+const DPHDP3_STRUCTURE =
+  'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_detail.faces?zkratka=DPHDP3';
 /** ČSSZ: minimum advances for 2026 (5 720 Kč paid until June, 5 005 Kč from July; zákon č. 90/2026 Sb.). */
 const CSSZ_2026 = 'https://www.cssz.gov.cz/zmena-vyse-minimalnich-zaloh-osvc-v-roce-2024';
 
@@ -79,6 +83,60 @@ export const RULES_CZ_2026: readonly RuleEntryInput[] = [
   base('vat.cnb_rate_rule', `${ZDPH}#p4`, 'rate_valid_on_date_else_last_published'),
   // ZDPH § 101 odst. 1: the return is due within 25 days after the end of the period.
   base('vat.deadline_day', `${ZDPH}#p101`, 25),
+  // Treaty on European Union, Art. 52: the 27 member states (CZ included; VAT consumers that need
+  // "other member states" exclude CZ themselves). 'XI' (Northern Ireland, goods only) is not listed:
+  // TODO(verify): add 'XI' once the goods-only rule has a place in the schema.
+  {
+    ...base('vat.eu_member_states', 'https://eur-lex.europa.eu/eli/treaty/teu_2016/oj', [
+      'AT',
+      'BE',
+      'BG',
+      'HR',
+      'CY',
+      'CZ',
+      'DK',
+      'EE',
+      'FI',
+      'FR',
+      'DE',
+      'GR',
+      'HU',
+      'IE',
+      'IT',
+      'LV',
+      'LT',
+      'LU',
+      'MT',
+      'NL',
+      'PL',
+      'PT',
+      'RO',
+      'SK',
+      'SI',
+      'ES',
+      'SE',
+    ]),
+    verified_at: '2026-10-26',
+  },
+  // ZDPH § 2: pass-through amounts (tourist fee, deposits, customs VAT) are not a supply of the
+  // taxpayer. TODO(verify): bank fees (06 §2.1 "[verify bank fees]").
+  {
+    ...base('vat.out_of_scope_categories', `${ZDPH}#p2`, [
+      'pt_tourist_fee',
+      'pt_deposit',
+      'pt_customs_vat',
+    ]),
+    verified_at: '2026-10-26',
+  },
+  // ZDPH § 47 and příloha č. 2: none of the seeded categories is a reduced-rate service by default
+  // (06 §2.1: `[]`, "[verify per service]" in M04 §4.2).
+  { ...base('vat.reduced_rate_categories', `${ZDPH}#p47`, []), verified_at: '2026-10-26' },
+  // DPHDP3 row map (M05 §4.2 step 8, research/czech-tax-filings.md §2). Rows 40/41/42/50 carry
+  // `confirmed: false` until Phase 3 checks their attrs against the XSD; see cz/epo.ts.
+  { ...base('epo.dphdp3_row_map', DPHDP3_STRUCTURE, CZ_DPHDP3_ROW_MAP), verified_at: '2026-10-26' },
+  // KH sections per treatment (research/czech-tax-filings.md §1.3.1); the 10 000 Kč split is
+  // `vat.kh_document_limit`.
+  { ...base('epo.kh_routing', KH_METHODOLOGY, CZ_KH_ROUTING), verified_at: '2026-10-26' },
   // ZDP § 7 odst. 7: flat-rate expense percentages and their caps (income cap 2 000 000 Kč).
   base('pausalni_vydaje.rates_caps', `${ZDP}#p7`, {
     '80': 1_600_000,

@@ -3,6 +3,7 @@ export * from './doc-split';
 export * from './document-pages';
 export * from './document-reading';
 export { createDbPing, type DbPing } from './health';
+export * from './inbound-email';
 export { MIGRATIONS_FOLDER, MIGRATIONS_SCHEMA, runMigrations } from './migrate';
 export { type RateLimitDb, rateLimitHit } from './rate-limit';
 export * from './rls-catalog';
@@ -13,6 +14,7 @@ export * from './schema/enums';
 export * from './schema/partners';
 export * from './schema/platform';
 export * from './schema/tenancy';
+export { markIfSemanticDuplicate } from './semantic-dedupe';
 export * from './suppliers';
 export {
   closeDb,
@@ -30,3 +32,4 @@ export {
   withServiceRole,
   withTenant,
 } from './tenant';
+export { purgeTrash, type TrashPurge } from './trash-purge';

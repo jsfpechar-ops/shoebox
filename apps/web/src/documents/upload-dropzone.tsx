@@ -3,10 +3,12 @@ import { t } from '@shoebox/i18n';
 import { Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ChangeEvent, type DragEvent, useState } from 'react';
+import { prepareFile } from './prepare-image';
 
 type UploadAnswer = { items?: { status: 'accepted' | 'duplicate' | 'rejected' }[] };
 
-const ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp,.isdoc,.isdocx,.xml';
+const ACCEPT =
+  'application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.isdoc,.isdocx,.xml';
 
 /** One drop zone: drag files in or tap to pick them. Sends all files at once to POST /api/documents. */
 export function UploadDropzone() {
@@ -20,8 +22,15 @@ export function UploadDropzone() {
     setBusy(true);
     setMessage('');
     try {
+      const prepared = await Promise.all(files.map((file) => prepareFile(file)));
+      const unreadable = prepared.filter((file) => file === null).length;
+      const ready = prepared.filter((file): file is File => file !== null);
+      if (ready.length === 0) {
+        setMessage(t('inbox.upload.heic_unsupported', { n: unreadable }));
+        return;
+      }
       const body = new FormData();
-      for (const file of files) body.append('files', file);
+      for (const file of ready) body.append('files', file);
       const response = await fetch('/api/documents', { method: 'POST', body });
       if (!response.ok) {
         setMessage(t('inbox.upload.error'));
@@ -37,6 +46,7 @@ export function UploadDropzone() {
       ]
         .filter((part) => part.n > 0)
         .map((part) => t(part.key, { n: part.n }));
+      if (unreadable > 0) parts.push(t('inbox.upload.heic_unsupported', { n: unreadable }));
       setMessage(parts.join(' '));
     } catch {
       setMessage(t('inbox.upload.error'));

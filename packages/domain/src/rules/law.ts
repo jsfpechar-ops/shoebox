@@ -34,9 +34,11 @@ const CashPaymentLimit = z.strictObject({
   currency: z.enum(['CZK', 'EUR']),
 });
 
+// The strict row shape (rate, statuses, deduction_row, confirmed) is `Dphdp3RowSchema` in cz/epo.ts;
+// `attrs` is optional here because rows whose XML attribute names are unverified carry none yet.
 const Dphdp3Row = z.looseObject({
   row: z.string().min(1),
-  attrs: z.array(z.string().min(1)).min(1),
+  attrs: z.array(z.string().min(1)).min(1).optional(),
   treatment: Identifier,
   side: z.enum(['input', 'output']),
 });

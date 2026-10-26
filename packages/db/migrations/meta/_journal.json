@@ -92,6 +92,34 @@
       "when": 1792976786147,
       "tag": "0062_documents_many_per_page",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792977000000,
+      "tag": "0051_backups_bucket",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792977600000,
+      "tag": "0052_purge_trash",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792979529209,
+      "tag": "0040_categories_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792979529210,
+      "tag": "0041_ledgers",
+      "breakpoints": true
     }
   ]
 }
