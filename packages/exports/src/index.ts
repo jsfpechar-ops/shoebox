@@ -3,7 +3,9 @@ export * from './isdoc/build';
 export {
   buildPodkladyPdf,
   formatKc,
+  PDF_MIME,
   podkladyPdfLines,
+  type Translate,
   transliterate,
 } from './podklady-pdf';
 export { buildPodkladyXlsx, PODKLADY_SHEETS, podkladySheets } from './podklady-xlsx';

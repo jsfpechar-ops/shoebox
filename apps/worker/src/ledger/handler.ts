@@ -16,6 +16,8 @@ import {
   type LedgerRebuildOrgPayload,
   type LedgerVerifyPayload,
   ledgerRebuildDocumentJob,
+  type PodkladyReserveRefreshPayload,
+  podkladyReserveRefreshJob,
   type TenantJobDefinition,
   vatPeriodEvaluateJob,
 } from '@shoebox/pipeline';
@@ -131,6 +133,10 @@ export function createLedgerRebuildDocumentHandler(
   const resolved = resolveDeps(deps);
   return async (payload, ctx) => {
     const result = await rebuildDocument(ctx.tx, payload.orgId, payload.documentId, resolved);
+    await deps.enqueue<PodkladyReserveRefreshPayload>(podkladyReserveRefreshJob, {
+      orgId: payload.orgId,
+      reason: 'ledger_rebuilt',
+    });
     for (const periodStart of result.changed
       ? await periodsOf(resolved, ctx.tx, payload.documentId)
       : []) {

@@ -101,7 +101,7 @@ export function memory(initial: PeriodLedger) {
       return true;
     },
     upsertVatObligations: async (_tx, _org, drafts) => {
-      for (const d of drafts) obligations.set(`${d.kind}:${d.periodStart}`, d);
+      for (const d of drafts) obligations.set(`${d.kind}:${d.periodStart}`, d as ObligationDraft);
       return drafts.length;
     },
   };

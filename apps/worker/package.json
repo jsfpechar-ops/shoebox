@@ -25,6 +25,7 @@
     "@shoebox/domain": "workspace:*",
     "@shoebox/exports": "workspace:*",
     "@shoebox/extraction": "workspace:*",
+    "@shoebox/i18n": "workspace:*",
     "@shoebox/pipeline": "workspace:*",
     "@shoebox/platform": "workspace:*",
     "@shoebox/registries": "workspace:*",
