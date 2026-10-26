@@ -1,6 +1,6 @@
 # 0313: migration 0041, `tax_ledger_entries` and `vat_ledger_entries` with read-only RLS
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-01 / P1-LEDG-02 (tables) | Depends on: 0312 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 70k tokens
 
