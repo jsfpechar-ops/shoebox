@@ -1,10 +1,5 @@
 import { addDays, type LegalDate, Money } from '@shoebox/domain';
-import {
-  decodeGpcAccount,
-  parseAccount,
-  parseDdmmyy,
-  parseSymbol,
-} from '../normalize';
+import { decodeGpcAccount, parseAccount, parseDdmmyy, parseSymbol } from '../normalize';
 import type { CanonicalTx, ParsedStatement, ParseWarning } from '../types';
 
 export const GPC_PARSER_VERSION = 1;
@@ -208,7 +203,8 @@ export function parseGpc(text: string, options?: GpcOptions): ParsedStatement {
     format: 'gpc',
     parserVersion: GPC_PARSER_VERSION,
     profile,
-    account: header.accountNumber === null ? { currency } : { account: header.accountNumber, currency },
+    account:
+      header.accountNumber === null ? { currency } : { account: header.accountNumber, currency },
     statementNumber: header.statementNumber,
     txs,
     warnings,

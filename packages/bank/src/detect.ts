@@ -50,9 +50,9 @@ export function detectStatementFormat(bytes: Uint8Array, filename?: string): Det
 
   const trimmed = text.trimStart();
   if (trimmed.startsWith('<') && (text.includes('camt.053') || text.includes('BkToCstmrStmt'))) {
-    const version = /camt\.053\.001\.(\d{2})/.exec(text);
-    return version
-      ? { format: 'camt053', confidence: 1, encoding, camtVersion: version[1] }
+    const camtVersion = /camt\.053\.001\.(\d{2})/.exec(text)?.[1];
+    return camtVersion !== undefined
+      ? { format: 'camt053', confidence: 1, encoding, camtVersion }
       : { format: 'camt053', confidence: 1, encoding };
   }
 
@@ -67,7 +67,7 @@ export function detectStatementFormat(bytes: Uint8Array, filename?: string): Det
   }
 
   const first = lines.find((line) => line.trim() !== '');
-  if (first !== undefined && first.startsWith('074') && first.length === 128) {
+  if (first?.startsWith('074') && first.length === 128) {
     return { format: 'gpc', confidence: 1, encoding };
   }
 

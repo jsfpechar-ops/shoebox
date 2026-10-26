@@ -45,7 +45,13 @@ const IN = r075({
   name: 'ODBERATEL SRO',
   date: '150926',
 });
-const OUT = r075({ id: '12345679', halere: '121050', code: '1', name: 'Platba kartou', date: '160926' });
+const OUT = r075({
+  id: '12345679',
+  halere: '121050',
+  code: '1',
+  name: 'Platba kartou',
+  date: '160926',
+});
 const STORNO = r075({ id: '12345680', halere: '10000', code: '4', valuta: '170926' });
 const HEAD = h074({ opening: '1000000', closing: '2098950', debit: '121050', credit: '1220000' });
 const FILE = [HEAD, IN, OUT, '078NAKUP: KAVARNA PRAHA', STORNO].join('\r\n');
@@ -105,13 +111,24 @@ describe('parseGpc', () => {
   });
 
   it('flags a balance mismatch', () => {
-    const bad = [h074({ opening: '1000000', closing: '2098951', debit: '121050', credit: '1220000' }), IN, OUT, STORNO];
+    const bad = [
+      h074({ opening: '1000000', closing: '2098951', debit: '121050', credit: '1220000' }),
+      IN,
+      OUT,
+      STORNO,
+    ];
     expect(parseGpc(bad.join('\n'), { profile: 'gpc_fio' }).balanceCheck).toBe('mismatch');
   });
 
   it('skips bad rows with a warning and keeps the rest', () => {
     const odd = r075({ id: '9', halere: '100', code: '9', date: '150926' });
-    const other = r075({ id: '8', halere: '100', code: '1', date: '150926', account: '0000002400123463' });
+    const other = r075({
+      id: '8',
+      halere: '100',
+      code: '1',
+      date: '150926',
+      account: '0000002400123463',
+    });
     const s = parseGpc([HEAD, 'garbage', IN, odd, other].join('\n'), { profile: 'gpc_fio' });
     expect(s.txs).toHaveLength(1);
     expect(s.warnings.map((w) => [w.line, w.code])).toEqual([
