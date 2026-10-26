@@ -67,6 +67,11 @@ regexTarget = "match"
 regexes = ['''7801011229''']
 
 [[allowlists]]
+description = "Synthetic identifier test vectors (lane B briefs 0202, 0206)"
+regexTarget = "match"
+regexes = ['''CZ65 0800 0000 1920 0014 5399''', '''CZ6508000000192000145398''', '''CZ7103192745''', '''CZ7103192746''', '''CZ510101123''', '''2000145398/0800''']
+
+[[allowlists]]
 description = "Synthetic or textbook vectors in specs and golden labels (owner-confirmed synthetic, decisions 2026-10-18 [privacy])"
 regexTarget = "match"
 regexes = ['''19-2000145399/0800''', '''123457/0100''', '''1234567890/0800''', '''2400123456/2010''', '''CZ7001000000000000123457''', '''CZ5855000000001265098001''', '''CZ8203142695''']

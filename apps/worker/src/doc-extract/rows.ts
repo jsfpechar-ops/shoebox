@@ -62,7 +62,7 @@ export interface VatSummaryRow {
 export interface FieldRow {
   readonly fieldKey: string;
   readonly valueText: string;
-  readonly source: 'llm' | 'isdoc';
+  readonly source: 'llm' | 'isdoc' | 'qr' | 'pdf_text';
 }
 
 export type StatusAfterRead = 'ready' | 'needs_review' | 'supporting';

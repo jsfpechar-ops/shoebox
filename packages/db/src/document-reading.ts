@@ -51,7 +51,11 @@ export interface ReadingWrite {
     base: string;
     vat: string;
   }[];
-  readonly fields: readonly { fieldKey: string; valueText: string; source: 'llm' | 'isdoc' }[];
+  readonly fields: readonly {
+    fieldKey: string;
+    valueText: string;
+    source: 'llm' | 'isdoc' | 'qr' | 'pdf_text';
+  }[];
   readonly validations: readonly {
     ruleId: string;
     ruleVersion: number;

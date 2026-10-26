@@ -17,5 +17,10 @@
   "devDependencies": {
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@shoebox/validation": "workspace:*",
+    "pdfjs-dist": "6.4.299",
+    "zxing-wasm": "3.1.5"
   }
 }

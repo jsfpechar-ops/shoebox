@@ -10,3 +10,8 @@ CZ8203142695;synthetic DIČ of the fictional property manager;testdata/golden-v1
 1234567890/0800;synthetic invalid account test vector;docs/v3/modules/M02-extraction.md
 CZ7001000000000000123457;synthetic IBAN test vector;docs/v3/modules/M02-extraction.md
 123/0100;format example (counterparty_account field);docs/v3/modules/M07-bank-and-payments.md
+SK3112000000198742637541;public sample IBAN (SK bank documentation example), CRPDPH parser fixture;packages/registries/test/crpdph-vies.test.ts
+DE89370400440532013000;public sample IBAN (DE documentation example);packages/validation/test/ids.test.ts
+CZ7103192745;synthetic natural-person DIČ (mod 11 test vector);packages/validation/test/ids.test.ts
+CZ510101123;synthetic 9-digit DIČ shape test vector;packages/validation/test/ids.test.ts
+19-2000145398/0800;synthetic invalid account test vector;packages/extraction/test/text-identifiers.test.ts
