@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Pisemnost nazevSW="Shoebox" verzeSW="0.1.0">
-  <DPFDP7 verzePis="00.00">
-    <VetaD dokument="DP7" k_uladis="DPF" rok="2026" dap_typ="B" pln_moc="N" audit="N" c_ufo_cil="451" c_pracufo="2001"/>
-    <VetaP rod_c="7801011229" jmeno="Lucie" prijmeni="Nováková" email="lucie@example.test" c_telef="+420777000111" naz_obce="Praha 3" ulice="Vinohradská" c_pop="100" psc="13000" stat="CZ"/>
+  <DPFDP7 verzePis="01.01">
+    <VetaD dokument="DP7" k_uladis="DPF" rok="2026" dap_typ="B" pln_moc="N" audit="N" c_ufo_cil="451"/>
+    <VetaP c_pracufo="2001" rod_c="7801011229" jmeno="Lucie" prijmeni="Nováková" email="lucie@example.test" c_telef="+420777000111" naz_obce="Praha 3" ulice="Vinohradská" c_pop="100" psc="13000" stat="CZ"/>
     <VetaT c_nace="620200" kc_prij7="3500000" kc_vyd7="1200000" pr_sazba="60" vyd7proc="A"/>
   </DPFDP7>
 </Pisemnost>

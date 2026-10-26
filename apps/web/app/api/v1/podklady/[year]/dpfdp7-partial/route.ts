@@ -6,7 +6,7 @@ import {
   isPartialXmlAvailable,
   redactRodneCislo,
   serializeDpfdp7Partial,
-  validateXml,
+  validateXmlOrStructural,
 } from '@shoebox/tax-xml';
 import { requireActiveRole } from '../../../../../../src/auth/org-context';
 import { podkladyDb } from '../../../../../../src/podklady/db';
@@ -83,7 +83,7 @@ export async function POST(
       decision.rodneCislo,
       rules,
     );
-    const v = await validateXml(xml, 'DPFDP7', version);
+    const v = await validateXmlOrStructural(xml, 'DPFDP7', version);
     const xsdValid: boolean | null = v.method === 'xsd' ? v.valid : null;
     if (!v.valid) {
       const text = redactRodneCislo(

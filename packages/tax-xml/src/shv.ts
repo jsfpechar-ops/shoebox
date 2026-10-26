@@ -38,9 +38,16 @@ export function serializeShv(c: ShvComputation, h: EpoHeader, opts: ShvSerialize
         ['d_poddp', dateAttr(h.preparedOn)],
       ],
     },
-    vetaPOf(h),
+    shvVetaP(h),
     ...c.rows.map(vetaR),
   ];
 
   return writePisemnost({ form: h.form, verzePis: opts.verzePis, appVersion: h.appVersion, vety });
+}
+
+// The DPHSHV VetaP has no email or phone attributes (official XSD 02.01.05), unlike DPHDP3/KH.
+const SHV_VETA_P_DROPPED = new Set(['email', 'c_telef']);
+function shvVetaP(h: EpoHeader): VetaNode {
+  const p = vetaPOf(h);
+  return { ...p, attrs: p.attrs.filter(([key]) => !SHV_VETA_P_DROPPED.has(key)) };
 }

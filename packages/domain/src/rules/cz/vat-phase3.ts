@@ -73,11 +73,11 @@ export const CZ_EPO_FORMS = {
     source_url: 'https://adisspr.mfcr.cz/adis/jepo/schema/dphshv_epo2.xsd',
     valid_for_periods_from: '2026-01-01',
   },
-  // [verify] version and verze_pis are placeholders until the owner downloads the XSD (22 T-03).
+  // Verified 2026-10-26 on the ADIS EPO structure page (DPFDP7 01.01.02); XSD vendored in packages/tax-xml/xsd.
   // tax_years lists the years whose XSD is vendored; empty means the partial XML stays hidden.
   DPFDP7: {
-    version: '00.00.00',
-    verze_pis: '00.00',
+    version: '01.01.02',
+    verze_pis: '01.01',
     xsd: 'dpfdp7_epo2.xsd',
     source_url: 'https://adisspr.mfcr.cz/adis/jepo/schema/dpfdp7_epo2.xsd',
     valid_for_periods_from: '2026-01-01',

@@ -46,9 +46,9 @@ describe('serializeDpfdp7Partial S3 (M06 §9)', () => {
       pln_moc: 'N',
       audit: 'N',
       c_ufo_cil: '451',
-      c_pracufo: '2001',
     });
     expect(doc.vety[1]?.attrs).toMatchObject({
+      c_pracufo: '2001',
       rod_c: RC,
       jmeno: 'Lucie',
       prijmeni: 'Nováková',
