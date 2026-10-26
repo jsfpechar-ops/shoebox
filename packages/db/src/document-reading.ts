@@ -8,6 +8,7 @@ import {
 import { documents, sourceFiles } from './schema/documents';
 import { organizations } from './schema/tenancy';
 import type { TenantTx } from './tenant';
+import { markIfSemanticDuplicate } from './semantic-dedupe';
 
 export interface DocumentForRead {
   readonly id: string;
@@ -194,6 +195,10 @@ export async function saveDocumentReading(tx: TenantTx, write: ReadingWrite): Pr
         })),
       )
       .onConflictDoNothing();
+  }
+
+  if (write.status !== 'supporting') {
+    await markIfSemanticDuplicate(tx, orgId, documentId);
   }
 
   return runId;
