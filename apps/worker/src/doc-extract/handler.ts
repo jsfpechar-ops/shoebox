@@ -70,6 +70,7 @@ export interface DocExtractDeps {
   readonly model: string;
   readonly clock: Clock;
   readonly store?: ReadingStore; // default dbReadingStore
+  readonly enqueueMatch?: (orgId: string, documentId: string, trigger: string) => Promise<unknown>; // bank.match.document on ready (M07 §4.6.1)
   readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
   readonly registries?: RegistryDeps; // default defaultRegistryDeps()
 }
@@ -350,7 +351,8 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
     }
 
     try {
-      await store.save(ctx.tx, write);
+      const runId = await store.save(ctx.tx, write);
+      if (write.status === 'ready') await deps.enqueueMatch?.(write.orgId, write.documentId, runId);
     } catch (error) {
       return onError(error, errorCode(error, 'error'));
     }
