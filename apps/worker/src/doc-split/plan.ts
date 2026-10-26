@@ -51,9 +51,7 @@ export function planSort(
     });
   }
 
-  const deleteDocumentIds = files
-    .map((f) => f.documentId)
-    .filter((id) => !usedDocumentIds.has(id));
+  const deleteDocumentIds = files.map((f) => f.documentId).filter((id) => !usedDocumentIds.has(id));
 
   return {
     orgId,

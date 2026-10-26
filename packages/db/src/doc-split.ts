@@ -48,7 +48,10 @@ export async function setDocumentsStatus(
   status: 'splitting' | 'received',
 ): Promise<void> {
   if (documentIds.length === 0) return;
-  await tx.update(documents).set({ status }).where(inArray(documents.id, [...documentIds]));
+  await tx
+    .update(documents)
+    .set({ status })
+    .where(inArray(documents.id, [...documentIds]));
 }
 
 export interface PageRowInput {
