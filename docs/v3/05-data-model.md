@@ -520,7 +520,7 @@ create table import_mappings (                                      -- saved col
 create table spreadsheet_imports (                                  -- M01 §4.13 (Phase 2)
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references organizations(id) on delete cascade,
-  source_file_id uuid not null references source_files(id),
+  source_file_id uuid not null references source_files(id) on delete cascade,
   mapping_id uuid references import_mappings(id) on delete set null,
   state text not null default 'parsed' check (state in ('parsed','importing','done','failed','undone')),
   row_count integer not null default 0, imported_count integer not null default 0,
@@ -637,7 +637,7 @@ create table payment_orders (                                       -- QR shown 
 create table payment_order_items (
   order_id uuid not null references payment_orders(id) on delete cascade,
   org_id uuid not null references organizations(id) on delete cascade,
-  document_id uuid not null references documents(id),
+  document_id uuid not null references documents(id) on delete cascade,
   amount numeric(15,2) not null, account text not null, variable_symbol text,
   checks jsonb not null,                                            -- snapshot of pre-payment checks
   risk_acknowledged_by uuid references auth.users(id),
