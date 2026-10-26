@@ -1,15 +1,13 @@
 # 0601 report
 Status: review
 
-## Files changed (git diff --stat claude/project-thread-owbjjp)
- packages/domain/src/vat/kh.ts                 |  40 +-
- packages/domain/test/classify-period.test.ts  |   6 +-
- packages/domain/test/dphdp3-deduction.test.ts | 122 ------
- packages/domain/test/kh-deduction.test.ts     |  87 ----
- packages/domain/test/rules-values.test.ts     |   2 +-
- packages/exports/src/podklady-xlsx.ts         |   7 +-
- packages/exports/test/podklady-xlsx.test.ts   |   8 +-
- 21 files changed, 161 insertions(+), 924 deletions(-)
+## Files changed (diff vs base bdd3ded; diff vs claude/project-thread-owbjjp also shows unrelated divergence)
+ apps/web/src/podklady/load.ts               |  8 ++-
+ packages/db/src/podklady.ts                 | 81 +++++++++++++++++++++++++----
+ packages/db/test/podklady.db.test.ts        | 14 +++--
+ packages/exports/src/podklady-xlsx.ts       |  7 ++-
+ packages/exports/test/podklady-xlsx.test.ts |  8 ++-
+ 5 files changed, 101 insertions(+), 17 deletions(-)
 
 ## Commands
 - exports typecheck: clean. exports test podklady-xlsx / podklady-pdf: Test Files 8 passed, Tests 51 passed (both).
