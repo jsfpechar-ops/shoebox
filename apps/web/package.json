@@ -27,6 +27,7 @@
     "@shoebox/pipeline": "workspace:*",
     "@shoebox/platform": "workspace:*",
     "@shoebox/registries": "workspace:*",
+    "@shoebox/tax-xml": "workspace:*",
     "@shoebox/ui": "workspace:*",
     "@shoebox/validation": "workspace:*",
     "@supabase/ssr": "0.12.7",
