@@ -256,3 +256,53 @@ export const docSplitJob = defineTenantJob({
   entityId: (payload) => payload.batchId,
 });
 export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;
+
+export const CATEGORIZE_TRIGGERS = ['pipeline', 'question_answered', 'vendor_memory_changed', 'prior_changed', 'profile_changed', 'catalog_upgrade', 'user_reprocess'] as const;
+export type CategorizeTrigger = (typeof CATEGORIZE_TRIGGERS)[number];
+export const LEDGER_REASONS = ['categorized', 'status_changed', 'revised', 'deleted', 'partner_changed', 'payment_link', 'profile_changed', 'fx_imported', 'rules_changed', 'verify'] as const;
+export type LedgerReason = (typeof LEDGER_REASONS)[number];
+export const ORG_REBUILD_REASONS = ['profile_changed', 'rules_changed', 'manual'] as const;
+
+/** Id-safe key part (no ':' or whitespace). */
+const nonceField = z.number().int().min(0).optional();
+
+export const docCategorizePayload = tenantPayload({ documentId: z.uuid(), revision: z.number().int().min(1), trigger: z.enum(CATEGORIZE_TRIGGERS), nonce: nonceField });
+export type DocCategorizePayload = z.infer<typeof docCategorizePayload>;
+/** M04 §4.6: cascade → LLM → VAT → questions → summary → status; enqueues ledger.rebuild_document. Version = categorize stage version. */
+export const docCategorizeJob = defineTenantJob({
+  name: 'doc.categorize',
+  payload: docCategorizePayload,
+  version: 1,
+  entityId: (p) => `${p.documentId}-${p.revision}-${p.trigger}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+});
+
+export const ledgerRebuildDocumentPayload = tenantPayload({ documentId: z.uuid(), reason: z.enum(LEDGER_REASONS), nonce: nonceField });
+export type LedgerRebuildDocumentPayload = z.infer<typeof ledgerRebuildDocumentPayload>;
+/** M04 §4.13: rebuild both ledgers for one document under an advisory lock; no-op when the input hash is unchanged. */
+export const ledgerRebuildDocumentJob = defineTenantJob({
+  name: 'ledger.rebuild_document',
+  payload: ledgerRebuildDocumentPayload,
+  version: 1,
+  entityId: (p) => `${p.documentId}-${p.reason}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+});
+
+export const ledgerRebuildOrgPayload = tenantPayload({ from: z.iso.date().optional(), reason: z.enum(ORG_REBUILD_REASONS), nonce: nonceField });
+export type LedgerRebuildOrgPayload = z.infer<typeof ledgerRebuildOrgPayload>;
+/** M04 §4.13: enqueues ledger.rebuild_document for the org's documents (issue_date order, batches of 200). */
+export const ledgerRebuildOrgJob = defineTenantJob({
+  name: 'ledger.rebuild_org',
+  payload: ledgerRebuildOrgPayload,
+  version: 1,
+  entityId: (p) => `org-${p.reason}-${p.from ?? 'all'}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+  retry: { retryLimit: 1 },
+});
+
+export const ledgerVerifyPayload = z.strictObject({ samplePct: z.number().min(0).max(100).default(1) });
+export type LedgerVerifyPayload = z.infer<typeof ledgerVerifyPayload>;
+/** M04 §4.13 determinism check: nightly dry-run rebuild of a sample; any diff is logged as an alert. */
+export const ledgerVerifyJob = defineSystemJob({
+  name: 'ledger.verify',
+  payload: ledgerVerifyPayload,
+  cron: '45 3 * * *',
+  retry: { retryLimit: 0 },
+});
