@@ -13,6 +13,7 @@ import {
   TAX_PROCEDURE_ACT,
 } from './deadlines';
 import { CZ_DPHDP3_ROW_MAP, CZ_KH_ROUTING } from './epo';
+import { CZ_EPO_FORMS, CZ_SIMPLE_PERIOD_POLICY } from './vat-phase3';
 
 const VALID_FROM = '2026-01-01';
 const VERIFIED_AT = '2026-10-18';
@@ -31,6 +32,9 @@ const KH_METHODOLOGY =
 /** EPO: published structure of the DPHDP3 form (přiznání k DPH), rows and XML attributes. [verify] */
 const DPHDP3_STRUCTURE =
   'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_detail.faces?zkratka=DPHDP3';
+/** EPO: published list of the XML structures (DPHDP3, DPHKH1, DPHSHV). [verify] */
+const EPO_STRUCTURES =
+  'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_seznam.faces';
 /** ČSSZ: minimum advances for 2026 (5 720 Kč paid until June, 5 005 Kč from July; zákon č. 90/2026 Sb.). */
 const CSSZ_2026 = 'https://www.cssz.gov.cz/zmena-vyse-minimalnich-zaloh-osvc-v-roce-2024';
 
@@ -137,6 +141,19 @@ export const RULES_CZ_2026: readonly RuleEntryInput[] = [
   // KH sections per treatment (research/czech-tax-filings.md §1.3.1); the 10 000 Kč split is
   // `vat.kh_document_limit`.
   { ...base('epo.kh_routing', KH_METHODOLOGY, CZ_KH_ROUTING), verified_at: '2026-10-26' },
+  // M05 §4.3 simple-period policy (version 2026.1), §4.4 rounding (D-11 default), §4.5 SH rounding,
+  // §4.11 amendment windows (TA-10 defaults), §4.8 EPO form versions (CTF §1.1, dated 11. 8. 2026).
+  {
+    ...base('vat.simple_period_policy', `${ZDPH}#p101`, CZ_SIMPLE_PERIOD_POLICY),
+    verified_at: '2026-10-26',
+  },
+  base('vat.return_rounding', `${ZDPH}#p37`, 'sum_entries_then_round'),
+  base('vat.shv_rounding', `${ZDPH}#p102`, 'ceil'),
+  base('vat.amendment_windows', `${ZDPH}#p141`, {
+    dp3_dodatecne_due: 'end_of_month_after_discovery',
+    kh_nasledne_working_days: 5,
+  }),
+  { ...base('epo.forms', EPO_STRUCTURES, CZ_EPO_FORMS), verified_at: '2026-10-26' },
   // ZDP § 7 odst. 7: flat-rate expense percentages and their caps (income cap 2 000 000 Kč).
   base('pausalni_vydaje.rates_caps', `${ZDP}#p7`, {
     '80': 1_600_000,

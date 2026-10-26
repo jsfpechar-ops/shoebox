@@ -13,6 +13,7 @@ import {
   TAX_PROCEDURE_ACT,
 } from './deadlines';
 import { CZ_DPHDP3_ROW_MAP, CZ_KH_ROUTING } from './epo';
+import { CZ_EPO_FORMS, CZ_SIMPLE_PERIOD_POLICY } from './vat-phase3';
 
 const VALID_FROM = '2025-01-01';
 const VALID_TO = '2025-12-31';
@@ -30,6 +31,9 @@ const KH_METHODOLOGY =
 /** EPO: published structure of the DPHDP3 form (přiznání k DPH), rows and XML attributes. [verify] */
 const DPHDP3_STRUCTURE =
   'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_detail.faces?zkratka=DPHDP3';
+/** EPO: published list of the XML structures (DPHDP3, DPHKH1, DPHSHV). [verify] */
+const EPO_STRUCTURES =
+  'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_seznam.faces';
 /** Finanční správa: paušální daň for 2025 (bands, monthly advances, income ceilings). */
 const PAUSALNI_DAN_2025 =
   'https://financnisprava.gov.cz/cs/dane/dane/dan-z-prijmu/pausalni-dan/informace-k-institutu-pausalni-dane-pro-rok-2025';
@@ -122,6 +126,19 @@ export const RULES_CZ_2025: readonly RuleEntryInput[] = [
   // ZDPH § 47 and příloha č. 2: none of the seeded categories is a reduced-rate service by default
   // (06 §2.1: `[]`, "[verify per service]" in M04 §4.2).
   { ...base('vat.reduced_rate_categories', `${ZDPH}#p47`, []), verified_at: '2026-10-26' },
+  // M05 §4.3 simple-period policy (version 2026.1), §4.4 rounding (D-11 default), §4.5 SH rounding,
+  // §4.11 amendment windows (TA-10 defaults), §4.8 EPO form versions (CTF §1.1, dated 11. 8. 2026).
+  {
+    ...base('vat.simple_period_policy', `${ZDPH}#p101`, CZ_SIMPLE_PERIOD_POLICY),
+    verified_at: '2026-10-26',
+  },
+  base('vat.return_rounding', `${ZDPH}#p37`, 'sum_entries_then_round'),
+  base('vat.shv_rounding', `${ZDPH}#p102`, 'ceil'),
+  base('vat.amendment_windows', `${ZDPH}#p141`, {
+    dp3_dodatecne_due: 'end_of_month_after_discovery',
+    kh_nasledne_working_days: 5,
+  }),
+  { ...base('epo.forms', EPO_STRUCTURES, CZ_EPO_FORMS), verified_at: '2026-10-26' },
   // DPHDP3 row map (M05 §4.2 step 8, research/czech-tax-filings.md §2). Rows 40/41/42/50 carry
   // `confirmed: false` until Phase 3 checks their attrs against the XSD; see cz/epo.ts.
   { ...base('epo.dphdp3_row_map', DPHDP3_STRUCTURE, CZ_DPHDP3_ROW_MAP), verified_at: '2026-10-26' },
