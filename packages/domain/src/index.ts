@@ -7,6 +7,7 @@ export * from './income-tax/answers';
 export * from './income-tax/assets';
 export * from './income-tax/private-use';
 export * from './income-tax/readiness';
+export * from './income-tax/totals';
 export * from './income-tax/vat-note';
 export * from './ledgers/allocate';
 export * from './ledgers/tax';
