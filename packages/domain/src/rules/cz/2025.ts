@@ -37,6 +37,10 @@ const PAUSALNI_DAN_2025 =
 const CSSZ_2025 =
   'https://www.cssz.gov.cz/-/prehled-nejdulezitejsich-udaju-pro-socialni-zabezpeceni-v-roce-2025';
 
+/** Finanční správa: bank accounts of the tax offices (prefix = tax kind, bank code 0710). TODO(verify): URL not re-read on 2026-10-26. */
+const FU_ACCOUNTS =
+  'https://financnisprava.gov.cz/cs/dane/placeni-dani/bankovni-ucty-financnich-uradu';
+
 function base(key: LawRuleKey, source: string, value: unknown): RuleEntryInput {
   return {
     key,
@@ -186,4 +190,33 @@ export const RULES_CZ_2025: readonly RuleEntryInput[] = [
     ...base('deadlines.generators', TAX_PROCEDURE_ACT, CZ_DEADLINE_GENERATORS),
     verified_at: DEADLINES_VERIFIED_AT,
   },
+  // M07 §4.7.4 (brief 0117): which payee account means which tax or insurance payment. Only the
+  // two prefixes with an [O] source are seeded. TODO(verify): income-tax prefix 721, the ČSSZ/OSSZ,
+  // insurer and municipal account lists (fill `accounts` from the official pages, A12).
+  base('bank.authority_accounts', FU_ACCOUNTS, {
+    fu: {
+      bank_code: '0710',
+      prefix_map: { '705': 'tax_vat_payment', '2866': 'tax_pausal_advance' },
+      vat_refund_category: 'income_vat_refund',
+    },
+    cssz: { category: 'ins_social_own', accounts: [] },
+    insurers: { category: 'ins_health_own', accounts: [] },
+    municipalities: { category: 'pt_tourist_fee', accounts: [] },
+    name_hints: {
+      'FINANCNI URAD': 'tax_other_fees',
+      CSSZ: 'ins_social_own',
+      OSSZ: 'ins_social_own',
+      PSSZ: 'ins_social_own',
+      MSSZ: 'ins_social_own',
+      'SPRAVA SOCIALNIHO ZABEZPECENI': 'ins_social_own',
+      'ZDRAVOTNI POJISTOVNA': 'ins_health_own',
+      VZP: 'ins_health_own',
+      VOZP: 'ins_health_own',
+      CPZP: 'ins_health_own',
+      OZP: 'ins_health_own',
+      ZPMV: 'ins_health_own',
+      RBP: 'ins_health_own',
+      'ZP SKODA': 'ins_health_own',
+    },
+  }),
 ];
