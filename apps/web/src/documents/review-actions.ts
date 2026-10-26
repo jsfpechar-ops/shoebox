@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireActiveRole } from '../auth/org-context';
 import { createSupabaseServerClient } from '../supabase/server';
+import { reactToSameInvoice } from './pages-actions';
 import { parseQuestionPayload } from './review-deck';
 
 function formText(form: FormData, name: string): string {
@@ -50,6 +51,9 @@ export async function answerQuestionAction(form: FormData): Promise<void> {
         .eq('org_id', auth.orgId);
       if (flagError) redirect('/inbox/review?error=1');
     }
+
+    // Page sorting: "yes" joins this document after the one before it and reads it again.
+    if (question.kind === 'same_invoice') await reactToSameInvoice(auth.orgId, id);
 
     if (question.document_id) {
       await supabase.rpc('audit_document', {
