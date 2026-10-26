@@ -122,10 +122,10 @@ export default async function SettingsPage() {
                   <ul className="flex flex-col gap-2">
                     {bank.payments.map((p) => (
                       <li key={p.id} className="flex flex-wrap justify-between gap-2 text-body">
-                        <span>
-                          {formatLegalDate(p.date)} · {p.who}
+                        <span>{`${formatLegalDate(p.date)} · ${p.who}`}</span>
+                        <span className="tabular-nums">
+                          {formatMoney(p.amount, p.currency, true)}
                         </span>
-                        <span className="tabular-nums">{formatMoney(p.amount, p.currency, true)}</span>
                       </li>
                     ))}
                   </ul>
