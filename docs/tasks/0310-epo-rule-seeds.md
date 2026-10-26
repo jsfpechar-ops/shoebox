@@ -1,6 +1,6 @@
 # 0310: seed `epo.dphdp3_row_map` and `epo.kh_routing` into the 2025 and 2026 rule years
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-02 (a, seeding part) | Depends on: 0302, 0309 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens
 
