@@ -11,7 +11,7 @@ import type {
   SimpleCheckCode,
   SimpleCheckContext,
   SimpleCheckFn,
-} from './classify-period';
+} from './classify-period-types';
 
 /** entry.dphdp3Rows that count toward the return (boxes 3 to 13). */
 export const RETURN_ROWS_3_13: ReadonlySet<string> = new Set([
