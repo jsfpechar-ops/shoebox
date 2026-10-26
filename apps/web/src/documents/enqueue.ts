@@ -1,4 +1,4 @@
-import { docExtractJob, docSplitJob, jobIdFromKey, jobKey } from '@shoebox/pipeline';
+import { docExtractJob, docSplitJob, emailReceivedJob, jobIdFromKey, jobKey } from '@shoebox/pipeline';
 import { PgBoss } from 'pg-boss';
 
 let started: Promise<PgBoss> | undefined;
@@ -46,6 +46,16 @@ export async function enqueueDocSplit(orgId: string, batchId: string): Promise<v
   const payload = docSplitJob.payload.parse({ orgId, batchId });
   const key = jobKey(docSplitJob, payload);
   await (await boss()).send(docSplitJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `email.received` for one stored inbound e-mail; a second call for the same mail is a no-op. */
+export async function enqueueEmailReceived(orgId: string, inboundEmailId: string): Promise<void> {
+  const payload = emailReceivedJob.payload.parse({ orgId, inboundEmailId });
+  const key = jobKey(emailReceivedJob, payload);
+  await (await boss()).send(emailReceivedJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });
