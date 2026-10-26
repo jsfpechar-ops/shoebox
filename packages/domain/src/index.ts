@@ -27,5 +27,6 @@ export * from './vat/obligations';
 export * from './vat/period';
 export * from './vat/point-date';
 export * from './vat/preview';
+export * from './vat/reconcile';
 export * from './vat/shv';
 export * from './vat/treatment';
