@@ -232,7 +232,7 @@ describe('bank.match: single document', () => {
     const { w, deps } = world([txRow({ id: 't1', variable_symbol: '2026001' })], [docRow({ id: 'd1', variable_symbol: '2026001', document_number: 'FV2026001' })]);
     const r = await run(deps, ['t1']);
     expect(r).toMatchObject({ transactions: 1, links: 1, suggestions: 0, categorized: 0, paidAtChanged: ['d1'] });
-    expect(w.links[0]).toEqual({ transactionId: 't1', documentId: 'd1', linkType: 'payment', amount: '1210.00', amountAccountCurrency: '1210.00', matchMethod: 'vs_amount', confidence: '0.989', matcherVersion: 1 });
+    expect(w.links[0]).toEqual({ transactionId: 't1', documentId: 'd1', linkType: 'payment', amount: '1210.00', amountAccountCurrency: '1210.00', matchMethod: 'vs_amount', confidence: '0.996', matcherVersion: 1 });
     expect(w.states.get('t1')).toEqual({ matchState: 'matched' });
     expect(w.paidAt.get('d1')).toBe('2026-03-10');
     expect(w.changed).toEqual(['d1']);

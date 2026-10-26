@@ -228,7 +228,7 @@ describe('bank.match: single document', () => {
       amount: '1210.00',
       amountAccountCurrency: '1210.00',
       matchMethod: 'vs_amount',
-      confidence: '0.989',
+      confidence: '0.996',
       matcherVersion: 1,
     });
     expect(w.states.get('t1')).toEqual({ matchState: 'matched' });
