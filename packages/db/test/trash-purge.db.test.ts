@@ -55,26 +55,33 @@ describe.skipIf(DATABASE_URL === undefined)('purgeTrash', () => {
 
   it('deletes old trash, keeps retained, live and recent documents, frees unused files', async () => {
     const cutoff = new Date(Date.now() - 30 * 86_400_000);
-    const result = await db.withServiceRole('retention', (tx) => purgeTrash(tx, cutoff, '2026-10-26', 200));
+    const result = await db.withServiceRole('retention', (tx) =>
+      purgeTrash(tx, cutoff, '2026-10-26', 200),
+    );
     expect(result.documents).toBe(2);
     expect(result.paths).toEqual([`org/${ORG}/files/${'a'.repeat(64)}`]);
     const docs = await sql`select id from documents where org_id = ${ORG} order by id`;
     expect(docs.map((r) => r.id)).toEqual([D(3), D(4), D(5)]);
     const files = await sql`select id from source_files where org_id = ${ORG}`;
     expect(files.map((r) => r.id)).toEqual([F2]);
-    const audit = await sql`select diff from audit_log where org_id = ${ORG} and action = 'trash_purge'`;
+    const audit =
+      await sql`select diff from audit_log where org_id = ${ORG} and action = 'trash_purge'`;
     expect(audit.map((r) => r.diff)).toEqual([{ documents: 2 }]);
   });
 
   it('is idempotent', async () => {
     const cutoff = new Date(Date.now() - 30 * 86_400_000);
-    const again = await db.withServiceRole('retention', (tx) => purgeTrash(tx, cutoff, '2026-10-26', 200));
+    const again = await db.withServiceRole('retention', (tx) =>
+      purgeTrash(tx, cutoff, '2026-10-26', 200),
+    );
     expect(again).toEqual({ documents: 0, paths: [] });
   });
 
   it('the worker role cannot call it', async () => {
     await expect(
-      db.withTenant(ORG, (tx) => tx.execute(q`select * from app.purge_trash(now(), current_date, 1)`)),
+      db.withTenant(ORG, (tx) =>
+        tx.execute(q`select * from app.purge_trash(now(), current_date, 1)`),
+      ),
     ).rejects.toThrow();
   });
 });

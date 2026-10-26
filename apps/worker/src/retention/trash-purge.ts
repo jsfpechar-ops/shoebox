@@ -3,7 +3,12 @@
 import { purgeTrash, type ServiceTx, type TenantDb, type TrashPurge } from '@shoebox/db';
 import { pragueToday } from '@shoebox/domain';
 import { retentionTrashPurgeJob } from '@shoebox/pipeline';
-import { type BlobStore, createSupabaseBlobStore, type Logger, orgIdOfPath } from '@shoebox/platform';
+import {
+  type BlobStore,
+  createSupabaseBlobStore,
+  type Logger,
+  orgIdOfPath,
+} from '@shoebox/platform';
 import type { JobRegistry, SystemHandler } from '../registry';
 
 export const TRASH_DAYS = 30;
@@ -15,10 +20,17 @@ export interface TrashPurgeDeps {
   readonly blobs: Pick<BlobStore, 'delete'>;
   readonly logger: Pick<Logger, 'info'>;
   readonly now?: () => number;
-  readonly purge?: (tx: ServiceTx, cutoff: Date, today: string, limit: number) => Promise<TrashPurge>;
+  readonly purge?: (
+    tx: ServiceTx,
+    cutoff: Date,
+    today: string,
+    limit: number,
+  ) => Promise<TrashPurge>;
 }
 
-export function createTrashPurgeHandler(deps: TrashPurgeDeps): SystemHandler<Record<string, never>> {
+export function createTrashPurgeHandler(
+  deps: TrashPurgeDeps,
+): SystemHandler<Record<string, never>> {
   const purge = deps.purge ?? purgeTrash;
   return async () => {
     const now = deps.now?.() ?? Date.now();
@@ -52,12 +64,19 @@ export function registerTrashPurge(
   const url = env.SUPABASE_URL;
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
-    logger.warn({ missing: REQUIRED.filter((name) => !env[name]) }, 'retention.trash_purge not registered');
+    logger.warn(
+      { missing: REQUIRED.filter((name) => !env[name]) },
+      'retention.trash_purge not registered',
+    );
     return false;
   }
   registry.registerSystem(
     retentionTrashPurgeJob,
-    createTrashPurgeHandler({ db, blobs: createSupabaseBlobStore({ url, apiKey: serviceKey }), logger }),
+    createTrashPurgeHandler({
+      db,
+      blobs: createSupabaseBlobStore({ url, apiKey: serviceKey }),
+      logger,
+    }),
   );
   return true;
 }

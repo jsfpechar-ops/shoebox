@@ -5,7 +5,6 @@ export * from './document-reading';
 export { createDbPing, type DbPing } from './health';
 export { MIGRATIONS_FOLDER, MIGRATIONS_SCHEMA, runMigrations } from './migrate';
 export { type RateLimitDb, rateLimitHit } from './rate-limit';
-export { purgeTrash, type TrashPurge } from './trash-purge';
 export * from './rls-catalog';
 export * from './schema/document-details';
 export * from './schema/document-pages';
@@ -31,3 +30,4 @@ export {
   withServiceRole,
   withTenant,
 } from './tenant';
+export { purgeTrash, type TrashPurge } from './trash-purge';
