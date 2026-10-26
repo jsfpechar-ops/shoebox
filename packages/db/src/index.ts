@@ -1,6 +1,6 @@
 export const packageName = '@shoebox/db' as const;
-export * from './document-reading';
 export * from './document-pages';
+export * from './document-reading';
 export { createDbPing, type DbPing } from './health';
 export { MIGRATIONS_FOLDER, MIGRATIONS_SCHEMA, runMigrations } from './migrate';
 export { type RateLimitDb, rateLimitHit } from './rate-limit';

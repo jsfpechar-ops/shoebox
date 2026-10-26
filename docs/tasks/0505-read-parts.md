@@ -1,6 +1,6 @@
 # 0505: Read a document from its chosen pages
 
-Status: todo
+Status: in-progress
 Ticket: Page sorting (owner 2026-10-26) | Depends on: 0501, 0502 | Base commit: see branch | Branch: claude/project-thread-z0dj04 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

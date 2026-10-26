@@ -20,8 +20,8 @@ import {
   type ProtoExtraction,
   ProtoParseError,
   parseProtoExtraction,
-  readIsdoc,
   type ReadPart,
+  readIsdoc,
 } from '@shoebox/extraction';
 import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
 import { runProtoChecks } from '@shoebox/validation';

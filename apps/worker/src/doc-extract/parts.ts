@@ -37,7 +37,11 @@ export async function partsOf(
     const bytes = await load(first.storagePath);
     if (first.mimeType === 'application/pdf') {
       const pages = rows.slice(i, j).map((row) => row.filePage);
-      parts.push({ bytes: await pick(bytes, pages), mediaType: 'application/pdf', region: first.region });
+      parts.push({
+        bytes: await pick(bytes, pages),
+        mediaType: 'application/pdf',
+        region: first.region,
+      });
     } else {
       parts.push({ bytes, mediaType: first.mimeType, region: first.region });
     }

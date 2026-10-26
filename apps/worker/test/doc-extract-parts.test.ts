@@ -47,18 +47,18 @@ describe('partsOf', () => {
       blobs,
       pick,
     );
-    expect(parts.map((p) => p.mediaType)).toEqual(['application/pdf', 'image/jpeg', 'application/pdf']);
+    expect(parts.map((p) => p.mediaType)).toEqual([
+      'application/pdf',
+      'image/jpeg',
+      'application/pdf',
+    ]);
     expect(picks).toEqual(['p/f1:3,4', 'p/f1:7']);
     expect(gets).toEqual(['p/f1', 'p/f2']);
   });
 
   it('keeps two regions of one photo as two parts', async () => {
     const { blobs } = fakeBlobs();
-    const parts = await partsOf(
-      [row({ mimeType: 'image/png', region: 'top' })],
-      blobs,
-      pick,
-    );
+    const parts = await partsOf([row({ mimeType: 'image/png', region: 'top' })], blobs, pick);
     expect(parts).toEqual([
       { bytes: new TextEncoder().encode('p/f1'), mediaType: 'image/png', region: 'top' },
     ]);
@@ -66,6 +66,8 @@ describe('partsOf', () => {
 
   it('rejects a file the model cannot read', async () => {
     const { blobs } = fakeBlobs();
-    await expect(partsOf([row({ mimeType: 'application/xml' })], blobs, pick)).rejects.toThrow(TypeError);
+    await expect(partsOf([row({ mimeType: 'application/xml' })], blobs, pick)).rejects.toThrow(
+      TypeError,
+    );
   });
 });

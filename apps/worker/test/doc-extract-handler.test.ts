@@ -209,8 +209,22 @@ describe('doc.extract handler', () => {
     const sorted: ReadingStore = {
       ...store,
       loadPages: async () => [
-        { position: 1, sourceFileId: 'f1', storagePath: 'a', mimeType: 'image/jpeg', filePage: 1, region: '' },
-        { position: 2, sourceFileId: 'f2', storagePath: 'b', mimeType: 'image/png', filePage: 1, region: '' },
+        {
+          position: 1,
+          sourceFileId: 'f1',
+          storagePath: 'a',
+          mimeType: 'image/jpeg',
+          filePage: 1,
+          region: '',
+        },
+        {
+          position: 2,
+          sourceFileId: 'f2',
+          storagePath: 'b',
+          mimeType: 'image/png',
+          filePage: 1,
+          region: '',
+        },
       ],
     };
     await createDocExtractHandler({ llm, blobs, model: 'claude-haiku-5-5', clock, store: sorted })(
