@@ -1,4 +1,5 @@
 import {
+  bankImportStatementJob,
   type CategorizeTrigger,
   docCategorizeJob,
   docExtractJob,
@@ -80,6 +81,16 @@ export async function enqueueDocCategorize(
   const payload = docCategorizeJob.payload.parse({ orgId, documentId, revision, trigger, nonce });
   const key = jobKey(docCategorizeJob, payload);
   await (await boss()).send(docCategorizeJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `bank.import.statement` for one stored statement file; a second call for the same file is a no-op. */
+export async function enqueueBankImport(orgId: string, sourceFileId: string): Promise<void> {
+  const payload = bankImportStatementJob.payload.parse({ orgId, sourceFileId });
+  const key = jobKey(bankImportStatementJob, payload);
+  await (await boss()).send(bankImportStatementJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });

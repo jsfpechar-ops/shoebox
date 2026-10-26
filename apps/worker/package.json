@@ -20,6 +20,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@shoebox/bank": "workspace:*",
     "@shoebox/db": "workspace:*",
     "@shoebox/domain": "workspace:*",
     "@shoebox/extraction": "workspace:*",
