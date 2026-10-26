@@ -1,6 +1,7 @@
 import {
   bankImportStatementJob,
   bankMatchDecideJob,
+  bankRadarRefreshJob,
   type CategorizeTrigger,
   docCategorizeJob,
   docExtractJob,
@@ -137,6 +138,16 @@ export async function enqueueMatchDecision(
   const payload = bankMatchDecideJob.payload.parse({ orgId, suggestionId, decision, userId });
   const key = jobKey(bankMatchDecideJob, payload);
   await (await boss()).send(bankMatchDecideJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `bank.radar.refresh` for the org (singleton: a second call while one is queued is a no-op). */
+export async function enqueueRadarRefresh(orgId: string): Promise<void> {
+  const payload = bankRadarRefreshJob.payload.parse({ orgId });
+  const key = jobKey(bankRadarRefreshJob, payload);
+  await (await boss()).send(bankRadarRefreshJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });
