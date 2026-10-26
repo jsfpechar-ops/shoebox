@@ -170,17 +170,21 @@ export function defaultPaths(root: string = ROOT): string[] {
   return paths;
 }
 
+/** A file can vanish between listing and reading (other tests write temporary fixtures into src). */
+function readIfPresent(file: string): string | null {
+  try {
+    return readFileSync(file, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
+}
+
 export function run(paths: string[], tenantIdentifiers = new Set(loadTenantIdentifiers().keys())) {
   const files = listSourceFiles(paths);
   const violations = files.flatMap((file) => {
-    let text: string;
-    try {
-      text = readFileSync(file, 'utf8');
-    } catch {
-      // Another test's temporary fixture can vanish between listing and reading: nothing to scan.
-      return [];
-    }
-    return findViolations(relative(ROOT, file), text, tenantIdentifiers);
+    const source = readIfPresent(file);
+    return source === null ? [] : findViolations(relative(ROOT, file), source, tenantIdentifiers);
   });
   return { files: files.length, violations };
 }

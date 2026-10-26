@@ -148,6 +148,14 @@ export async function applyCorrection(
       if (w6.error) return { ok: false, error: SAVE_ERROR };
     }
 
+    // 6b. One audit row per fixed value (M11 §13.1).
+    const w6b = await supabase.rpc('audit_document', {
+      p_document: input.documentId,
+      p_action: 'edit_field',
+      p_diff: { field: input.editKey, old: fields[input.editKey] ?? null, new: input.value },
+    });
+    if (w6b.error) return { ok: false, error: SAVE_ERROR };
+
     // 7. The last write sets the planned status.
     const w7 = await supabase
       .from('documents')
