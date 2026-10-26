@@ -87,9 +87,8 @@ Specs: `03-architecture.md`, `05-data-model.md`, `modules/M12-platform-ops-secur
    - All documents, the register (XLSX), the bank reconciliation, open questions, and notes.
    - Exports: **Pohoda XML** (received invoices, receipts/internal documents, bank) and **ISDOC**. Money S3 XML follows.
 6. **Accountant seat:** invite by e-mail; read, comment and export; resolve questions.
-7. **Paying own bills:** QR code per unpaid invoice, shown after an unreliable-payer and published-account check. ABO batch file for CZK and a SEPA XML file (pain.001) for EUR (M07 §4.9.4). No CSV payment orders.
+7. **Paying own bills:** QR code per unpaid invoice, shown after an unreliable-payer and published-account check. ABO batch file.
 8. **Spreadsheet import** of the user's old XLSX/CSV list (M01 §4.13), bulk "Označit jako zaplacené" in the register (M11 §5.1), and the cash/document basis toggle and payables ageing on Přehled (M09 §4.2, §4.11).
-9. **Close the month:** the user closes a month; the database then refuses changes to its documents until the user reopens it with a reason, which is audit-logged (M04 §4.16).
 
 **Exit criteria**
 - ≥ 95 % auto-match on the synthetic 500-transaction set (`modules/M07`), with zero false matches above 0.9 confidence.

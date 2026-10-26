@@ -1217,23 +1217,6 @@ Acceptance:
 - [ ] ABO writer validated against the table-driven layout for 3 fixtures; flag stays off until the owner's bank-import checklist (A14) is done.
 Packages/files: packages/bank/src/pay/, apps/web/app/(app)/doklad/[id]/pay/
 
-### P2-PAY-02: SEPA XML payment file for EUR
-Spec: M07 §4.9.4 SEPA XML batch export · M07 §4.9.1 Pre-payment checks · 05 §6 `payment_orders` | Depends on: P2-PAY-01 | Size: S | Executor: Haiku 5.5 | Risk: HIGH (money)
-Goal: a `pain.001` file for selected unpaid EUR documents, same checks and exclusions as ABO. Nothing initiates a payment.
-Acceptance:
-- [ ] `packages/bank/test/sepa.test.ts`: 3 fixtures produce XML that validates against the `pain.001.001.03` XSD; amounts from `Money`; IBAN mod-97 and missing-IBAN items are excluded with the right error code; CZK items are refused.
-- [ ] `[verify]` result recorded: which of Fio, ČS, ČSOB, KB accept the file (and whether any accept CZK in it).
-Packages/files: packages/bank/src/pay/sepa/
-
-### P2-CLOSE-01: Close the month (database lock)
-Spec: M04 §4.16 Closed months · 05 §8 `period_closes` · M10 §4.1 late arrivals | Depends on: P2-PKG-01 | Size: M | Executor: Haiku 5.5 | Risk: HIGH (migration, RLS)
-Goal: "Uzavřít měsíc" writes `period_closes`; a trigger refuses changes to documents of a closed month; `reopen_period(period_start, reason)` reopens with an audit row.
-Acceptance:
-- [ ] Migration + RLS test `packages/db/test/rls/period-closes.db.test.ts` (cross-tenant isolation, member cannot reopen).
-- [ ] `packages/db/test/migrations/period-close.db.test.ts`: update/delete of a document, line, VAT summary or field in a closed month raises `period_closed`, also from the worker role; moving a document into a closed month raises; after reopen the update passes and `audit_log` holds the reason.
-- [ ] A new document dated in a closed month lands `needs_review` with the closed-month question.
-Packages/files: packages/db/migrations/, apps/web/app/(app)/pro-ucetni/
-
 ### Epic PKG: accountant package
 
 ### P2-PKG-01: Package lifecycle and completeness

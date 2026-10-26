@@ -42,4 +42,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-25 [i18n] UI in English for now to save tokens; `en.json` defines the keys and is the default locale; `cs.json` kept dormant (partial, falls back to English) until Josef asks for Czech again. Brief 0050. (owner)
 - 2026-10-25 [onboarding] `/vitejte`: IČO, ARES fills the rest, ≤ 3 chip steps (0060–0064). (owner)
 - 2026-10-25 [test-env] Supabase + one free Render service (web+worker, `deploy/render-test.yaml`); `tsx`; auto sign-in, no login (0055). (owner)
-- 2026-10-26 [scope] Phase 1: manifest + audit log of fixes. Phase 2: SEPA XML (EUR), month close with DB lock (M04 §4.16). No PSD2 aggregator (cost); Fio stays Later. (owner)
+- 2026-10-26 [scope] Phase 1: home-screen manifest + audit log of manual fixes. No SEPA file, month lock or PSD2 aggregator; Fio stays Later. (owner)

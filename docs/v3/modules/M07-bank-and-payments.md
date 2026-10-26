@@ -445,7 +445,7 @@ Radar items are materialised as `review_questions` (`kind = 'missing_document'`,
 | `ACCOUNT_NOT_PUBLISHED` | supplier `typSubjektu = 'PLATCE_DPH'`, org is `platce`, and the normalised pay-to IBAN is not among `zverejneneUcty` (active: no `datumZverejneniUkonceni`) | `blocking` when the amount exceeds the threshold defined by rule `vat.ruceni_cash_threshold` (`04 §7`, `06 §2`; exact §109 multiplier **[verify]**), else `warning` |
 | `ACCOUNT_CHANGED` | pay-to account differs from every account used in earlier confirmed payments to this partner | warning ("Účet se liší od minulých plateb. Ověřte, že nejde o podvod.") |
 | `REGISTRY_UNAVAILABLE` | CRPDPH status 2/3 or timeout (00:00–00:10 outage) | warning ("Nepodařilo se ověřit"), never blocking (`06 §1`) |
-| `FOREIGN_CURRENCY` | currency ≠ CZK | info: QR/ABO not offered; EUR goes to the SEPA XML file (§4.9.4), other currencies are paid by hand |
+| `FOREIGN_CURRENCY` | currency ≠ CZK | info: QR/ABO not offered (SEPA later) |
 
 "Blocking" hides the QR code until the user ticks "Rozumím, přesto chci zaplatit" (audit-logged). We never prevent the user from paying; we prevent paying unknowingly. The check result and timestamp are snapshotted on `payment_order_items.checks`; the UI says "Ověřeno dnes 10:42. Pokud platíte později, ověříme znovu." (§109 turns on the payment date, `research/registries-and-formats.md §2.4`).
 
@@ -455,13 +455,6 @@ Pure `buildSpayd()` per `research/registries-and-formats.md §5.1`: `SPD*1.0*ACC
 #### 4.9.3 ABO batch export
 `buildAboBatch({ sourceAccount, dueDate, items[] })` produces the domestic payment-order file (KPC/ABO) the user uploads to internet banking. Validation per item (mirrors Competitor A's checks, internal research (not published) `payments.abo_validation_errors`): `alreadyPaid`, `missingBankAccount`, `invalidBankAccount`, `varSymTooLong` (> 10), `invalidCurrency` (only CZK), `unableToPayNegativeAmount`, and **one file per source account and currency**. Any pre-payment `blocking` check without the user's acknowledgement excludes the item.
 Structure (header `UHL1` record, group header, item lines, group and file trailers) follows the banks' "ABO formát pro tuzemský platební styk" description. The exact record layout is **[verify against the bank import specs of Fio, ČSOB and KB]** (the research files document the statement format 074/075, not the payment-order format); the writer is table-driven (`abo/layout.ts`) so a correction is a data change. Encoding windows-1250, CRLF, amounts in haléře. The file name is `prikazy_{account}_{YYYYMMDD}.kpc`; `payment_orders`/`payment_order_items` record what was exported. Exporting does **not** mark documents paid; payment is confirmed only by a matched transaction.
-
-#### 4.9.4 SEPA XML batch export (owner 2026-10-26)
-`buildSepaBatch({ sourceAccount, executionDate, items[] })` produces an ISO 20022 `pain.001` credit-transfer file for **EUR** items, for the user to upload to internet banking. Same flow and rules as ABO (§4.9.3): pre-payment checks first, one file per source account, an item with an unacknowledged `blocking` check is left out, export never marks a document paid.
-- Item validation: `alreadyPaid`, `missingIban` (a SEPA payee needs an IBAN; BIC optional inside SEPA), `invalidIban` (mod-97), `invalidCurrency` (only EUR in this file), `unableToPayNegativeAmount`, remittance text ≤ 140 chars (`Úhrada {document_number}` plus VS when present).
-- Schema version and the Czech banks' accepted variants are **[verify against the import specs of Fio, ČS, ČSOB and KB]** (`pain.001.001.03` is the common baseline). Whether the same file may carry CZK domestic payments differs by bank **[verify]**; until verified, CZK stays on ABO.
-- Encoding UTF-8; amounts with dot and 2 dp from `Money`; file name `prikazy_sepa_{account}_{YYYYMMDD}.xml`; `payment_orders.kind = 'sepa_xml'` (05 §6).
-- No CSV payment orders: Czech banks import ABO or XML, so CSV adds nothing.
 
 ## 5. Data
 

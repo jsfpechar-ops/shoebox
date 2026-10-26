@@ -613,7 +613,7 @@ create table counterparty_aliases (                                 -- learned c
 create table payment_orders (                                       -- QR shown / ABO exported (M07 §4.9)
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references organizations(id) on delete cascade,
-  kind text not null check (kind in ('qr','abo','sepa_xml')),      -- sepa_xml: M07 §4.9.4
+  kind text not null check (kind in ('qr','abo')),
   money_account_id uuid references money_accounts(id),
   file_path text, total numeric(15,2) not null, item_count integer not null,
   created_by uuid references auth.users(id), created_at timestamptz not null default now()
@@ -755,16 +755,6 @@ create table export_mappings (                                       -- accounta
   unique nulls not distinct (export_profile_id, key_kind, key, vat_status, target_field)
 );
 create index on export_mappings (org_id, export_profile_id);
-
-create table period_closes (                                        -- "close the month" (M04 §4.16); Phase 2 migration
-  id uuid primary key default gen_random_uuid(),
-  org_id uuid not null references organizations(id) on delete cascade,
-  period_start date not null,                                        -- first day of the closed month
-  closed_at timestamptz not null default now(), closed_by uuid not null references auth.users(id),
-  reopened_at timestamptz, reopened_by uuid references auth.users(id), reopen_reason text,
-  check ((reopened_at is null) = (reopen_reason is null))
-);
-create unique index on period_closes (org_id, period_start) where reopened_at is null;
 
 create table accountant_packages (
   id uuid primary key default gen_random_uuid(),
