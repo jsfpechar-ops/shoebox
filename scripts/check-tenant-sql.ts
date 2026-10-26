@@ -172,9 +172,16 @@ export function defaultPaths(root: string = ROOT): string[] {
 
 export function run(paths: string[], tenantIdentifiers = new Set(loadTenantIdentifiers().keys())) {
   const files = listSourceFiles(paths);
-  const violations = files.flatMap((file) =>
-    findViolations(relative(ROOT, file), readFileSync(file, 'utf8'), tenantIdentifiers),
-  );
+  const violations = files.flatMap((file) => {
+    let text: string;
+    try {
+      text = readFileSync(file, 'utf8');
+    } catch {
+      // Another test's temporary fixture can vanish between listing and reading: nothing to scan.
+      return [];
+    }
+    return findViolations(relative(ROOT, file), text, tenantIdentifiers);
+  });
   return { files: files.length, violations };
 }
 
