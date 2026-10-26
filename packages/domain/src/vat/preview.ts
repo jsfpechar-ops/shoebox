@@ -209,7 +209,8 @@ function buildKhSections(
         });
       }
     }
-    if (rows.length > 0) sections.push({ section, labelKey: `vat.kh.section.${section}`, rows });
+    if (rows.length > 0)
+      sections.push({ section, labelKey: `vat.kh.section.${section.toLowerCase()}`, rows });
   }
   return sections;
 }
