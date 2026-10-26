@@ -8,6 +8,7 @@ import { registerEmailReceived } from './email-received/register';
 import { registerDriftMonitors } from './jobs/ops/drift-monitors';
 import { registerLedgerJobs } from './ledger/register';
 import { registerTrashPurge } from './retention/trash-purge';
+import { registerVatJobs } from './vat/register';
 import { loadWorkerConfig, startWorker } from './worker';
 
 const worker = await startWorker(loadWorkerConfig(process.env), {
@@ -21,6 +22,7 @@ const worker = await startWorker(loadWorkerConfig(process.env), {
     registerTrashPurge(registry, db, process.env, logger);
     registerDriftMonitors(registry, process.env, logger);
     registerLedgerJobs(registry, db, logger);
+    registerVatJobs(registry, process.env, logger);
   },
 });
 
