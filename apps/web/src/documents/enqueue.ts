@@ -83,8 +83,9 @@ export async function enqueueImportRun(
   orgId: string,
   importId: string,
   fromRow: number,
+  nonce: number = Date.now(),
 ): Promise<void> {
-  const payload = importSpreadsheetRunJob.payload.parse({ orgId, importId, fromRow });
+  const payload = importSpreadsheetRunJob.payload.parse({ orgId, importId, fromRow, nonce });
   const key = jobKey(importSpreadsheetRunJob, payload);
   await (await boss()).send(importSpreadsheetRunJob.name, payload, {
     id: jobIdFromKey(key),
@@ -109,8 +110,12 @@ export async function enqueueDocCategorize(
 }
 
 /** Queues `import.spreadsheet.undo` for one import (the worker soft-deletes its untouched documents). */
-export async function enqueueImportUndo(orgId: string, importId: string): Promise<void> {
-  const payload = importSpreadsheetUndoJob.payload.parse({ orgId, importId });
+export async function enqueueImportUndo(
+  orgId: string,
+  importId: string,
+  nonce: number = Date.now(),
+): Promise<void> {
+  const payload = importSpreadsheetUndoJob.payload.parse({ orgId, importId, nonce });
   const key = jobKey(importSpreadsheetUndoJob, payload);
   await (await boss()).send(importSpreadsheetUndoJob.name, payload, {
     id: jobIdFromKey(key),

@@ -144,6 +144,20 @@ describe('import.spreadsheet.run handler', () => {
     expect(enqueued).toEqual([{ orgId: ORG, importId: IMPORT, fromRow: 200 }]);
   });
 
+  it('carries the start nonce to the next run so its job key stays unique', async () => {
+    const rows = Array.from({ length: 250 }, (_, i) => [
+      '2026-10-01',
+      `FV-${i}`,
+      '100.00',
+      `D ${i}`,
+      '',
+    ]);
+    const { store } = fakeStore(runRecord());
+    const enqueued: ImportSpreadsheetRunPayload[] = [];
+    await handlerFor(store, csvBytes(rows), enqueued)({ ...payload(0), nonce: 7 }, ctx);
+    expect(enqueued).toEqual([{ orgId: ORG, importId: IMPORT, fromRow: 200, nonce: 7 }]);
+  });
+
   it('finishes the import with the counts summed over runs on the last run', async () => {
     const rows = Array.from({ length: 450 }, (_, i) => [
       `2026-10-${String((i % 28) + 1).padStart(2, '0')}`,
