@@ -63,7 +63,9 @@ export function triageAttachments(parts: readonly MailPart[], html: string | nul
     if (UNSUPPORTED_TYPES.has(type) || lowerName === 'winmail.dat') return;
 
     const ext = extOf(name);
-    const resolved = (ext !== null ? EXT_TYPES.get(ext) : undefined) ?? (ALLOWED_TYPES.has(type) ? type : undefined);
+    const resolved =
+      (ext !== null ? EXT_TYPES.get(ext) : undefined) ??
+      (ALLOWED_TYPES.has(type) ? type : undefined);
     if (resolved === undefined) return;
     const isImage = resolved.startsWith('image/');
     const cid = part.contentId?.replace(/^<|>$/g, '') ?? null;

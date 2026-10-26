@@ -1,9 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import type {
-  finishInboundEmail,
-  insertEmailAttachment,
-  loadInboundEmail,
-} from '@shoebox/db';
+import type { finishInboundEmail, insertEmailAttachment, loadInboundEmail } from '@shoebox/db';
 import { BlobStoreError, filePath } from '@shoebox/platform';
 import PostalMime from 'postal-mime';
 import type { TenantHandler } from '../registry';
@@ -76,6 +72,9 @@ export function createEmailReceivedHandler(
     }
     if (anyNew) await deps.enqueueSplit(payload.orgId, batchId);
 
-    await deps.store.finish(ctx.tx, mail.id, { spamVerdict: verdict, bodyText: email.text ?? null });
+    await deps.store.finish(ctx.tx, mail.id, {
+      spamVerdict: verdict,
+      bodyText: email.text ?? null,
+    });
   };
 }

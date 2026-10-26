@@ -1,6 +1,6 @@
+import { finishInboundEmail, insertEmailAttachment, loadInboundEmail } from '@shoebox/db';
 import { docSplitJob, emailReceivedJob } from '@shoebox/pipeline';
 import { createSupabaseBlobStore, type Logger } from '@shoebox/platform';
-import { finishInboundEmail, insertEmailAttachment, loadInboundEmail } from '@shoebox/db';
 import type { JobRegistry } from '../registry';
 import { createEmailReceivedHandler } from './handler';
 

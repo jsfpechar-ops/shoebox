@@ -1,9 +1,6 @@
 import type { TenantTx } from '@shoebox/db';
 import { describe, expect, it } from 'vitest';
-import {
-  createEmailReceivedHandler,
-  type EmailReceivedDeps,
-} from '../src/email-received/handler';
+import { createEmailReceivedHandler, type EmailReceivedDeps } from '../src/email-received/handler';
 import { type MailPart, spamVerdictOf, triageAttachments } from '../src/email-received/triage';
 
 const ORG = 'eeeeeeee-0000-4000-8000-000000000105';
@@ -49,7 +46,10 @@ describe('triageAttachments', () => {
         part({ filename: 'logo.png', mimeType: 'image/png', contentId: '<logo1>' }),
         part({ filename: 'podpis.jpg', mimeType: 'image/jpeg', content: big(15_000) }),
         part({ filename: 'IMG_1.HEIC', mimeType: 'image/heic' }),
-        part({ filename: 'smlouva.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
+        part({
+          filename: 'smlouva.docx',
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        }),
         part({ filename: 'velky.pdf', content: big(20 * 1024 * 1024 + 1) }),
       ],
       '<p>Dobrý den<img src="cid:logo1"></p>',
@@ -58,18 +58,32 @@ describe('triageAttachments', () => {
   });
 
   it('an image with a content id that the HTML does not use is kept', () => {
-    const out = triageAttachments([part({ filename: 'uctenka.jpg', mimeType: 'image/jpeg', contentId: '<x9>' })], '<p>hi</p>');
+    const out = triageAttachments(
+      [part({ filename: 'uctenka.jpg', mimeType: 'image/jpeg', contentId: '<x9>' })],
+      '<p>hi</p>',
+    );
     expect(out).toHaveLength(1);
   });
 });
 
 describe('spamVerdictOf', () => {
   it('spf and dkim both failing is spoof_fail', () => {
-    expect(spamVerdictOf([{ key: 'authentication-results', value: 'mx.cloudflare.net; spf=fail smtp.mailfrom=x; dkim=fail header.d=x' }])).toBe('spoof_fail');
+    expect(
+      spamVerdictOf([
+        {
+          key: 'authentication-results',
+          value: 'mx.cloudflare.net; spf=fail smtp.mailfrom=x; dkim=fail header.d=x',
+        },
+      ]),
+    ).toBe('spoof_fail');
   });
   it('one passing is pass; no header is unknown', () => {
-    expect(spamVerdictOf([{ key: 'authentication-results', value: 'mx; spf=fail; dkim=pass' }])).toBe('pass');
-    expect(spamVerdictOf([{ key: 'ARC-Authentication-Results', value: 'i=1; mx; spf=pass; dkim=none' }])).toBe('pass');
+    expect(
+      spamVerdictOf([{ key: 'authentication-results', value: 'mx; spf=fail; dkim=pass' }]),
+    ).toBe('pass');
+    expect(
+      spamVerdictOf([{ key: 'ARC-Authentication-Results', value: 'i=1; mx; spf=pass; dkim=none' }]),
+    ).toBe('pass');
     expect(spamVerdictOf([{ key: 'subject', value: 'spf=fail dkim=fail' }])).toBe('unknown');
   });
 });
@@ -100,14 +114,26 @@ const EML = new TextEncoder().encode(
 );
 
 function fakeDeps(over: Partial<EmailReceivedDeps> = {}) {
-  const log = { put: [] as string[], inserted: [] as string[], batches: [] as string[], finished: [] as unknown[], queued: [] as string[] };
+  const log = {
+    put: [] as string[],
+    inserted: [] as string[],
+    batches: [] as string[],
+    finished: [] as unknown[],
+    queued: [] as string[],
+  };
   const deps: EmailReceivedDeps = {
     blobs: {
       get: async () => EML,
       put: async (path) => void log.put.push(path),
     },
     store: {
-      load: async () => ({ id: MAIL, orgId: ORG, emlPath: `org/${ORG}/eml/x.eml`, purpose: 'documents', processedAt: null }),
+      load: async () => ({
+        id: MAIL,
+        orgId: ORG,
+        emlPath: `org/${ORG}/eml/x.eml`,
+        purpose: 'documents',
+        processedAt: null,
+      }),
       finish: async (_tx, id, result) => void log.finished.push({ id, ...result }),
       insertAttachment: async (_tx, row) => {
         log.inserted.push(row.originalFilename);
@@ -133,12 +159,18 @@ describe('email.received handler', () => {
     expect(log.batches).toHaveLength(1);
     expect(log.batches[0]).toMatch(/^[0-9a-f-]{36}$/);
     expect(log.queued).toEqual(log.batches);
-    expect(log.finished).toEqual([{ id: MAIL, spamVerdict: 'pass', bodyText: expect.stringContaining('V příloze faktura.') }]);
+    expect(log.finished).toEqual([
+      { id: MAIL, spamVerdict: 'pass', bodyText: expect.stringContaining('V příloze faktura.') },
+    ]);
   });
 
   it('a spoofed mail is held back: nothing stored or read', async () => {
-    const spoofed = new TextDecoder().decode(EML).replace('spf=pass; dkim=pass', 'spf=fail; dkim=fail');
-    const { deps, log } = fakeDeps({ blobs: { get: async () => new TextEncoder().encode(spoofed), put: async () => undefined } });
+    const spoofed = new TextDecoder()
+      .decode(EML)
+      .replace('spf=pass; dkim=pass', 'spf=fail; dkim=fail');
+    const { deps, log } = fakeDeps({
+      blobs: { get: async () => new TextEncoder().encode(spoofed), put: async () => undefined },
+    });
     await createEmailReceivedHandler(deps)({ orgId: ORG, inboundEmailId: MAIL }, ctx);
     expect(log.inserted).toEqual([]);
     expect(log.queued).toEqual([]);
@@ -148,7 +180,13 @@ describe('email.received handler', () => {
   it('an already processed or missing mail is left alone; an exact duplicate file is not read again', async () => {
     const done = fakeDeps({
       store: {
-        load: async () => ({ id: MAIL, orgId: ORG, emlPath: 'p', purpose: 'documents', processedAt: new Date() }),
+        load: async () => ({
+          id: MAIL,
+          orgId: ORG,
+          emlPath: 'p',
+          purpose: 'documents',
+          processedAt: new Date(),
+        }),
         finish: async () => undefined,
         insertAttachment: async () => ({ sourceFileId: 's', documentId: 'd' }),
       },
@@ -165,7 +203,13 @@ describe('email.received handler', () => {
 
   it('a bank notice creates no documents yet', async () => {
     const { deps, log } = fakeDeps();
-    deps.store.load = async () => ({ id: MAIL, orgId: ORG, emlPath: 'p', purpose: 'bank_notice', processedAt: null });
+    deps.store.load = async () => ({
+      id: MAIL,
+      orgId: ORG,
+      emlPath: 'p',
+      purpose: 'bank_notice',
+      processedAt: null,
+    });
     await createEmailReceivedHandler(deps)({ orgId: ORG, inboundEmailId: MAIL }, ctx);
     expect(log.inserted).toEqual([]);
     expect(log.finished).toHaveLength(1);

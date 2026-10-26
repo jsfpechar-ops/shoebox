@@ -1,8 +1,8 @@
 // Entry point of the worker container (Cloud Run worker pool, M12 §4.2). Not imported by index.ts.
 import { logger } from '@shoebox/platform';
 import { registerDocExtract } from './doc-extract/register';
-import { registerEmailReceived } from './email-received/register';
 import { registerDocSplit } from './doc-split/register';
+import { registerEmailReceived } from './email-received/register';
 import { loadWorkerConfig, startWorker } from './worker';
 
 const worker = await startWorker(loadWorkerConfig(process.env), {
