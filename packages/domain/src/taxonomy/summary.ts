@@ -4,7 +4,7 @@ import type { TaxEffect, VatStatus, VatTreatment } from '../enums/index';
 import type { VatPeriodRange } from '../vat/point-date';
 import { type Deductibility, getCategory } from './categories';
 
-export const SUMMARY_MAX_LENGTH = 120;
+export const SUMMARY_MAX_LENGTH = 160;
 
 // TODO(i18n-cs): English until cs.json wakes up (owner 2026-10-25).
 export const MONTH_NAMES_EN: readonly string[] = [
