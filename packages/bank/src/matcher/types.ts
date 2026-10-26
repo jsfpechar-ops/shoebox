@@ -63,7 +63,11 @@ export interface MatchContext {
   readonly fxRate: (currency: string, on: LegalDate) => string | null;
 }
 export type RetrievalKey = 'vs' | 'message' | 'amount' | 'account' | 'name';
-export interface Candidate { readonly t: TxView; readonly d: DocView; readonly via: readonly RetrievalKey[] }
+export interface Candidate {
+  readonly t: TxView;
+  readonly d: DocView;
+  readonly via: readonly RetrievalKey[];
+}
 export type AmountKind = 'exact' | 'rounding' | 'fx' | 'partial' | 'overpayment';
 export interface AmountFeature {
   readonly kind: AmountKind;
@@ -74,9 +78,25 @@ export interface AmountFeature {
   /** Proposed link amount, account currency. */
   readonly amountAccount: Money;
 }
-export type FeatureCode = 'amount_exact' | 'amount_rounding' | 'amount_fx' | 'amount_partial' | 'vs_exact' | 'vs_conflict'
-  | 'msg_doc_number' | 'account_match' | 'account_other_partner' | 'name' | 'date' | 'date_outside' | 'alias' | 'unique';
-export interface Feature { readonly code: FeatureCode; readonly contribution: number }
+export type FeatureCode =
+  | 'amount_exact'
+  | 'amount_rounding'
+  | 'amount_fx'
+  | 'amount_partial'
+  | 'vs_exact'
+  | 'vs_conflict'
+  | 'msg_doc_number'
+  | 'account_match'
+  | 'account_other_partner'
+  | 'name'
+  | 'date'
+  | 'date_outside'
+  | 'alias'
+  | 'unique';
+export interface Feature {
+  readonly code: FeatureCode;
+  readonly contribution: number;
+}
 export interface CandidateScore {
   readonly transactionId: string;
   readonly documentId: string;

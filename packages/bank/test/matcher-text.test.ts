@@ -1,7 +1,14 @@
 import { parseLegalDate } from '@shoebox/domain';
 import { describe, expect, it } from 'vitest';
 import { dateFactor, daysBetween, windowKindOf } from '../src/matcher/dates';
-import { docKeys, foldText, levenshtein, messageHasDocKey, normMerchant, tokenSetRatio } from '../src/matcher/text';
+import {
+  docKeys,
+  foldText,
+  levenshtein,
+  messageHasDocKey,
+  normMerchant,
+  tokenSetRatio,
+} from '../src/matcher/text';
 
 const D = parseLegalDate;
 
@@ -46,7 +53,9 @@ describe('levenshtein / tokenSetRatio', () => {
 
 describe('docKeys / messageHasDocKey', () => {
   it('builds keys from VS and document number', () => {
-    expect(docKeys({ documentNumber: 'FV2026001', variableSymbol: '2026001' })).toEqual(['2026001']);
+    expect(docKeys({ documentNumber: 'FV2026001', variableSymbol: '2026001' })).toEqual([
+      '2026001',
+    ]);
     expect(docKeys({ documentNumber: '2026-0000123456' })).toEqual(['123456']);
     expect(docKeys({ variableSymbol: '0000123' })).toEqual(['123']);
     expect(docKeys({ documentNumber: 'F-7' })).toEqual(['7']);
@@ -59,7 +68,9 @@ describe('docKeys / messageHasDocKey', () => {
     expect(messageHasDocKey('platba 0002026001', d)).toBe(true);
     expect(messageHasDocKey('uhrada 12026001', d)).toBe(false);
     expect(messageHasDocKey(undefined, d)).toBe(false);
-    expect(messageHasDocKey('faktura 2026-0000123456 ', { documentNumber: '2026-0000123456' })).toBe(true);
+    expect(
+      messageHasDocKey('faktura 2026-0000123456 ', { documentNumber: '2026-0000123456' }),
+    ).toBe(true);
   });
 });
 
@@ -97,7 +108,11 @@ describe('dates', () => {
     expect(dateFactor('transfer', D('2026-04-06'), d).f).toBeCloseTo(0.975, 6);
   });
   it('missing issue date is neutral', () => {
-    expect(dateFactor('transfer', D('2026-03-10'), {})).toEqual({ f: 0, outside: false, anchorDistanceDays: 0 });
+    expect(dateFactor('transfer', D('2026-03-10'), {})).toEqual({
+      f: 0,
+      outside: false,
+      anchorDistanceDays: 0,
+    });
   });
   it.each([
     ['2026-03-02', 1, false, 1],
@@ -119,7 +134,15 @@ describe('dates', () => {
     const f = { servicePeriodTo: D('2026-03-31'), dueDate: D('2026-04-25') };
     expect(dateFactor('filing', D('2026-04-10'), f)).toMatchObject({ f: 1, outside: false });
     expect(dateFactor('filing', D('2026-05-25'), f)).toMatchObject({ f: 1, outside: false });
-    expect(dateFactor('filing', D('2026-05-26'), f)).toMatchObject({ f: 0, outside: true, anchorDistanceDays: 1 });
-    expect(dateFactor('filing', D('2026-03-30'), f)).toMatchObject({ f: 0, outside: true, anchorDistanceDays: 1 });
+    expect(dateFactor('filing', D('2026-05-26'), f)).toMatchObject({
+      f: 0,
+      outside: true,
+      anchorDistanceDays: 1,
+    });
+    expect(dateFactor('filing', D('2026-03-30'), f)).toMatchObject({
+      f: 0,
+      outside: true,
+      anchorDistanceDays: 1,
+    });
   });
 });
