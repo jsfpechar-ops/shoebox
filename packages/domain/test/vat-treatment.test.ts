@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { VatTreatment } from '../src/enums/index';
 import { Money } from '../src/money/index';
 import { createCzRules } from '../src/rules/index';
+import type { CategoryCode } from '../src/taxonomy/categories';
 import {
   deriveVatRateType,
   deriveVatTreatment,
@@ -366,7 +367,7 @@ describe('issued side', () => {
 
 describe('deriveVatRateType', () => {
   const at = rules.at('2026-09-05');
-  const cases: Array<[VatTreatment | null, string | null, string, string]> = [
+  const cases: Array<[VatTreatment | null, string | null, CategoryCode, string]> = [
     ['rcv_domestic_vat', '21', 'exp_services_general', 'standard'],
     ['rcv_domestic_vat', '21.00', 'exp_services_general', 'standard'],
     ['rcv_domestic_vat', '12', 'exp_services_general', 'reduced'],
