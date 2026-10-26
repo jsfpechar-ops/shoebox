@@ -1,6 +1,6 @@
 # 0603: Show on the PDF where a value came from
 
-Status: todo
+Status: review
 Ticket: GAP-04 (owner go 2026-10-26 23:02) | Depends on: none | Base commit: 886fc60 | Branch: claude/project-thread-7b9jcx | PR base: phase/0
 Executor: Sonnet 5.5 (reason: visual judgement) | Fits one session: 30 tool calls, 60k tokens
 

@@ -5,7 +5,7 @@ import { Button, Input } from '@shoebox/ui';
 import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import type { EditKey, FixKind } from './correction';
 import { type FixState, fixFieldAction } from './correction-actions';
-import { cleanPicked, isPickTarget, PICK_EVENT, setPickTarget } from './pick';
+import { cleanPicked, isPickTarget, PICK_EVENT, requestLocate, setPickTarget } from './pick';
 
 const idle: FixState = { error: null, saved: false };
 
@@ -35,6 +35,7 @@ export function FixField({
   useEffect(() => {
     if (!open) return;
     setPickTarget(id);
+    requestLocate(kind, current);
     function onPick(event: Event) {
       if (!isPickTarget(id) || !inputRef.current) return;
       const value = cleanPicked(kind, String((event as CustomEvent).detail ?? ''));
@@ -44,7 +45,7 @@ export function FixField({
     }
     window.addEventListener(PICK_EVENT, onPick);
     return () => window.removeEventListener(PICK_EVENT, onPick);
-  }, [open, id, kind]);
+  }, [open, id, kind, current]);
 
   if (!open) {
     return (

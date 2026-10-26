@@ -1,6 +1,12 @@
 import type { FixKind } from './correction';
 
 export const PICK_EVENT = 'sysel:pick';
+export const LOCATE_EVENT = 'sysel:locate';
+
+/** Asks the PDF viewer to highlight where a value sits. The value is never logged. */
+export function requestLocate(kind: FixKind, value: string): void {
+  window.dispatchEvent(new CustomEvent(LOCATE_EVENT, { detail: { kind, value } }));
+}
 
 let active: string | null = null;
 
