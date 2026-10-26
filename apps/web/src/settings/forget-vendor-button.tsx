@@ -13,9 +13,12 @@ export function ForgetVendorButton({ id, supplier }: { id: string; supplier: str
   async function forget() {
     setState('busy');
     try {
-      const res = await fetch(`/api/vendor-profiles/${encodeURIComponent(id)}/memory?reprocess=true`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `/api/vendor-profiles/${encodeURIComponent(id)}/memory?reprocess=true`,
+        {
+          method: 'DELETE',
+        },
+      );
       setState(res.ok ? 'done' : 'failed');
       if (res.ok) router.refresh();
     } catch {
@@ -23,7 +26,12 @@ export function ForgetVendorButton({ id, supplier }: { id: string; supplier: str
     }
   }
 
-  if (state === 'done') return <p role="status" className="text-body">{t('settings.vendors.forgotten')}</p>;
+  if (state === 'done')
+    return (
+      <p role="status" className="text-body">
+        {t('settings.vendors.forgotten')}
+      </p>
+    );
   return (
     <div className="flex flex-col items-end gap-1">
       <Button
@@ -35,7 +43,11 @@ export function ForgetVendorButton({ id, supplier }: { id: string; supplier: str
       >
         {t('settings.vendors.forget')}
       </Button>
-      {state === 'failed' ? <p role="alert" className="text-body">{t('settings.vendors.failed')}</p> : null}
+      {state === 'failed' ? (
+        <p role="alert" className="text-body">
+          {t('settings.vendors.failed')}
+        </p>
+      ) : null}
     </div>
   );
 }
