@@ -128,6 +128,7 @@ export const documents = pgTable(
     importRow: integer('import_row'),
     pageFrom: integer('page_from').notNull().default(1),
     pageTo: integer('page_to'),
+    uploadBatchId: uuid('upload_batch_id'),
     status: documentStatusEnum('status').notNull().default('received'),
     stageVersion: jsonb('stage_version').notNull().default({}),
     class: documentClassEnum('class').notNull().default('unknown'),
@@ -177,6 +178,7 @@ export const documents = pgTable(
   },
   (t) => [
     index('documents_org_id_status_idx').on(t.orgId, t.status),
+    index('documents_org_id_upload_batch_id_idx').on(t.orgId, t.uploadBatchId),
     index('documents_org_id_issue_date_idx').on(t.orgId, t.issueDate),
     check('documents_entry_mode_check', sql`${t.entryMode} in ('captured','manual','imported')`),
     check(
