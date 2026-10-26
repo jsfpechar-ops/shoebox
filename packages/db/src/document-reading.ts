@@ -22,7 +22,7 @@ export interface DocumentForRead {
 
 export interface ReadingPatch {
   readonly class: string;
-  readonly classSource: 'llm';
+  readonly classSource: 'llm' | 'rule';
   readonly direction: 'in';
   readonly taxDocStatus: 'full_tax_document' | 'not_tax_document' | 'unknown';
   readonly partnerSnapshot: Record<string, string | null> | null;
@@ -64,8 +64,8 @@ export interface ReadingWrite {
     params: Record<string, unknown>;
   }[];
   readonly run: {
-    /** How the values were read; default 'llm'. 'isdoc' = from the file's ISDOC data, no model call. */
-    readonly method?: 'llm' | 'isdoc';
+    /** How the values were read; default 'llm'. 'isdoc' = from the file's ISDOC data, no model call. 'rule' = skipped by the free pre-check, no model call. */
+    readonly method?: 'llm' | 'isdoc' | 'rule';
     readonly model: string | null;
     readonly promptVersion: string;
     readonly attempt: number;
