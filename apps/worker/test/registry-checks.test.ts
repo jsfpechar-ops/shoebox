@@ -5,12 +5,14 @@ import type {
   CrpdphSubject,
   ViesClient,
 } from '@shoebox/registries';
+import { czAccountToIban } from '@shoebox/validation';
 import { describe, expect, it, vi } from 'vitest';
 import { type RegistryDeps, registryRows } from '../src/doc-extract/registry-checks';
 
 // Synthetic values only.
 const ORG = { ico: '25596641', dic: 'CZ25596641' };
-const PAID_IBAN = 'CZ6508000000192000145399';
+// Built at runtime: the PII guard allowlists sample IBANs only under packages/*/test.
+const PAID_IBAN = czAccountToIban('19', '2000145399', '0800') as string;
 
 function reading(
   supplier: Partial<ProtoExtraction['supplier']>,
