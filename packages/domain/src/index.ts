@@ -8,3 +8,4 @@ export * from './overview/deadlines';
 export * from './overview/meters';
 export * from './overview/totals';
 export * from './rules/index';
+export * from './taxonomy/categories';
