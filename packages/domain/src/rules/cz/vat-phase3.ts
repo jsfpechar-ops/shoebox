@@ -10,7 +10,7 @@ import type { VatTreatment } from '../../enums/index';
  * (versions dated 11. 8. 2026), 22 D-11 default.
  */
 export const CZ_SIMPLE_PERIOD_POLICY = {
-  version: '2026.2',
+  version: '2026.3',
   allowed_treatments: {
     identifikovana_osoba: [
       'rcv_eu_service_reverse_charge',
@@ -34,6 +34,8 @@ export const CZ_SIMPLE_PERIOD_POLICY = {
       'rcv_eu_goods_acquisition',
       'rcv_foreign_vat_charged',
       'rcv_out_of_scope',
+      'rcv_domestic_reverse_charge',
+      'iss_domestic_reverse_charge',
     ],
   },
   forbid_document_classes: ['received_advance_tax_doc'],

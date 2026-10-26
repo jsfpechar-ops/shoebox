@@ -152,6 +152,9 @@ export function khLookup(ledger: PeriodLedger): KhDocumentLookup {
     return {
       duzp: optionalDate(doc.duzp ?? doc.vatPointDate, 'documents.duzp'),
       partnerCountry: doc.partner?.country ?? null,
+      rcCommodityCodes: [
+        ...new Set(doc.lines.map((l) => l.rcCommodityCode).filter((c): c is string => c !== null)),
+      ],
     };
   };
 }

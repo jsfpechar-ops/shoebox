@@ -42,9 +42,9 @@ const e = (
   ...o,
 });
 const DOCS: Record<string, KhDocumentInfo> = {
-  mac: { duzp: d('2026-09-03'), partnerCountry: 'CZ' },
-  full: { duzp: d('2026-09-04'), partnerCountry: 'CZ' },
-  pen: { duzp: d('2026-09-05'), partnerCountry: 'CZ' },
+  mac: { duzp: d('2026-09-03'), partnerCountry: 'CZ', rcCommodityCodes: [] },
+  full: { duzp: d('2026-09-04'), partnerCountry: 'CZ', rcCommodityCodes: [] },
+  pen: { duzp: d('2026-09-05'), partnerCountry: 'CZ', rcCommodityCodes: [] },
 };
 const lookup = (id: string) => DOCS[id];
 
