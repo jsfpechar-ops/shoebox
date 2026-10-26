@@ -1,6 +1,14 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
+  // The Cloud Run image (deploy/gcp/web.Dockerfile) builds a self-contained server; local and CI
+  // builds keep the default output.
+  ...(process.env.NEXT_OUTPUT === 'standalone' && {
+    output: 'standalone',
+    outputFileTracingRoot: path.join(path.dirname(fileURLToPath(import.meta.url)), '../..'),
+  }),
   // Workspace packages ship TypeScript source (package.json "exports" point at src/).
   transpilePackages: ['@shoebox/db', '@shoebox/domain', '@shoebox/i18n', '@shoebox/ui'],
   // Biome lints the repo (pnpm lint); Next must not look for ESLint.

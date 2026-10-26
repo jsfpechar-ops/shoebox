@@ -46,3 +46,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-26 [deps/bank] postal-mime 4.0.5; statements via Inbox upload, unknown account auto-created. (orch.)
 - 2026-10-26 [bank] Matcher: no deps; overpay = partial; FÚ 705/2866/721 verified.
 - 2026-10-26 [auth] No download re-confirm (no TOTP); P3-VAT-12 aal2 dropped. (coord.)
+- 2026-10-26 [hosting] Test env moves from Render to Google Cloud project sysel0123, free tiers only: website on Cloud Run europe-west1, worker in Docker on the e2-micro VM (us-central1), secrets in Secret Manager, deploy by GitHub Actions (deploy/gcp). (owner)

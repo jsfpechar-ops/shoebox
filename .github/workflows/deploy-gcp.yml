@@ -1,0 +1,110 @@
+# Test environment on Google Cloud (owner decision 2026-10-26 [test-env]): the website on Cloud Run
+# (europe-west1, scales to zero), the reading worker in Docker on the always-free e2-micro VM
+# (us-central1). Database and storage stay on Supabase. App secrets live in Secret Manager.
+name: Deploy to Google Cloud
+
+on:
+  push:
+    branches: [phase/0]
+    paths-ignore: ['docs/**', 'research/**', '**/*.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-gcp
+  cancel-in-progress: false
+
+env:
+  PROJECT: sysel0123
+  PROJECT_NUMBER: '478478473513'
+  WEB_REGION: europe-west1
+  VM_ZONE: us-central1-a
+  SECRETS: ANTHROPIC_API_KEY SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY DATABASE_URL WORKER_DATABASE_URL SHOEBOX_TEST_AUTOLOGIN_EMAIL SHOEBOX_TEST_AUTOLOGIN_PASSWORD
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Check that every secret has a value
+        run: |
+          missing=""
+          for s in $SECRETS; do
+            gcloud secrets versions describe latest --secret "$s" --project "$PROJECT" >/dev/null 2>&1 || missing="$missing $s"
+          done
+          if [ -n "$missing" ]; then echo "::error::Secret Manager has no value for:$missing"; exit 1; fi
+
+      - uses: ./.github/actions/setup
+      - name: Migrate the database
+        run: |
+          DATABASE_URL=$(gcloud secrets versions access latest --secret DATABASE_URL --project "$PROJECT")
+          echo "::add-mask::$DATABASE_URL"
+          export DATABASE_URL
+          pnpm db:migrate 2>&1 | tail -30
+
+      - name: Create Artifact Registry repositories (once)
+        run: |
+          for loc in "$WEB_REGION" us-central1; do
+            gcloud artifacts repositories describe shoebox --location "$loc" --project "$PROJECT" >/dev/null 2>&1 \
+              || gcloud artifacts repositories create shoebox --repository-format docker --location "$loc" \
+                   --project "$PROJECT" --description "Shoebox test images"
+            # Free storage is 0.5 GB: keep only the two newest images.
+            gcloud artifacts repositories set-cleanup-policies shoebox --location "$loc" \
+              --project "$PROJECT" --policy deploy/gcp/ar-cleanup.json --no-dry-run
+            gcloud artifacts repositories add-iam-policy-binding shoebox --location "$loc" --project "$PROJECT" \
+              --member "serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+              --role roles/artifactregistry.reader >/dev/null
+          done
+          gcloud auth configure-docker "$WEB_REGION-docker.pkg.dev,us-central1-docker.pkg.dev" --quiet
+
+      - name: Build and push images
+        run: |
+          WEB_IMAGE="$WEB_REGION-docker.pkg.dev/$PROJECT/shoebox/web:${GITHUB_SHA::12}"
+          WORKER_IMAGE="us-central1-docker.pkg.dev/$PROJECT/shoebox/worker:${GITHUB_SHA::12}"
+          docker build -q -f deploy/gcp/web.Dockerfile -t "$WEB_IMAGE" .
+          docker build -q -f deploy/gcp/worker.Dockerfile -t "$WORKER_IMAGE" .
+          docker push -q "$WEB_IMAGE"
+          docker push -q "$WORKER_IMAGE"
+          echo "WEB_IMAGE=$WEB_IMAGE" >> "$GITHUB_ENV"
+          echo "WORKER_IMAGE=$WORKER_IMAGE" >> "$GITHUB_ENV"
+
+      - name: Let the runtime account read the secrets
+        run: |
+          for s in $SECRETS; do
+            gcloud secrets add-iam-policy-binding "$s" --project "$PROJECT" \
+              --member "serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+              --role roles/secretmanager.secretAccessor >/dev/null
+          done
+
+      - name: Deploy the website to Cloud Run
+        run: |
+          set_secrets=$(for s in $SECRETS; do printf '%s=%s:latest,' "$s" "$s"; done)
+          gcloud run deploy shoebox-test --project "$PROJECT" --region "$WEB_REGION" --image "$WEB_IMAGE" \
+            --allow-unauthenticated --min-instances 0 --max-instances 1 --memory 512Mi --cpu 1 \
+            --set-env-vars "APP_ENV=test,SHOEBOX_LLM_PROVIDER=anthropic,SHOEBOX_LLM_MODEL=claude-haiku-5-5,APP_URL=https://shoebox-test-$PROJECT_NUMBER.$WEB_REGION.run.app" \
+            --set-secrets "${set_secrets%,}"
+          URL=$(gcloud run services describe shoebox-test --project "$PROJECT" --region "$WEB_REGION" --format 'value(status.url)')
+          echo "Website: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy the worker to the e2-micro VM
+        run: |
+          if ! gcloud compute instances describe shoebox-worker --zone "$VM_ZONE" --project "$PROJECT" >/dev/null 2>&1; then
+            gcloud compute instances create shoebox-worker --project "$PROJECT" --zone "$VM_ZONE" \
+              --machine-type e2-micro --boot-disk-size 30GB --boot-disk-type pd-standard \
+              --image-family debian-12 --image-project debian-cloud --scopes cloud-platform \
+              --metadata "worker-image=$WORKER_IMAGE" --metadata-from-file startup-script=deploy/gcp/vm-startup.sh
+          else
+            gcloud compute instances add-metadata shoebox-worker --zone "$VM_ZONE" --project "$PROJECT" \
+              --metadata "worker-image=$WORKER_IMAGE" --metadata-from-file startup-script=deploy/gcp/vm-startup.sh
+            gcloud compute instances reset shoebox-worker --zone "$VM_ZONE" --project "$PROJECT"
+          fi
