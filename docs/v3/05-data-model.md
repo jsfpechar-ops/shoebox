@@ -341,6 +341,7 @@ create table document_pages (                                       -- pages of 
   primary key (document_id, position)
 );                                                                  -- no rows = the whole source file
 create index on document_pages (org_id, source_file_id);
+-- Fixes (0061, security invoker): separate_document_pages(document_id) → uuid[]; join_documents(document_id, other_id) → uuid[].
 -- documents.upload_batch_id uuid (0060): the files of one upload drop; indexed (org_id, upload_batch_id).
 
 create table document_links (
