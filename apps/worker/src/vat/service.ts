@@ -333,6 +333,42 @@ async function refreshObligations(
   return c.store.upsertVatObligations(tx, orgId, drafts, OBLIGATION_GENERATOR_VERSION);
 }
 
+type Computed = Loaded & {
+  readonly classifier: SimpleCheckResult;
+  readonly dp3: Dphdp3Computation | null;
+  readonly kh: KhComputation | null;
+  readonly shvByMonth: ShvComputation[];
+  readonly ledgerHash: string;
+};
+
+/** Load, classify and, for a simple verdict, compute the period. Shared by evaluatePeriod and generateBundle. */
+async function computePeriod(
+  tx: TenantTx,
+  orgId: string,
+  periodStart: LegalDate,
+  c: Ctx,
+): Promise<Computed | Skipped> {
+  const loaded = await loadPeriod(tx, orgId, periodStart, c);
+  if ('skipped' in loaded) return loaded;
+  const { ledger, status, period } = loaded;
+  const classifier = classifyPeriod(
+    toClassifierInput(ledger, status, period, new Date(c.now()).toISOString()),
+    c.rules,
+  );
+  let dp3: Dphdp3Computation | null = null;
+  let kh: KhComputation | null = null;
+  let shvByMonth: ShvComputation[] = [];
+  if (classifier.verdict === 'simple') {
+    const entries = ledger.entries.map(toEntryDraft);
+    dp3 = computeDphdp3(entries, status, c.rules, period.start);
+    if (status === 'platce') {
+      kh = computeKh(entries, dp3, khLookup(ledger));
+      shvByMonth = shMonthsOf(entries, period, c);
+    }
+  }
+  return { ...loaded, classifier, dp3, kh, shvByMonth, ledgerHash: ledger.ledgerHash };
+}
+
 export async function evaluatePeriod(
   tx: TenantTx,
   orgId: string,
@@ -340,26 +376,15 @@ export async function evaluatePeriod(
   deps: VatDeps,
 ): Promise<EvaluateResult | Skipped> {
   const c = resolve(deps);
-  const loaded = await loadPeriod(tx, orgId, periodStart, c);
+  const loaded = await computePeriod(tx, orgId, periodStart, c);
   if ('skipped' in loaded) return loaded;
-  const { ledger, status, period } = loaded;
-  const check = classifyPeriod(
-    toClassifierInput(ledger, status, period, new Date(c.now()).toISOString()),
-    c.rules,
-  );
+  const { ledger, status, period, classifier: check, dp3, shvByMonth: shMonths } = loaded;
   if (check.verdict === 'needs_accountant') await enqueueWorkbook(orgId, period.start, c);
   const draftFilingId =
     check.verdict === 'nothing_to_file'
       ? null
       : await refreshDraft(tx, orgId, c, loaded, check, ledger.ledgerHash, 'radne');
 
-  let dp3: Dphdp3Computation | null = null;
-  let shMonths: ShvComputation[] = [];
-  if (check.verdict === 'simple') {
-    const entries = ledger.entries.map(toEntryDraft);
-    dp3 = computeDphdp3(entries, status, c.rules, period.start);
-    if (status === 'platce') shMonths = shMonthsOf(entries, period, c);
-  }
   const obligations = await refreshObligations(tx, orgId, c, loaded, shMonths, dp3);
   c.logger.info(
     {
@@ -445,13 +470,18 @@ export async function generateBundle(
   deps: VatDeps,
 ): Promise<GenerateOutcome> {
   const c = resolve(deps);
-  const loaded = await loadPeriod(tx, orgId, req.periodStart, c);
+  const loaded = await computePeriod(tx, orgId, req.periodStart, c);
   if ('skipped' in loaded) return { outcome: 'skipped', reason: loaded.skipped };
-  const { ledger, profile, status, period } = loaded;
-  const check = classifyPeriod(
-    toClassifierInput(ledger, status, period, new Date(c.now()).toISOString()),
-    c.rules,
-  );
+  const {
+    ledger,
+    profile,
+    status,
+    period,
+    classifier: check,
+    dp3,
+    kh,
+    shvByMonth: shMonths,
+  } = loaded;
   if (check.verdict === 'nothing_to_file') return { outcome: 'skipped', reason: 'nothing_to_file' };
   if (check.verdict !== 'simple') {
     const draftFilingId = await refreshDraft(
@@ -513,15 +543,12 @@ export async function generateBundle(
     return { outcome: 'skipped', reason: 'not_vat_registered' };
   }
 
-  const entries = ledger.entries.map(toEntryDraft);
-  const dp3 = computeDphdp3(entries, status, c.rules, period.start);
-  const kh = status === 'platce' ? computeKh(entries, dp3, khLookup(ledger)) : null;
+  if (dp3 === null) throw new Error('vat: simple period without dp3');
   const rec = reconcileKhDp3(dp3, kh);
   if (!rec.ok) {
     // Maintainer bug: the dead-letter queue surfaces it. Codes only, no amounts.
     throw new Error(`reconcileKhDp3 failed: ${rec.issues.map((i) => i.code).join(',')}`);
   }
-  const shMonths = status === 'platce' ? shMonthsOf(entries, period, c) : [];
 
   const bundleId = crypto.randomUUID();
   const blobPath = (name: string) => `org/${orgId}/filings/${bundleId}/${name}.xml`;
