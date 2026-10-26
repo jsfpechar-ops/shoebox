@@ -24,7 +24,11 @@ M01 §4.13 step 6 (what one imported row becomes):
 
 Undo (step 8): soft-delete (`deleted_at = now()`, the same column trash uses) every document of the import whose status is not `finalized` and that has no `document_fields` row with `source='user'` and `set_by`/`updated_at` later than the import's `created_at` — simpler, allowed: no field row whose `updated_at` is after `spreadsheet_imports.finished_at`. Set the import `state='undone'`, `undone_at=now()`. Return `{ removed: number, kept: number }`. Refuse (return null) when the import is older than 30 days.
 
-## 3. Steps
+## 3. Files
+
+`packages/db/migrations/0030_spreadsheet_imports.sql`, `packages/db/migrations/meta/_journal.json`, `packages/db/src/schema/imports.ts`, `packages/db/src/schema/index.ts`, `packages/db/src/imports.ts`, `packages/db/src/index.ts`, `packages/testkit/src/factories/*`, `packages/db/test/imports.db.test.ts`, `docs/v3/05-data-model.md` (one line).
+
+## 4. Steps
 
 1. `packages/db/migrations/0030_spreadsheet_imports.sql`: both tables (05 text), the FK, `select app.apply_tenant_rls('import_mappings'); select app.apply_tenant_rls('spreadsheet_imports');` (copy the pattern of `0060_document_pages.sql`). Add the journal entry in `packages/db/migrations/meta/_journal.json` with `"when"` = the current `Date.now()` value (larger than every other entry), tag `0030_spreadsheet_imports`.
 2. Drizzle schema `packages/db/src/schema/imports.ts`, exported from `schema/index.ts`.
@@ -38,9 +42,24 @@ Undo (step 8): soft-delete (`deleted_at = now()`, the same column trash uses) ev
 5. `packages/db/test/imports.db.test.ts` (pattern: `semantic-dedupe.db.test.ts`): a row → one `ready` document with fields source user; same row again → `created:false`; a row repeating an existing live doc (same supplier IČO, number, gross) → `duplicate`; undo removes an untouched doc and keeps a finalized one.
 6. Edit 05 (one line) for the money_account_id FK note.
 
-## 4. Acceptance
+## 5. Do not touch
+
+Lane A, C and D folders (`packages/domain/src/{taxonomy,vat,ledgers,fx}`, `packages/domain/rules/cz`, `apps/web/app/(app)/**` screens, `apps/worker/src/{doc-split,email-received}`), other migrations, `cs.json`. No new dependency.
+
+## 6. Commands
+
+End every command with `| tail -30`. Commands are in section 7.
+
+## 7. Acceptance
 
 - [ ] `pnpm --filter @shoebox/db test -- imports 2>&1 | tail -30` passes (db tests need `DATABASE_URL`; run `packages/db/scripts/local-pg.sh` if the sandbox has it, else report "db tests skipped locally").
 - [ ] `pnpm --filter @shoebox/db typecheck`, `pnpm --filter @shoebox/testkit typecheck`, `pnpm depcruise`, `pnpm exec biome check packages/db packages/testkit`, `python3 scripts/context_lint.py` clean.
 - [ ] No money as float: amounts stay decimal strings into `numeric` columns.
-- [ ] Report: files, deviations, test output tail.
+
+## 8. Stop and ask
+
+Stop and report instead of guessing when a named file, column or helper does not exist as described, or a check fails twice for a reason outside these files.
+
+## 9. Report
+
+`docs/tasks/0212-report.md`: files changed, deviations from this brief, the test output tail. Then set this brief's Status to `review`.

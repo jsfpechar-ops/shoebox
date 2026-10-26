@@ -24,14 +24,33 @@ Default decision (autonomous run): the file is parsed inline in `POST /api/v1/im
 - Put the preview computation in a pure function `buildImportPreview(sheet, headerRow, mapping, options)` in `packages/pipeline/src/import/preview.ts` (exported), so it is unit-tested without HTTP.
 - Error keys go into `packages/i18n/messages/en.json` (`import.already`, `import.too_large`, `import.unsupported`, `import.undo_expired`, and one per readSpreadsheet error reason). English only.
 
-## 3. Steps
+## 3. Files
+
+`packages/pipeline/src/import/preview.ts` (+ index export), `packages/pipeline/test/import-preview.test.ts`, `apps/web/app/api/v1/imports/**`, `apps/web/src/imports/*`, `apps/web/test/imports-api.test.ts`, `packages/i18n/messages/en.json`.
+
+## 4. Steps
 
 1. `preview.ts` + tests in `packages/pipeline/test/import-preview.test.ts`.
 2. The five route files, thin: validate, call helpers, respond. A shared `apps/web/src/imports/` module for the logic if a route grows past ~60 lines.
 3. `apps/web/test/imports-api.test.ts` for the request validation and status codes, with the store/blob mocked (pattern: an existing `apps/web/test/*route*` or `register` test).
 
-## 4. Acceptance
+## 5. Do not touch
+
+Lane A, C and D folders (`packages/domain/src/{taxonomy,vat,ledgers,fx}`, `packages/domain/rules/cz`, `apps/web/app/(app)/**` screens, `apps/worker/src/{doc-split,email-received}`), other migrations, `cs.json`. No new dependency.
+
+## 6. Commands
+
+End every command with `| tail -30`. Commands are in section 7.
+
+## 7. Acceptance
 
 - [ ] `pnpm --filter @shoebox/pipeline test -- import-preview 2>&1 | tail -30`, `pnpm --filter @shoebox/web test -- imports-api 2>&1 | tail -30` pass.
 - [ ] Typecheck pipeline + web, `pnpm depcruise`, biome on changed files, `python3 scripts/context_lint.py` clean.
-- [ ] Report: files, deviations, test tail.
+
+## 8. Stop and ask
+
+Stop and report instead of guessing when a named file, column or helper does not exist as described, or a check fails twice for a reason outside these files.
+
+## 9. Report
+
+`docs/tasks/0214-report.md`: files changed, deviations from this brief, the test output tail. Then set this brief's Status to `review`.

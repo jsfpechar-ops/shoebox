@@ -22,14 +22,33 @@ The worker job `import.spreadsheet.run` that imports the valid rows of one uploa
 - Org IČO/DIČ for checks: load like doc-extract does (`ProtoOrg`).
 - No document content in logs: log only ids and counts.
 
-## 3. Steps
+## 3. Files
+
+`packages/pipeline/src/jobs.ts`, `apps/worker/src/import-run/{handler,register}.ts`, the worker file that calls `registerDocSplit`, `apps/worker/test/import-run.test.ts`.
+
+## 4. Steps
 
 1. Job definition in `packages/pipeline/src/jobs.ts` (+ export).
 2. `apps/worker/src/import-run/handler.ts` (`createImportRunHandler(deps)`) and `register.ts` (needs `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`; no Anthropic key). Register it where `registerDocSplit` is called.
 3. `apps/worker/test/import-run.test.ts` with a fake store/blob (pattern: `apps/worker/test/doc-split*.test.ts` or the doc-extract handler test): a 3-row CSV (one valid, one missing total, one repeating the first) → 1 insert, skipped `missing_total` and `duplicate_in_file`, `finishImport` called; a 450-row CSV → first run inserts 200 and enqueues `fromRow: 200`; state not `importing` → nothing happens. Build CSV bytes in the test with synthetic names (no real IČO; use `12345678`-style values that pass `icoChecksumValid`, e.g. compute one in the test).
 
-## 4. Acceptance
+## 5. Do not touch
+
+Lane A, C and D folders (`packages/domain/src/{taxonomy,vat,ledgers,fx}`, `packages/domain/rules/cz`, `apps/web/app/(app)/**` screens, `apps/worker/src/{doc-split,email-received}`), other migrations, `cs.json`. No new dependency.
+
+## 6. Commands
+
+End every command with `| tail -30`. Commands are in section 7.
+
+## 7. Acceptance
 
 - [ ] `pnpm --filter @shoebox/worker test -- import-run 2>&1 | tail -30` and `pnpm --filter @shoebox/pipeline test 2>&1 | tail -30` pass.
 - [ ] Typecheck worker + pipeline, `pnpm depcruise`, biome on changed files, `python3 scripts/context_lint.py` clean.
-- [ ] Report: files, deviations, test tail.
+
+## 8. Stop and ask
+
+Stop and report instead of guessing when a named file, column or helper does not exist as described, or a check fails twice for a reason outside these files.
+
+## 9. Report
+
+`docs/tasks/0213-report.md`: files changed, deviations from this brief, the test output tail. Then set this brief's Status to `review`.
