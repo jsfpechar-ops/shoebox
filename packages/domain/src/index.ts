@@ -4,6 +4,7 @@ export * from './dates/index';
 export * from './enums/index';
 export * from './fx';
 export * from './ledgers/allocate';
+export * from './ledgers/tax';
 export * from './money/index';
 export * from './overview/deadlines';
 export * from './overview/meters';
