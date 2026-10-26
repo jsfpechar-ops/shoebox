@@ -13,7 +13,16 @@ export type ManualState = {
   errors: Partial<Record<'partner' | 'date' | 'amount' | 'form', MessageKey>>;
 };
 
-const FORM_KEYS = ['kind', 'partner', 'date', 'amount', 'paid', 'note', 'missing', 'reason'] as const;
+const FORM_KEYS = [
+  'kind',
+  'partner',
+  'date',
+  'amount',
+  'paid',
+  'note',
+  'missing',
+  'reason',
+] as const;
 
 /** Saves a document typed by hand. It goes through the same checks as an uploaded one. The values are never logged. */
 export async function saveManualEntryAction(

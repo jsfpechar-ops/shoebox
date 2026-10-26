@@ -21,7 +21,11 @@ export type ManualParse =
   | { ok: true; value: ManualEntry }
   | { ok: false; errors: Partial<Record<'partner' | 'date' | 'amount', MessageKey>> };
 
-function pick<T extends readonly string[]>(list: T, raw: string | undefined, fallback: T[number]): T[number] {
+function pick<T extends readonly string[]>(
+  list: T,
+  raw: string | undefined,
+  fallback: T[number],
+): T[number] {
   return (list as readonly string[]).includes(raw ?? '') ? (raw as T[number]) : fallback;
 }
 

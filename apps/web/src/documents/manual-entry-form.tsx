@@ -23,7 +23,12 @@ export function ManualEntryForm() {
     <form action={action} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <Label htmlFor={`${id}-kind`}>{t('manual.kind')}</Label>
-        <select id={`${id}-kind`} name="kind" defaultValue="received_receipt" className={selectClass}>
+        <select
+          id={`${id}-kind`}
+          name="kind"
+          defaultValue="received_receipt"
+          className={selectClass}
+        >
           <option value="received_receipt">{t('manual.kind.received_receipt')}</option>
           <option value="received_invoice">{t('manual.kind.received_invoice')}</option>
           <option value="issued_invoice">{t('manual.kind.issued_invoice')}</option>
