@@ -8,7 +8,7 @@ import {
 } from '../src/detect';
 
 const bytes = (text: string) => new TextEncoder().encode(text);
-const GPC_074 = `074${'0'.repeat(6)}2400123455${'SYSEL TEST'.padEnd(20)}${'0'.repeat(79)}`;
+const GPC_074 = `074${'0'.repeat(6)}2400123455${'SYSEL TEST'.padEnd(20)}${'0'.repeat(89)}`;
 
 describe('detectEncoding / decodeText', () => {
   it('reads plain ASCII and UTF-8 as utf-8', () => {
@@ -17,7 +17,7 @@ describe('detectEncoding / decodeText', () => {
   });
 
   it('falls back to windows-1250 and decodes it', () => {
-    const cp1250 = new Uint8Array([0x8e, 0x4c, 0x55, 0x9d, 0x4f, 0x55, 0xc8, 0x4b, 0xdd]);
+    const cp1250 = new Uint8Array([0x8e, 0x4c, 0x55, 0x8d, 0x4f, 0x55, 0xc8, 0x4b, 0xdd]);
     expect(detectEncoding(cp1250)).toBe('windows-1250');
     expect(decodeText(cp1250, 'windows-1250')).toBe('ŽLUŤOUČKÝ');
   });
