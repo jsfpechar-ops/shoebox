@@ -4,6 +4,7 @@ Updated: 2026-10-26.
 
 ## Now
 
+- Failure analytics (0520–0522): `pipeline_events` codes-only log (reads, failed calls, status changes, user fixes), staff-only `analytics` views + `pnpm analytics:export` CSV, `extraction_runs.cost_usd` filled from `llm-pricing.ts` (`[verify]` prices).
 - 0514–0516: free pre-check skips clear non-invoices (0 tokens); bad answers fail at once. Epic CLS still to build.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
