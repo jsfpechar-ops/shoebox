@@ -1,6 +1,6 @@
 # 0211: Spreadsheet import core: read, map, parse rows
 
-Status: todo
+Status: review
 Ticket: P2-IMP-01 | Depends on: none | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0211-report.md
