@@ -19,5 +19,7 @@ export * from './taxonomy/categories';
 export * from './taxonomy/summary';
 export * from './vat/header';
 export * from './vat/ledger';
+export * from './vat/obligations';
+export * from './vat/period';
 export * from './vat/point-date';
 export * from './vat/treatment';
