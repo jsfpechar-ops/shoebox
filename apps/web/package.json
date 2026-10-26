@@ -21,6 +21,7 @@
   "dependencies": {
     "@shoebox/db": "workspace:*",
     "@shoebox/domain": "workspace:*",
+    "@shoebox/exports": "workspace:*",
     "@shoebox/i18n": "workspace:*",
     "@shoebox/pipeline": "workspace:*",
     "@shoebox/platform": "workspace:*",

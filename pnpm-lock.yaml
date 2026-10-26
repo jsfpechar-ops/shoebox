@@ -89,6 +89,9 @@ importers:
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@shoebox/exports':
+        specifier: workspace:*
+        version: link:../../packages/exports
       '@shoebox/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
