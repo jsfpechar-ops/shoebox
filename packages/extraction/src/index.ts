@@ -9,3 +9,4 @@ export * from './llm/provider';
 export * from './proto/schema';
 export * from './qr/payload';
 export * from './scan/scan';
+export * from './text/identifiers';

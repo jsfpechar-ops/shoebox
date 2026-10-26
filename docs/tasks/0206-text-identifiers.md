@@ -1,6 +1,6 @@
 # 0206: Find identifiers in the PDF text layer
 
-Status: todo
+Status: review
 Ticket: P1-EXT-03 (regex extractors, identifier part) | Depends on: 0202 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0206-report.md
