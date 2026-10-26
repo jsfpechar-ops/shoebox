@@ -6,14 +6,27 @@ import type { createSupabaseServerClient } from '../supabase/server';
 type SupabaseLike = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export type PaidFilter = 'all' | 'paid' | 'unpaid';
-export interface RegisterFilter { readonly year: number | null; readonly paid: PaidFilter; readonly q: string }
+export interface RegisterFilter {
+  readonly year: number | null;
+  readonly paid: PaidFilter;
+  readonly q: string;
+}
 export interface RegisterRow {
-  readonly id: string; readonly status: DocumentStatus; readonly cls: DocumentClass;
+  readonly id: string;
+  readonly status: DocumentStatus;
+  readonly cls: DocumentClass;
   readonly date: LegalDate | null; // issue_date ?? duzp ?? null
-  readonly partner: string | null; readonly ico: string | null; readonly dic: string | null;
-  readonly number: string | null; readonly variableSymbol: string | null;
-  readonly gross: string | null; readonly net: string | null; readonly vat: string | null;
-  readonly currency: string; readonly due: LegalDate | null; readonly duzp: LegalDate | null;
+  readonly partner: string | null;
+  readonly ico: string | null;
+  readonly dic: string | null;
+  readonly number: string | null;
+  readonly variableSymbol: string | null;
+  readonly gross: string | null;
+  readonly net: string | null;
+  readonly vat: string | null;
+  readonly currency: string;
+  readonly due: LegalDate | null;
+  readonly duzp: LegalDate | null;
   readonly paid: 'paid' | 'unpaid' | 'none'; // paid_at or is_paid_per_document → paid; else gross present → unpaid; else none
   readonly paidAt: LegalDate | null;
   readonly hasFile: boolean; // source_file_id not null
@@ -99,7 +112,10 @@ export function applyRegisterFilter(
 ): RegisterRow[] {
   const needle = filter.q.toLowerCase();
   return rows.filter((row) => {
-    if (filter.year !== null && (row.date === null || row.date.slice(0, 4) !== String(filter.year))) {
+    if (
+      filter.year !== null &&
+      (row.date === null || row.date.slice(0, 4) !== String(filter.year))
+    ) {
       return false;
     }
     if (filter.paid === 'paid' && row.paid !== 'paid') return false;
