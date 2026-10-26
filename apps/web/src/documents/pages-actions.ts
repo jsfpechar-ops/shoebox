@@ -83,7 +83,8 @@ export async function reactToSameInvoice(orgId: string, questionId: string): Pro
   if (error || !q) return;
   const answer = q.answer as { value?: unknown } | null;
   const other = (q.payload as { other_document_id?: unknown } | null)?.other_document_id;
-  if (answer?.value !== 'yes' || typeof other !== 'string' || typeof q.document_id !== 'string') return;
+  if (answer?.value !== 'yes' || typeof other !== 'string' || typeof q.document_id !== 'string')
+    return;
   const { data, error: joinError } = await supabase.rpc('join_documents', {
     p_document_id: other,
     p_other_id: q.document_id,
