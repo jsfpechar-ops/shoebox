@@ -27,6 +27,7 @@
   "inbox.upload.duplicate": "{n, plural, one {# file is already here} other {# files are already here}}.",
   "inbox.upload.rejected": "{n, plural, one {# file cannot be read} other {# files cannot be read}}. Send a PDF, a photo or an ISDOC file up to 20 MB.",
   "inbox.upload.error": "The upload failed. Please try again.",
+  "inbox.upload.heic_unsupported": "{n, plural, one {# iPhone photo (HEIC) can't be opened in this browser} other {# iPhone photos (HEIC) can't be opened in this browser}}. Upload it from your phone, or save it as JPEG first.",
   "inbox.list.label": "Documents",
   "inbox.row.unknown_supplier": "Supplier not read yet",
   "inbox.empty.title": "No documents here yet",
