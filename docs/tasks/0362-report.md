@@ -1,6 +1,6 @@
 # 0362 report
 
-Status: blocked
+Status: review (orchestrator: worker RLS test replaces the seeded row for one-row-per-org tables inside its rolled-back transaction)
 Commit: ac40c1c (branch wt-0362, not pushed)
 
 ## Files changed

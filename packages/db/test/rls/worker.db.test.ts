@@ -25,6 +25,8 @@ import {
 // replaced by `app_worker` (trust auth on the local cluster). withTenant() itself is covered by
 // test/with-tenant.db.test.ts.
 const ROLLBACK = Symbol('rollback');
+/** Tenant tables keyed by org_id alone (05): the suite already seeds their only row per org. */
+const ONE_ROW_PER_ORG: readonly string[] = ['tax_reserve_estimates'];
 
 describe.skipIf(DATABASE_URL === undefined)(
   'RLS worker cases: app_worker × every tenant table',
@@ -121,10 +123,13 @@ describe.skipIf(DATABASE_URL === undefined)(
           pgCode,
         );
         expect(codeB, `${table}: insert for org B as worker of A`).toBe('42501');
-        const codeA = await asWorker(ORG_A, (tx) => insertRow(tx, table, rowA)).then(
-          () => null,
-          pgCode,
-        );
+        const codeA = await asWorker(ORG_A, async (tx) => {
+          // One row per org (org_id is the key): replace the seeded row inside this rolled-back transaction.
+          if (ONE_ROW_PER_ORG.includes(table)) {
+            await tx`delete from ${tx(table)} where org_id = ${ORG_A}`;
+          }
+          await insertRow(tx, table, rowA);
+        }).then(() => null, pgCode);
         // organizations: a new id is not app.current_org_id(), so even that insert is refused.
         expect(codeA, `${table}: insert for org A as worker of A`).toBe(
           orgColumnOf(table) === 'id' ? '42501' : null,
