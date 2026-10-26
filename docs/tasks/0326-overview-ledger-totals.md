@@ -1,6 +1,6 @@
 # 0326: Přehled from ledgers (a): `computeLedgerTotals` and the merge rule (`packages/domain`)
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-03 (acceptance "ledgers feed Přehled"; M11 Přehled meters) | Depends on: 0308 (`TaxLedgerBasis`, tax effects), none at runtime | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens
 

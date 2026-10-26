@@ -1,6 +1,6 @@
 # 0326 report
 
-Status: review
+Status: done
 
 ## Files changed
 - packages/domain/src/overview/ledger-totals.ts (new): computeLedgerTotals, mergeOverviewTotals

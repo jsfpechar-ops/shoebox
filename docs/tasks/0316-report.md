@@ -1,6 +1,6 @@
 # 0316 report
 
-Status: review
+Status: done
 
 ## Files changed
 - `packages/domain/src/taxonomy/summary.ts` (new): `buildSummary`, `monthLabel`, `periodLabel`, `SUMMARY_MAX_LENGTH` (160), `MONTH_NAMES_EN`, `SummaryInput`.
