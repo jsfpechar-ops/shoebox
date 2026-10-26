@@ -8,7 +8,7 @@ export interface ExportPeriod {
 
 export const EXPORT_MAX_BYTES = 200 * 1024 * 1024;
 
-const UNSAFE = /[\\/:*?"<>|\u0000-\u001f]/g;
+const UNSAFE_CHARS = '\\/:*?"<>|';
 const PART_MAX = 80;
 
 const MIME_EXT: Readonly<Record<string, string>> = {
@@ -90,12 +90,16 @@ export function periodOptions(today: LegalDate): ExportPeriod[] {
 }
 
 function cleanPart(value: string | null): string {
-  return (value ?? '').trim().replace(UNSAFE, '_').slice(0, PART_MAX).trim();
+  return [...(value ?? '').trim()]
+    .map((ch) => (UNSAFE_CHARS.includes(ch) || ch.charCodeAt(0) < 32 ? '_' : ch))
+    .join('')
+    .slice(0, PART_MAX)
+    .trim();
 }
 
 function extensionOf(fileName: string | null, mime: string): string {
   const fromName = fileName?.match(/\.([A-Za-z0-9]{1,10})$/);
-  if (fromName) return fromName[1].toLowerCase();
+  if (fromName) return (fromName[1] ?? '').toLowerCase();
   return MIME_EXT[mime.toLowerCase()] ?? 'bin';
 }
 

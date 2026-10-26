@@ -13,7 +13,7 @@ const selectClass = cn(
 
 function optionLabel(key: string): string {
   const quarter = key.match(/^(\d{4})-Q([1-4])$/);
-  if (quarter) return t('export.quarter', { q: quarter[2], year: quarter[1] });
+  if (quarter) return t('export.quarter', { q: quarter[2] ?? '', year: quarter[1] ?? '' });
   if (/^\d{4}$/.test(key)) return t('export.year', { year: key });
   return t('export.month', { label: key });
 }
@@ -29,7 +29,12 @@ export default function AccountantPage() {
         <form method="get" action="/api/export" className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <Label htmlFor="export-period">{t('export.period')}</Label>
-            <select id="export-period" name="period" defaultValue={selected} className={selectClass}>
+            <select
+              id="export-period"
+              name="period"
+              defaultValue={selected}
+              className={selectClass}
+            >
               {periodOptions(today).map((option) => (
                 <option key={option.key} value={option.key}>
                   {optionLabel(option.key)}

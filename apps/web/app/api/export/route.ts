@@ -3,7 +3,11 @@ import { createXlsx, createZip, type ZipEntry } from '@shoebox/exports';
 import { t } from '@shoebox/i18n';
 import { requireActiveRole } from '../../../src/auth/org-context';
 import { loadExportDocs } from '../../../src/documents/export-data';
-import { EXPORT_MAX_BYTES, exportEntryName, parsePeriod } from '../../../src/documents/export-period';
+import {
+  EXPORT_MAX_BYTES,
+  exportEntryName,
+  parsePeriod,
+} from '../../../src/documents/export-period';
 import { registerSheet } from '../../../src/documents/register-data';
 import { createSupabaseServerClient } from '../../../src/supabase/server';
 
@@ -21,8 +25,7 @@ export async function GET(request: Request): Promise<Response> {
   const supabase = await createSupabaseServerClient();
   const docs = await loadExportDocs(supabase, auth.orgId, period);
   const total = docs.reduce((sum, doc) => sum + (doc.file?.size ?? 0), 0);
-  if (total > EXPORT_MAX_BYTES)
-    return Response.json({ error: 'too_big' }, { status: 413 });
+  if (total > EXPORT_MAX_BYTES) return Response.json({ error: 'too_big' }, { status: 413 });
 
   const used = new Set<string>();
   const entries: ZipEntry[] = [];

@@ -1,12 +1,17 @@
-import { registerRowOf, type RegisterRow } from './register-data';
-import type { ExportPeriod } from './export-period';
 import type { createSupabaseServerClient } from '../supabase/server';
+import type { ExportPeriod } from './export-period';
+import { type RegisterRow, registerRowOf } from './register-data';
 
 type SupabaseLike = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export interface ExportDoc {
   readonly row: RegisterRow;
-  readonly file: { readonly path: string; readonly mime: string; readonly size: number; readonly name: string | null } | null;
+  readonly file: {
+    readonly path: string;
+    readonly mime: string;
+    readonly size: number;
+    readonly name: string | null;
+  } | null;
 }
 
 const EXPORT_LIMIT = 10_000;
