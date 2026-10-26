@@ -5,13 +5,13 @@ import {
   insertStatementTransactions,
   loadStatementSource,
 } from '@shoebox/db';
-import { bankImportStatementJob } from '@shoebox/pipeline';
+import { bankImportStatementJob, bankMatchTransactionsJob } from '@shoebox/pipeline';
 import { createSupabaseBlobStore, type Logger } from '@shoebox/platform';
 import type { JobRegistry } from '../registry';
 import { createBankImportHandler } from './handler';
 
 export function registerBankImport(
-  registry: Pick<JobRegistry, 'registerTenant'>,
+  registry: Pick<JobRegistry, 'registerTenant' | 'enqueue'>,
   env: Readonly<Record<string, string | undefined>>,
   logger: Pick<Logger, 'info' | 'warn'>,
 ): boolean {
@@ -35,6 +35,8 @@ export function registerBankImport(
         insertImport: insertStatementImport,
         insertTransactions: insertStatementTransactions,
       },
+      enqueueMatch: (orgId, statementImportId) =>
+        registry.enqueue(bankMatchTransactionsJob, { orgId, statementImportId }),
     }),
   );
   logger.info({}, 'bank.import.statement registered');

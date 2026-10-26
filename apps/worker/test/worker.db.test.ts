@@ -1,5 +1,5 @@
 import type { AddressInfo } from 'node:net';
-import { runMigrations } from '@shoebox/db';
+import { runMigrations } from '@shoebox/db/migrate';
 import { opsHeartbeatJob } from '@shoebox/pipeline';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type RunningWorker, startWorker } from '../src/worker';

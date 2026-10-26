@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { requireActiveRole } from '../auth/org-context';
 import { createSupabaseServerClient } from '../supabase/server';
+import { enqueueRadarRefresh } from './enqueue';
 import { reactToSameInvoice } from './pages-actions';
 import { parseQuestionPayload } from './review-deck';
 
@@ -54,6 +55,9 @@ export async function answerQuestionAction(form: FormData): Promise<void> {
 
     // Page sorting: "yes" joins this document after the one before it and reads it again.
     if (question.kind === 'same_invoice') await reactToSameInvoice(auth.orgId, id);
+
+    // Radar: apply the answer to the payment and refresh the questions.
+    if (question.kind === 'missing_document') await enqueueRadarRefresh(auth.orgId);
 
     if (question.document_id) {
       await supabase.rpc('audit_document', {

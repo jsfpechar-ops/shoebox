@@ -12,6 +12,8 @@ import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
 import { PagesCard } from '../../../../src/documents/pages-card';
 import { loadJoinCandidates, loadPagesView } from '../../../../src/documents/pages-data';
+import { loadPaymentView, supabasePaymentStore } from '../../../../src/documents/payment';
+import { PaymentCard } from '../../../../src/documents/payment-card';
 import { PdfViewer } from '../../../../src/documents/pdf-viewer';
 import { readAgainAction } from '../../../../src/documents/read-again-actions';
 import { moveToTrashAction } from '../../../../src/documents/trash-actions';
@@ -52,6 +54,11 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           .originalOf(detail.id)
           .catch(() => null)
       : null;
+  const paymentView =
+    auth.ok && !processing && detail.status !== 'failed'
+      ? await loadPaymentView(supabasePaymentStore(supabase, auth.orgId), detail.id)
+      : null;
+  const canAct = auth.ok && (auth.role === 'owner' || auth.role === 'member');
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
@@ -92,6 +99,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
         </Card>
       ) : (
         <>
+          {paymentView && (paymentView.paidAt !== null || paymentView.found.length > 0) ? (
+            <PaymentCard documentId={detail.id} view={paymentView} canAct={canAct} />
+          ) : null}
           <Card className="flex flex-col gap-4 p-6">
             <h2 className="text-card-title">{t('doc.detail.read_title')}</h2>
             {detail.readBy === 'isdoc' ? (

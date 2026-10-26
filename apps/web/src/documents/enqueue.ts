@@ -1,5 +1,7 @@
 import {
   bankImportStatementJob,
+  bankMatchDecideJob,
+  bankRadarRefreshJob,
   type CategorizeTrigger,
   docCategorizeJob,
   docExtractJob,
@@ -131,12 +133,40 @@ export async function enqueueBankImport(orgId: string, sourceFileId: string): Pr
   });
 }
 
-/** Queues `vat.filing.generate` for one period and kind; the key makes a second identical request a no-op. Returns the job id. */
+/** Queues `bank.match.decide`: the owner's tap on a suggested payment. One job per suggestion. */
+export async function enqueueMatchDecision(
+  orgId: string,
+  suggestionId: string,
+  decision: 'accept' | 'reject',
+  userId: string,
+): Promise<void> {
+  const payload = bankMatchDecideJob.payload.parse({ orgId, suggestionId, decision, userId });
+  const key = jobKey(bankMatchDecideJob, payload);
+  await (await boss()).send(bankMatchDecideJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `bank.radar.refresh` for the org (one job per org and minute). */
+export async function enqueueRadarRefresh(orgId: string): Promise<void> {
+  const payload = bankRadarRefreshJob.payload.parse({
+    orgId,
+    at: new Date().toISOString().slice(0, 16).replace(':', '-'),
+  });
+  const key = jobKey(bankRadarRefreshJob, payload);
+  await (await boss()).send(bankRadarRefreshJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `vat.filing.generate` for one period and kind; the nonce lets a later request run again (a finished job keeps its id). Returns the job id. */
 export async function enqueueVatFilingGenerate(
   orgId: string,
   input: Omit<VatFilingGeneratePayload, 'orgId'>,
 ): Promise<string> {
-  const payload = vatFilingGenerateJob.payload.parse({ ...input, orgId });
+  const payload = vatFilingGenerateJob.payload.parse({ nonce: Date.now(), ...input, orgId });
   const key = jobKey(vatFilingGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(vatFilingGenerateJob.name, payload, { id, singletonKey: key });
@@ -149,21 +179,32 @@ export async function enqueueVatWorkbookGenerate(
   periodStart: string,
   requestedBy?: string,
 ): Promise<string> {
-  const payload = vatWorkbookGenerateJob.payload.parse({ orgId, periodStart, requestedBy });
+  const payload = vatWorkbookGenerateJob.payload.parse({
+    orgId,
+    periodStart,
+    requestedBy,
+    nonce: Date.now(),
+  });
   const key = jobKey(vatWorkbookGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(vatWorkbookGenerateJob.name, payload, { id, singletonKey: key });
   return id;
 }
 
-/** Queues `podklady.generate` for one tax year and answers version; the key makes a second identical request a no-op. */
+/** Queues `podklady.generate` for one tax year and answers version; the nonce lets a later request run again. */
 export async function enqueuePodkladyGenerate(
   orgId: string,
   year: number,
   answersVersion: number,
   requestedBy: string,
 ): Promise<string> {
-  const payload = podkladyGenerateJob.payload.parse({ orgId, year, answersVersion, requestedBy });
+  const payload = podkladyGenerateJob.payload.parse({
+    orgId,
+    year,
+    answersVersion,
+    requestedBy,
+    nonce: Date.now(),
+  });
   const key = jobKey(podkladyGenerateJob, payload);
   const id = jobIdFromKey(key);
   await (await boss()).send(podkladyGenerateJob.name, payload, { id, singletonKey: key });

@@ -261,6 +261,44 @@ export const bankImportStatementJob = defineTenantJob({
   entityId: (payload) => payload.sourceFileId,
 });
 
+/** M07 §6.2: match the transactions of one import (or an explicit batch). Enqueued after bank.import.statement. */
+export const bankMatchTransactionsJob = defineTenantJob({
+  name: 'bank.match.transactions',
+  payload: tenantPayload({
+    transactionIds: z.array(z.uuid()).min(1).max(5000).optional(),
+    statementImportId: z.uuid().optional(),
+  }).refine((p) => p.transactionIds !== undefined || p.statementImportId !== undefined, {
+    message: 'transactionIds or statementImportId is required',
+  }),
+  version: 1,
+  entityId: (p) =>
+    p.statementImportId ??
+    createHash('sha256')
+      .update([...(p.transactionIds ?? [])].sort().join(','))
+      .digest('hex')
+      .slice(0, 32),
+});
+
+/** M07 §6.2: re-score the unmatched transactions of the lookback window for one document that became ready. `trigger` = the extraction run id. */
+export const bankMatchDocumentJob = defineTenantJob({
+  name: 'bank.match.document',
+  payload: tenantPayload({ documentId: z.uuid(), trigger: z.string().min(1).max(64) }),
+  version: 1,
+  entityId: (p) => `${p.documentId}:${p.trigger}`,
+});
+
+/** M07 US9: the owner confirmed or rejected one suggested pairing; the worker writes the result. */
+export const bankMatchDecideJob = defineTenantJob({
+  name: 'bank.match.decide',
+  payload: tenantPayload({
+    suggestionId: z.uuid(),
+    decision: z.enum(['accept', 'reject']),
+    userId: z.uuid(),
+  }),
+  version: 1,
+  entityId: (p) => p.suggestionId,
+});
+
 /** M02: read one document (Haiku 5.5), then run the checks. Enqueued by the upload API. */
 export const docExtractJob = defineTenantJob({
   name: 'doc.extract',
@@ -329,6 +367,9 @@ export const ORG_REBUILD_REASONS = ['profile_changed', 'rules_changed', 'manual'
 
 /** Id-safe key part (no ':' or whitespace). */
 const nonceField = z.number().int().min(0).optional();
+/** Appends the per-request nonce so a repeat request gets a new job id (a finished job keeps its id). */
+const withNonce = (base: string, nonce: number | undefined): string =>
+  nonce === undefined ? base : `${base}-${nonce}`;
 
 export const docCategorizePayload = tenantPayload({
   documentId: z.uuid(),
@@ -392,13 +433,14 @@ export const ledgerVerifyJob = defineSystemJob({
 export const vatPeriodEvaluatePayload = tenantPayload({
   periodStart: z.iso.date(),
   family: z.enum(['IO', 'PAYER']),
+  nonce: nonceField,
 });
 export type VatPeriodEvaluatePayload = z.infer<typeof vatPeriodEvaluatePayload>;
 export const vatPeriodEvaluateJob = defineTenantJob({
   name: 'vat.period.evaluate',
   payload: vatPeriodEvaluatePayload,
   version: 1,
-  entityId: (p) => p.periodStart,
+  entityId: (p) => withNonce(p.periodStart, p.nonce),
 });
 
 /** M05 §6: generate one filing (radne, opravne, dodatecne, nasledne) for a period. */
@@ -408,38 +450,41 @@ export const vatFilingGeneratePayload = tenantPayload({
   amendsFilingId: z.uuid().optional(),
   discoveredOn: z.iso.date().optional(),
   requestedBy: z.uuid(),
+  nonce: nonceField,
 });
 export type VatFilingGeneratePayload = z.infer<typeof vatFilingGeneratePayload>;
 export const vatFilingGenerateJob = defineTenantJob({
   name: 'vat.filing.generate',
   payload: vatFilingGeneratePayload,
   version: 1,
-  entityId: (p) => `${p.periodStart}:${p.kind}`,
+  entityId: (p) => withNonce(`${p.periodStart}-${p.kind}`, p.nonce),
 });
 
 /** M05 §6: build the period workbook (xlsx). */
 export const vatWorkbookGeneratePayload = tenantPayload({
   periodStart: z.iso.date(),
   requestedBy: z.uuid().optional(),
+  nonce: nonceField,
 });
 export type VatWorkbookGeneratePayload = z.infer<typeof vatWorkbookGeneratePayload>;
 export const vatWorkbookGenerateJob = defineTenantJob({
   name: 'vat.workbook.generate',
   payload: vatWorkbookGeneratePayload,
   version: 1,
-  entityId: (p) => p.periodStart,
+  entityId: (p) => withNonce(p.periodStart, p.nonce),
 });
 
 /** M05 §6: detect whether a period needs an amendment (opravne) after a ledger change. */
 export const vatAmendmentDetectPayload = tenantPayload({
   periodStart: z.iso.date(),
+  nonce: nonceField,
 });
 export type VatAmendmentDetectPayload = z.infer<typeof vatAmendmentDetectPayload>;
 export const vatAmendmentDetectJob = defineTenantJob({
   name: 'vat.amendment.detect',
   payload: vatAmendmentDetectPayload,
   version: 1,
-  entityId: (p) => p.periodStart,
+  entityId: (p) => withNonce(p.periodStart, p.nonce),
 });
 
 /** M06 §6: build the annual podklady (PDF + XLSX) for one tax year; idempotent per ledger hash and answers version. */
@@ -447,13 +492,14 @@ export const podkladyGeneratePayload = tenantPayload({
   year: z.number().int().min(2024),
   answersVersion: z.number().int().min(0),
   requestedBy: z.uuid(),
+  nonce: nonceField,
 });
 export type PodkladyGeneratePayload = z.infer<typeof podkladyGeneratePayload>;
 export const podkladyGenerateJob = defineTenantJob({
   name: 'podklady.generate',
   payload: podkladyGeneratePayload,
   version: 1,
-  entityId: (p) => `${p.year}-${p.answersVersion}`,
+  entityId: (p) => withNonce(`${p.year}-${p.answersVersion}`, p.nonce),
 });
 
 export const PODKLADY_RESERVE_REASONS = ['ledger_rebuilt', 'nightly', 'profile_changed'] as const;
@@ -461,13 +507,14 @@ export const PODKLADY_RESERVE_REASONS = ['ledger_rebuilt', 'nightly', 'profile_c
 /** M06 §6: recompute the tax reserve and the income-tax obligations of one org. */
 export const podkladyReserveRefreshPayload = tenantPayload({
   reason: z.enum(PODKLADY_RESERVE_REASONS),
+  nonce: nonceField,
 });
 export type PodkladyReserveRefreshPayload = z.infer<typeof podkladyReserveRefreshPayload>;
 export const podkladyReserveRefreshJob = defineTenantJob({
   name: 'podklady.reserve.refresh',
   payload: podkladyReserveRefreshPayload,
   version: 1,
-  entityId: (p) => `reserve-${p.reason}`,
+  entityId: (p) => withNonce(`reserve-${p.reason}`, p.nonce),
 });
 
 export const podkladyReserveNightlyPayload = z.strictObject({});
@@ -477,5 +524,24 @@ export const podkladyReserveNightlyJob = defineSystemJob({
   name: 'podklady.reserve.nightly',
   payload: podkladyReserveNightlyPayload,
   cron: '30 2 * * *',
+  retry: { retryLimit: 0 },
+});
+
+/** M07 §4.8: materialise the missing-documents radar of one organization as review questions. `at` (minute or nightly-date) makes the job id per request. */
+export const bankRadarRefreshJob = defineTenantJob({
+  name: 'bank.radar.refresh',
+  payload: tenantPayload({ at: z.string().min(1).max(32) }),
+  version: 1,
+  entityId: (p) => p.at,
+});
+export type BankRadarRefreshPayload = z.infer<typeof bankRadarRefreshJob.payload>;
+
+export const bankRadarNightlyPayload = z.strictObject({});
+export type BankRadarNightlyPayload = z.infer<typeof bankRadarNightlyPayload>;
+/** M07 §4.8: daily 03:20 Europe/Prague fan-out of bank.radar.refresh over the active organizations. */
+export const bankRadarNightlyJob = defineSystemJob({
+  name: 'bank.radar.nightly',
+  payload: bankRadarNightlyPayload,
+  cron: '20 3 * * *',
   retry: { retryLimit: 0 },
 });

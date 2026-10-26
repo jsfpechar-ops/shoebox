@@ -1,5 +1,5 @@
 import { createAnthropicClient } from '@shoebox/extraction';
-import { docExtractJob } from '@shoebox/pipeline';
+import { bankMatchDocumentJob, docExtractJob } from '@shoebox/pipeline';
 import { createSupabaseBlobStore, type Logger } from '@shoebox/platform';
 import type { JobRegistry } from '../registry';
 import { createDocExtractHandler } from './handler';
@@ -7,7 +7,7 @@ import { createDocExtractHandler } from './handler';
 const REQUIRED = ['ANTHROPIC_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const;
 
 export function registerDocExtract(
-  registry: Pick<JobRegistry, 'registerTenant'>,
+  registry: Pick<JobRegistry, 'registerTenant' | 'enqueue'>,
   env: Readonly<Record<string, string | undefined>>,
   logger: Pick<Logger, 'info' | 'warn'>,
 ): boolean {
@@ -26,6 +26,8 @@ export function registerDocExtract(
       blobs: createSupabaseBlobStore({ url, apiKey: serviceKey }),
       model,
       clock: { now: () => Date.now() },
+      enqueueMatch: (orgId, documentId, trigger) =>
+        registry.enqueue(bankMatchDocumentJob, { orgId, documentId, trigger }),
     }),
   );
   logger.info({ model }, 'doc.extract registered');

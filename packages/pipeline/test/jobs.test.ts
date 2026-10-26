@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
+  bankRadarNightlyJob,
+  bankRadarRefreshJob,
   CRON_TIME_ZONE,
   DEFAULT_RETRY,
   deadLetterName,
@@ -266,7 +268,9 @@ describe('M05 VAT jobs', () => {
     expect(vatFilingGenerateJob.payload.parse(payload)).toEqual(payload);
     expect(() => vatFilingGenerateJob.payload.parse({ ...payload, kind: 'x' })).toThrow();
     expect(vatFilingGenerateJob.name).toBe('vat.filing.generate');
-    expect(vatFilingGenerateJob.entityId(payload)).toBe('2026-08-01:radne');
+    expect(vatFilingGenerateJob.entityId(payload)).toBe('2026-08-01-radne');
+    // The key builder rejects ':' in an entity id, so the filing key must build.
+    expect(() => jobKey(vatFilingGenerateJob, payload)).not.toThrow();
     expect(
       vatPeriodEvaluateJob.entityId({ orgId: ORG, periodStart: '2026-08-01', family: 'IO' }),
     ).toBe('2026-08-01');
@@ -321,5 +325,43 @@ describe('import jobs keys (regression: ":" in entityId threw)', () => {
     expect(jobKey(importSpreadsheetUndoJob, { orgId: ORG, importId: DOC, nonce: 1 })).not.toBe(
       jobKey(importSpreadsheetUndoJob, { orgId: ORG, importId: DOC, nonce: 2 }),
     );
+  });
+});
+
+describe('bank radar jobs (M07 §4.8)', () => {
+  it('bank.radar.refresh keys on the request time', () => {
+    const payload = { orgId: '11111111-1111-4111-8111-111111111111', at: '2026-10-26T10-00' };
+    expect(bankRadarRefreshJob.payload.parse(payload)).toEqual(payload);
+    expect(jobKey(bankRadarRefreshJob, payload)).toBe(
+      `${payload.orgId}:bank.radar.refresh:2026-10-26T10-00:1`,
+    );
+  });
+  it('bank.radar.nightly is a system cron', () => {
+    expect(bankRadarNightlyJob.scope).toBe('system');
+    expect(bankRadarNightlyJob.cron).toBe('20 3 * * *');
+  });
+});
+
+describe('lane C jobs can run again (a finished job keeps its id)', () => {
+  const ORG_ID = '11111111-1111-4111-8111-111111111111';
+  const USER_ID = '22222222-2222-4222-8222-222222222222';
+  // biome-ignore lint/suspicious/noExplicitAny: one helper over a heterogeneous job table
+  const idOf = (def: any, p: any): string => jobIdFromKey(jobKey(def, p));
+  const cases = [
+    [podkladyReserveRefreshJob, { orgId: ORG_ID, reason: 'ledger_rebuilt' as const }],
+    [vatPeriodEvaluateJob, { orgId: ORG_ID, periodStart: '2026-08-01', family: 'PAYER' as const }],
+    [vatWorkbookGenerateJob, { orgId: ORG_ID, periodStart: '2026-08-01' }],
+    [vatAmendmentDetectJob, { orgId: ORG_ID, periodStart: '2026-08-01' }],
+    [
+      vatFilingGenerateJob,
+      { orgId: ORG_ID, periodStart: '2026-08-01', kind: 'radne' as const, requestedBy: USER_ID },
+    ],
+    [podkladyGenerateJob, { orgId: ORG_ID, year: 2026, answersVersion: 1, requestedBy: USER_ID }],
+  ] as const;
+
+  it.each(cases)('%s: two requests with different nonces get different job ids', (def, base) => {
+    expect(idOf(def, { ...base, nonce: 1 })).not.toBe(idOf(def, { ...base, nonce: 2 }));
+    expect(idOf(def, { ...base, nonce: 1 })).toBe(idOf(def, { ...base, nonce: 1 }));
+    expect(idOf(def, base)).not.toBe(idOf(def, { ...base, nonce: 1 }));
   });
 });

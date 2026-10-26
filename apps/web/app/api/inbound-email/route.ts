@@ -1,4 +1,4 @@
-import { createInboundEmailStore, type InboundEmailStore } from '@shoebox/db';
+import { createInboundEmailStore, type InboundEmailStore } from '@shoebox/db/inbound-email';
 import { createSupabaseBlobStore } from '@shoebox/platform';
 import { enqueueEmailReceived } from '../../../src/documents/enqueue';
 import { handleInboundEmail, INBOUND_MAX_BYTES } from '../../../src/inbound-email/webhook';

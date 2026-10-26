@@ -95,7 +95,7 @@ export function parseCamt053(text: string, options?: { currency?: string }): Par
     const valueDate = date10(textAt(ntry, 'ValDt', 'Dt') || textAt(ntry, 'ValDt', 'DtTm'));
     const negative = textAt(ntry, 'CdtDbtInd') === 'DBIT';
     const entryAmt = child(ntry, 'Amt');
-    const entryCcy = entryAmt?.attrs['Ccy'] || currency;
+    const entryCcy = entryAmt?.attrs.Ccy || currency;
     const entryRef = textAt(ntry, 'AcctSvcrRef') || textAt(ntry, 'NtryRef');
     const isReversal = textAt(ntry, 'RvslInd') === 'true';
     const details = childrenNamed(child(ntry, 'NtryDtls'), 'TxDtls');
@@ -143,7 +143,7 @@ export function parseCamt053(text: string, options?: { currency?: string }): Par
       if (symbols.ss !== undefined) tx.ss = symbols.ss;
 
       const instd = at(detail, 'AmtDtls', 'InstdAmt', 'Amt');
-      const origCcy = instd?.attrs['Ccy'] ?? '';
+      const origCcy = instd?.attrs.Ccy ?? '';
       if (instd !== null && origCcy !== '' && origCcy !== entryCcy) {
         const original = amountOf(instd, negative, origCcy);
         if (original !== null) tx.amountOriginal = original;
