@@ -1,5 +1,6 @@
 import { documentDetailFactories } from './document-details';
 import { documentFactories } from './documents';
+import { moneyFactories } from './money';
 import { partnerFactories } from './partners';
 import { platformFactories } from './platform';
 import { createFactoryRegistry, type FactoryRegistry, type TenantFactory } from './registry';
@@ -22,6 +23,18 @@ export {
   ingestItemFactory,
   sourceFileFactory,
 } from './documents';
+export {
+  counterpartyAliasFactory,
+  importMappingFactory,
+  matchSuggestionFactory,
+  moneyAccountFactory,
+  paymentLinkFactory,
+  paymentOrderFactory,
+  paymentOrderItemFactory,
+  spreadsheetImportFactory,
+  statementImportFactory,
+  transactionFactory,
+} from './money';
 export { partnerBankAccountFactory, partnerFactory, vendorProfileFactory } from './partners';
 export { auditLogFactory, llmUsageDailyFactory, privacyRequestFactory } from './platform';
 export type { FactoryContext, FactoryRegistry, Row, TenantFactory } from './registry';
@@ -33,7 +46,7 @@ export { membershipFactory, organizationFactory, taxpayerProfileFactory } from '
  * Each migration slice adds `src/factories/<area>.ts` exporting its factories and registers them
  * below (a tenant table without a factory fails the RLS meta-test). tenancy.ts covers 0002,
  * partners.ts covers 0004, documents.ts covers 0005, document-details.ts covers 0006,
- * platform.ts covers 0007.
+ * platform.ts covers 0007. money.ts covers 0020.
  */
 export const tenantFactories: FactoryRegistry = createFactoryRegistry();
 for (const [table, factory] of [
@@ -42,6 +55,7 @@ for (const [table, factory] of [
   ...documentFactories,
   ...documentDetailFactories,
   ...platformFactories,
+  ...moneyFactories,
 ]) {
   tenantFactories.define(table, factory);
 }
