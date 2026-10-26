@@ -8,7 +8,7 @@ Updated: 2026-10-26.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
 - Lane D screens done (0400–0411, PRs #12–#19): Sysel name + app icon, register + Excel, trash, add by hand, review questions, accountant ZIP, settings, PDF click-to-fill, audit_log on fixes, nightly encrypted backup (owner adds 4 secrets). Not yet seen in a browser with real data.
 - Lane A intake (2026-10-26): duplicate detection + page notice (0100–0101), browser photo prep incl. HEIC (0102); e-mail inbox code 0103–0106 (Cloudflare worker → signed webhook → `email.received` → `doc.split`); goes live after the steps in `deploy/inbound-email.md` (domain).
-- Lane C wave 1 (0301–0314, #20): categories, VAT treatment, tax and VAT ledgers (pure), tables 0040–0041; wave 2 wires them in.
+- Lane C #20 + #25 (0301–0327): categorize, vendor memory, ledgers, Přehled totals. Next: VAT returns 0328+.
 
 - Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.
 - Přehled screen done (0070–0074, #98–#106): totals, limit meters, deadlines (holidays + generators seeded in rules), loader, English UI; Czech copy dormant in `packages/i18n/later/`. Not yet seen with real data.
