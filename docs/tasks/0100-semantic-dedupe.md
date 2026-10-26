@@ -1,6 +1,6 @@
 # 0100: Same invoice uploaded twice becomes a duplicate
 
-Status: todo
+Status: review
 Ticket: P1-ING-08 (semantic part only) | Depends on: none | Base commit: 496b1e9 | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
