@@ -125,9 +125,7 @@ export function computeDphdp3(
 
   // 4. Derived rows (payers only): 43/44 from the proportional share of their source rows.
   const derive = (target: '43' | '44'): Dphdp3RowValue => {
-    const sources = [
-      ...new Set(map.filter((m) => m.deduction_row === target).map((m) => m.row)),
-    ];
+    const sources = [...new Set(map.filter((m) => m.deduction_row === target).map((m) => m.row))];
     let base = Money.zero(CZK);
     let tax = Money.zero(CZK);
     for (const row of sources) {

@@ -1,5 +1,5 @@
 import type { LegalDate } from '../dates/index';
-import { CZK, Money } from '../money/index';
+import { CZK, Money, round2 } from '../money/index';
 import { type Dphdp3Computation, dphdp3Row } from './dphdp3';
 import { dicDigits } from './header';
 import type { VatLedgerEntryDraft } from './ledger';
@@ -35,7 +35,7 @@ export interface KhB2Row extends KhAmounts {
   readonly dicDod: string;
   readonly cEvidDd: string;
   readonly dppd: LegalDate;
-  readonly pomer: 'N';
+  readonly pomer: 'A' | 'N';
   readonly zdph44: 'N';
   readonly documentId: string;
 }
@@ -89,26 +89,28 @@ interface Buckets {
 }
 
 /** Standard, zero and none go to bucket 1; zero and none carry no tax. Reduced goes to bucket 2. */
-function bucketsOf(entries: readonly VatLedgerEntryDraft[]): Buckets {
+function bucketsOf(entries: readonly VatLedgerEntryDraft[], proportional: boolean): Buckets {
+  const share = (m: Money, e: VatLedgerEntryDraft): Money =>
+    proportional ? round2(m.multiply(e.deductionPct).divide('100')) : m;
   const std = entries.filter(
     (e) => e.vatRateType === 'standard' || e.vatRateType === 'zero' || e.vatRateType === 'none',
   );
   const red = entries.filter((e) => e.vatRateType === 'reduced');
   return {
     zaklDane1: Money.sum(
-      std.map((e) => e.baseCzk),
+      std.map((e) => share(e.baseCzk, e)),
       CZK,
     ),
     dan1: Money.sum(
-      std.map((e) => (e.vatRateType === 'standard' ? e.vatCzk : Money.zero(CZK))),
+      std.map((e) => (e.vatRateType === 'standard' ? share(e.vatCzk, e) : Money.zero(CZK))),
       CZK,
     ),
     zaklDane2: Money.sum(
-      red.map((e) => e.baseCzk),
+      red.map((e) => share(e.baseCzk, e)),
       CZK,
     ),
     dan2: Money.sum(
-      red.map((e) => e.vatCzk),
+      red.map((e) => share(e.vatCzk, e)),
       CZK,
     ),
   };
@@ -128,10 +130,13 @@ function groupByDocument(
   return groups;
 }
 
-function aggregate(entries: readonly VatLedgerEntryDraft[]): KhAggregate | null {
+function aggregate(
+  entries: readonly VatLedgerEntryDraft[],
+  proportional: boolean,
+): KhAggregate | null {
   if (entries.length === 0) return null;
   const ids = [...new Set(entries.map((e) => e.documentId))].sort();
-  return { ...bucketsOf(entries), documentIds: ids };
+  return { ...bucketsOf(entries, proportional), documentIds: ids };
 }
 
 function compareKeys(a: readonly string[], b: readonly string[]): number {
@@ -165,7 +170,7 @@ export function computeKh(
       vatidDod: parts?.number ?? '',
       cEvidDd: first.evidenceNumber ?? '',
       dppd: first.vatPointDate,
-      ...bucketsOf(docEntries),
+      ...bucketsOf(docEntries, false),
     };
   });
 
@@ -180,7 +185,7 @@ export function computeKh(
       dicOdb: dicDigits(first.counterpartyVatId) ?? '',
       cEvidDd: first.evidenceNumber ?? '',
       dppd: docDate(documentId, first.vatPointDate),
-      ...bucketsOf(docEntries),
+      ...bucketsOf(docEntries, false),
     };
   });
 
@@ -192,7 +197,12 @@ export function computeKh(
       dicDod: dicDigits(first.counterpartyVatId) ?? '',
       cEvidDd: first.evidenceNumber ?? '',
       dppd: docDate(documentId, first.vatPointDate),
-      ...bucketsOf(docEntries),
+      ...bucketsOf(docEntries, true),
+      pomer: docEntries.some(
+        (x) => Money.parse(x.deductionPct, CZK).compare(Money.parse('100', CZK)) < 0,
+      )
+        ? ('A' as const)
+        : ('N' as const),
     };
   });
 
@@ -235,7 +245,7 @@ export function computeKh(
       zdph44: 'N',
       documentId: r.documentId,
     })),
-    a5: aggregate(inSection('A5')),
+    a5: aggregate(inSection('A5'), false),
     b2: sortedB2.map((r, i) => ({
       cRadku: i + 1,
       dicDod: r.dicDod,
@@ -245,11 +255,11 @@ export function computeKh(
       dan1: r.dan1,
       zaklDane2: r.zaklDane2,
       dan2: r.dan2,
-      pomer: 'N',
+      pomer: r.pomer,
       zdph44: 'N',
       documentId: r.documentId,
     })),
-    b3: aggregate(inSection('B3')),
+    b3: aggregate(inSection('B3'), true),
     c: {
       obrat23: row('1'),
       obrat5: row('2'),
