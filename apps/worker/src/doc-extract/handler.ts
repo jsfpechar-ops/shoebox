@@ -29,7 +29,7 @@ import {
   readIsdoc,
   scanDocument,
 } from '@shoebox/extraction';
-import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
+import { docExtractJob, type DocumentStagePayload } from '@shoebox/pipeline';
 import { icoChecksumValid, icoRepairCandidates, runProtoChecks } from '@shoebox/validation';
 import type { TenantHandler } from '../registry';
 import { partsOf } from './parts';
@@ -142,6 +142,16 @@ function ratesFor(date: string | null, clock: Clock): VatRates {
   }
 }
 
+/** A retry cannot fix these: the same file gives the same answer, so a retry only pays for it again (0514). */
+function retryable(error: unknown): boolean {
+  if (error instanceof ProtoParseError) return false;
+  if (error instanceof AnthropicHttpError) {
+    const s = error.status;
+    return s === 0 || s === 408 || s === 429 || s >= 500;
+  }
+  return true;
+}
+
 export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<DocumentStagePayload> {
   const store = deps.store ?? dbReadingStore;
 
@@ -155,9 +165,9 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       return;
     }
 
-    // A failure before the last attempt is re-thrown so pg-boss retries it;
-    // on the last attempt it is recorded and the document shows "Nepodařilo se přečíst".
-    const final = ctx.attempt >= DEFAULT_RETRY.retryLimit + 1;
+    // A transient failure before the last attempt is re-thrown so pg-boss retries it; any other failure
+    // is recorded at once (0514). On the last attempt it is recorded and the document shows "Nepodařilo se přečíst".
+    const final = ctx.attempt >= docExtractJob.retry.retryLimit + 1;
     const run = {
       orgId: doc.orgId,
       documentId: doc.id,
@@ -165,8 +175,8 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       promptVersion: PROTO_PROMPT_VERSION,
       attempt: ctx.attempt,
     };
-    const onError = async (error: unknown, code: string): Promise<void> => {
-      if (!final) {
+    const onError = async (error: unknown, code: string, retry: boolean): Promise<void> => {
+      if (!final && retry) {
         throw error;
       }
       await store.fail(ctx.tx, { ...run, error: code, final: true });
@@ -186,7 +196,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
     try {
       bytes = await deps.blobs.get(doc.storagePath);
     } catch (error) {
-      return onError(error, errorCode(error, 'storage'));
+      return onError(error, errorCode(error, 'storage'), true);
     }
 
     // IČOs of suppliers already saved for this org: used to repair a misread IČO. Best effort.
@@ -205,7 +215,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       const pages = store.loadPages ? await store.loadPages(ctx.tx, doc.id) : [];
       if (pages.length > 0) parts = await partsOf(pages, deps.blobs);
     } catch (error) {
-      return onError(error, errorCode(error, 'storage'));
+      return onError(error, errorCode(error, 'storage'), true);
     }
 
     // Exact data in the file itself (QR codes, PDF text layer): read for PDFs and images only, and
@@ -305,7 +315,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
           latencyMs: 0,
         });
       } catch (error) {
-        return onError(error, 'parse');
+        return onError(error, 'parse', false);
       }
     } else if (modelType === null) {
       // An XML or .isdocx without readable ISDOC data: nothing a model could read either.
@@ -321,7 +331,12 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
             : buildPartsRequest({ model: deps.model, parts }),
         );
       } catch (error) {
-        return onError(error, errorCode(error, 'error'));
+        return onError(error, errorCode(error, 'error'), retryable(error));
+      }
+      // A cut-off or refused answer comes back the same on a retry: record it once (0514).
+      if (response.stopReason === 'max_tokens' || response.stopReason === 'refusal') {
+        await store.fail(ctx.tx, { ...run, error: response.stopReason, final: true });
+        return;
       }
       try {
         write = toWrite(parseProtoExtraction(response.json), 'llm', {
@@ -336,7 +351,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
         });
       } catch (error) {
         // Any throw after parsing (e.g. an invalid currency code) counts as a parse failure.
-        return onError(error, 'parse');
+        return onError(error, 'parse', false);
       }
     }
 
@@ -354,7 +369,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       const runId = await store.save(ctx.tx, write);
       if (write.status === 'ready') await deps.enqueueMatch?.(write.orgId, write.documentId, runId);
     } catch (error) {
-      return onError(error, errorCode(error, 'error'));
+      return onError(error, errorCode(error, 'error'), retryable(error));
     }
 
     // Remember the saved supplier for next time. Own savepoint, best effort: the reading is already saved.

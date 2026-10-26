@@ -305,6 +305,8 @@ export const docExtractJob = defineTenantJob({
   payload: documentStagePayload,
   version: 1,
   entityId: (payload) => payload.documentId,
+  // A read that fails for good stops at once (0514); transient errors get 2 retries.
+  retry: { retryLimit: 2 },
 });
 
 /** M01 page sorting (replaces §4.7): sort the pages of one upload drop into documents, then queue their reads. */

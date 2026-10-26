@@ -22,7 +22,7 @@ export function registerDocSplit(
   registry.registerTenant(
     docSplitJob,
     createDocSplitHandler({
-      llm: createAnthropicClient({ apiKey }),
+      llm: createAnthropicClient({ apiKey, maxAttempts: 2 }),
       blobs: createSupabaseBlobStore({ url, apiKey: serviceKey }),
       model,
       enqueueRead: (orgId, documentId) =>

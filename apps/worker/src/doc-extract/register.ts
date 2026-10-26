@@ -22,7 +22,7 @@ export function registerDocExtract(
   registry.registerTenant(
     docExtractJob,
     createDocExtractHandler({
-      llm: createAnthropicClient({ apiKey }),
+      llm: createAnthropicClient({ apiKey, maxAttempts: 2 }),
       blobs: createSupabaseBlobStore({ url, apiKey: serviceKey }),
       model,
       clock: { now: () => Date.now() },
