@@ -1,6 +1,6 @@
 # 0312: migration 0040, seed the 56 categories from the domain taxonomy
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-01 / P1-LEDG-02 (ledger tables prerequisite) | Depends on: 0301 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 

@@ -1,6 +1,6 @@
 # 0303 report: Category decision cascade
 
-Status: review
+Status: done
 Branch: wt-0303 (no push, no PR)
 
 ## Files changed

@@ -1,6 +1,6 @@
 # 0306: `resolveFxRate` and `convertToCzk` (pure, over a supplied ČNB rate list)
 
-Status: todo
+Status: done
 Ticket: P1-CAT-02 (c) | Depends on: 0302 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

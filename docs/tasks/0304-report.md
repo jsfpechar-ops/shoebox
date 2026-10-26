@@ -1,6 +1,6 @@
 # 0304 report
 
-Status: blocked
+Status: done
 Done: steps 1 to 3 (test file, treatment.ts, index export). Left: typecheck green (blocked by a test typing defect, see Questions).
 
 ## Files changed (git diff --stat vs 496b1e9 base commit wt-0304)

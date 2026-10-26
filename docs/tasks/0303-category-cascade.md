@@ -1,6 +1,6 @@
 # 0303: Category decision cascade (pure): stages 0–7, hard rules H1–H5, soft rules as data, asset check, business share
 
-Status: todo
+Status: done
 Ticket: P1-CAT-01 | Depends on: 0302 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

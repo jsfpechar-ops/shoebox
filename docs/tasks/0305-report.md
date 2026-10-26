@@ -1,6 +1,6 @@
 # 0305 report
 
-Status: review
+Status: done
 Brief: docs/tasks/0305-vat-point-date.md | Worktree: wt-0305 | Not pushed, no PR.
 
 ## Files changed (git diff --stat 31f3746 HEAD)
