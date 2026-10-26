@@ -6,7 +6,20 @@ export const UPLOAD_MEDIA_TYPES: readonly string[] = [
   'image/jpeg',
   'image/png',
   'image/webp',
+  'application/xml', // .isdoc and .xml: the worker reads ISDOC data without AI
+  'application/x-isdocx', // .isdocx (a ZIP holding the ISDOC)
 ];
+
+/**
+ * The media type we store. Browsers send "" or a generic type for ISDOC files, so the extension
+ * decides for .isdoc, .isdocx and .xml; every other file keeps the type the browser sent.
+ */
+export function uploadMediaTypeOf(name: string, type: string): string {
+  const ext = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
+  if (ext === 'isdoc' || ext === 'xml') return 'application/xml';
+  if (ext === 'isdocx') return 'application/x-isdocx';
+  return type;
+}
 export const UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
 export const UPLOAD_MAX_FILES = 50;
 
@@ -67,7 +80,8 @@ export async function uploadDocuments(
       items.push({ fileName: file.name, status: 'rejected', reason: 'empty' });
       continue;
     }
-    if (!UPLOAD_MEDIA_TYPES.includes(file.type)) {
+    const mimeType = uploadMediaTypeOf(file.name, file.type);
+    if (!UPLOAD_MEDIA_TYPES.includes(mimeType)) {
       items.push({ fileName: file.name, status: 'rejected', reason: 'type' });
       continue;
     }
@@ -77,12 +91,12 @@ export async function uploadDocuments(
     }
     const sha256 = sha256Hex(file.bytes);
     const storagePath = filePath(ctx.orgId, sha256);
-    await deps.putFile(storagePath, file.bytes, file.type);
+    await deps.putFile(storagePath, file.bytes, mimeType);
     const source = await deps.insertSourceFile({
       orgId: ctx.orgId,
       sha256,
       storagePath,
-      mimeType: file.type,
+      mimeType,
       byteSize: file.bytes.byteLength,
       originalFilename: file.name,
       filenameNfc: file.name.normalize('NFC'),

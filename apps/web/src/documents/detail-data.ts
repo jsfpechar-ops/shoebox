@@ -23,6 +23,8 @@ export interface DocumentDetail {
   readonly fields: readonly DetailField[];
   readonly vatLines: readonly { rate: string; base: string; vat: string }[];
   readonly checks: readonly DetailCheck[]; // blocking first, then warning
+  /** How the values were read: 'isdoc' = exactly from the file's ISDOC data, no AI. */
+  readonly readBy: 'isdoc' | 'model' | null;
   readonly file: {
     readonly path: string;
     readonly mimeType: string;
@@ -53,8 +55,13 @@ function isKey(key: string): key is MessageKey {
   return Object.hasOwn(catalogs.en, key);
 }
 
-/** Builds the page model from the three raw rows. Pure; null when the document row is malformed. */
-export function detailOf(doc: unknown, vat: unknown, checks: unknown): DocumentDetail | null {
+/** Builds the page model from the raw rows. Pure; null when the document row is malformed. */
+export function detailOf(
+  doc: unknown,
+  vat: unknown,
+  checks: unknown,
+  runs: unknown = [],
+): DocumentDetail | null {
   if (!isRow(doc)) return null;
   const id = text(doc.id);
   const status = text(doc.status);
@@ -131,6 +138,10 @@ export function detailOf(doc: unknown, vat: unknown, checks: unknown): DocumentD
       }
     : null;
 
+  const lastRun = Array.isArray(runs) ? runs.find(isRow) : undefined;
+  const method = lastRun ? text(lastRun.method) : null;
+  const readBy = method === null ? null : method === 'isdoc' ? 'isdoc' : 'model';
+
   return {
     id,
     status: status as DocumentStatus,
@@ -141,6 +152,7 @@ export function detailOf(doc: unknown, vat: unknown, checks: unknown): DocumentD
     fields,
     vatLines,
     checks: detailChecks,
+    readBy,
     file,
   };
 }
@@ -152,7 +164,7 @@ export async function loadDocumentDetail(
   id: string,
 ): Promise<DocumentDetail | null> {
   try {
-    const [docResult, vatResult, checkResult] = await Promise.all([
+    const [docResult, vatResult, checkResult, runResult] = await Promise.all([
       supabase
         .from('documents')
         .select(DOCUMENT_COLUMNS)
@@ -170,9 +182,19 @@ export async function loadDocumentDetail(
         .select('rule_id, severity, params')
         .eq('document_id', id)
         .eq('state', 'open'),
+      supabase
+        .from('extraction_runs')
+        .select('method')
+        .eq('document_id', id)
+        .eq('stage', 'extract')
+        .eq('ok', true)
+        .order('created_at', { ascending: false })
+        .limit(1),
     ]);
     if (docResult.error || vatResult.error || checkResult.error) return null;
-    return detailOf(docResult.data, vatResult.data, checkResult.data);
+    // The read method is a hint only: an error there never hides the document.
+    const runs = runResult.error ? [] : runResult.data;
+    return detailOf(docResult.data, vatResult.data, checkResult.data, runs);
   } catch {
     return null;
   }

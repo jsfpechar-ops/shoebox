@@ -83,6 +83,15 @@ function errorCode(error: unknown): string {
   return error instanceof Error ? error.name : 'unknown';
 }
 
+/** HTTP status and reason code of a provider error (never content), so a failed call can be diagnosed. */
+function errorStatus(error: unknown): { httpStatus?: number; errorReason?: string } {
+  const source = (error as { status?: unknown; reason?: unknown } | null) ?? {};
+  return {
+    ...(typeof source.status === 'number' ? { httpStatus: source.status } : {}),
+    ...(typeof source.reason === 'string' ? { errorReason: source.reason } : {}),
+  };
+}
+
 export function createJobRegistry(options: RegistryOptions): JobRegistry {
   const { boss, db, logger } = options;
   const pollingIntervalSeconds = options.pollingIntervalSeconds ?? 2;
@@ -123,7 +132,7 @@ export function createJobRegistry(options: RegistryOptions): JobRegistry {
         'job completed',
       );
     } catch (error) {
-      logger.warn({ ...fields, errorCode: errorCode(error) }, 'job failed');
+      logger.warn({ ...fields, errorCode: errorCode(error), ...errorStatus(error) }, 'job failed');
       throw error;
     }
   }

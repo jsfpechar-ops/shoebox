@@ -1,0 +1,47 @@
+# Render blueprint for the Phase 1 test environment (owner decision 2026-10-25 [test-env]).
+# Blueprint Path in Render: deploy/render-test.yaml. Production stays on Cloud Run europe-west1.
+# Test only: one free web service runs the website and the worker in the same container, so the
+# worker reads documents only while the site is awake. Migrations run in the build step (the free
+# plan has no pre-deploy command). Secrets (sync: false) are pasted in the Render dashboard.
+services:
+  - type: web
+    name: shoebox-test
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: phase/0
+    autoDeploy: true
+    buildCommand: npx --yes pnpm@10.28.0 install --frozen-lockfile && npx --yes pnpm@10.28.0 db:migrate && npx --yes pnpm@10.28.0 --filter @shoebox/web build
+    # The worker's health server takes 8081; the website keeps 3000, the port Render routes to.
+    startCommand: sh -c 'PORT=8081 npx --yes pnpm@10.28.0 --filter @shoebox/worker start & exec npx --yes pnpm@10.28.0 --filter @shoebox/web start'
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "3000"
+      - key: APP_ENV
+        value: test
+      - key: SHOEBOX_LLM_PROVIDER
+        value: anthropic
+      - key: SHOEBOX_LLM_MODEL
+        value: claude-haiku-5-5
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: WORKER_DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      # Test only: sign in as this Supabase user without a login screen (brief 0055).
+      - key: SHOEBOX_TEST_AUTOLOGIN_EMAIL
+        sync: false
+      - key: SHOEBOX_TEST_AUTOLOGIN_PASSWORD
+        sync: false

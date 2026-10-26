@@ -6,7 +6,7 @@ import { type ChangeEvent, type DragEvent, useState } from 'react';
 
 type UploadAnswer = { items?: { status: 'accepted' | 'duplicate' | 'rejected' }[] };
 
-const ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp';
+const ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp,.isdoc,.isdocx,.xml';
 
 /** One drop zone: drag files in or tap to pick them. Sends all files at once to POST /api/documents. */
 export function UploadDropzone() {

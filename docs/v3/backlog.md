@@ -1025,6 +1025,14 @@ Acceptance:
 - [ ] A recipient guard refuses addresses outside org members, invited accountants and share recipients the user typed (no mail to suppliers, AGENTS rule 8).
 Packages/files: packages/platform/src/mailer.ts, packages/platform/src/mailer-ses.ts, docs/runbooks/secret-rotation.md
 
+### P1-TRUST-01: Home-screen manifest and audit log for manual fixes
+Spec: M01 §4.1.1 Web upload and camera (PWA) · M11 §13.1 Server actions (write `audit_log`) · 02 Phase 1 item 11 | Depends on: core loop (0045–0053) | Size: S | Executor: Haiku 5.5 | Risk: normal
+Goal: the core loop already built lacks both: add `manifest.webmanifest` (name, icons, "Vyfotit doklad" shortcut) and make "Fix a value" write one `audit_log` row (field, old value, new value, user, time). No document content beyond the field key in logs.
+Acceptance:
+- [ ] `apps/web/e2e/manifest.spec.ts`: the manifest is served and linked; axe 0.
+- [ ] A test on the fix-a-value action: one `audit_log` row per changed field with old and new value; RLS keeps it in the org.
+Packages/files: apps/web/app/manifest.ts, apps/web/src/documents/
+
 ### P1-GATE-01: Phase 1 gate
 Spec: 02 Phase 1 (Exit criteria) · M12 §4.10 Evaluation harness (Metrics and CI gates) · M01 §9.1 AC-1–AC-5 · M09 §9 AC-1, AC-2, AC-4, AC-5 · 07 §8 Accessibility | Depends on: every P1 ticket, P0-EVAL-03 | Size: S | Executor: Haiku 5.5 | Risk: normal
 Goal: prove the scanner and organizer on the golden set and staging; the owner confirms in the PR.
@@ -1519,7 +1527,8 @@ graph LR
 ## Later (no tickets yet)
 
 - Issued invoicing (M08)
-- Fio / MONETA token sync (`features.bank_fio_api`, after L-01) and a PSD2 aggregator
+- Fio / MONETA token sync (`features.bank_fio_api`, after L-01; not ordered yet, owner 2026-10-26). No PSD2 aggregator (too expensive, owner 2026-10-26)
+- ABRA Flexi export, only if a pilot accountant uses it
 - REST API + webhooks + MCP server, personal access tokens, OAuth
 - PWA offline capture and share target
 - Accountant multi-client portal

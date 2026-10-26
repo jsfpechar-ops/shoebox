@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ANTHROPIC_API_URL,
   AnthropicHttpError,
+  anthropicErrorReason,
   anthropicRequestBody,
   anthropicResponseOf,
   createAnthropicClient,
@@ -194,5 +195,31 @@ describe('createAnthropicClient', () => {
       }).complete(request),
     ).rejects.toThrow('anthropic: HTTP 400: bad schema');
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('anthropicErrorReason', () => {
+  it('maps known messages to fixed codes', () => {
+    expect(
+      anthropicErrorReason('Your credit balance is too low to access the Anthropic API.'),
+    ).toBe('credit_balance');
+    expect(anthropicErrorReason('The PDF specified is password protected.')).toBe('pdf_password');
+    expect(anthropicErrorReason('A maximum of 100 PDF pages may be provided.')).toBe('pdf_pages');
+    expect(anthropicErrorReason('prompt is too long: 250000 tokens > 200000 maximum')).toBe(
+      'too_large',
+    );
+    expect(anthropicErrorReason('model: claude-x')).toBe('param:model');
+    expect(anthropicErrorReason('output_config.format.schema: unsupported keyword')).toBe(
+      'param:output_config.format.schema',
+    );
+    expect(anthropicErrorReason('Invalid model name')).toBe('model');
+    expect(anthropicErrorReason('')).toBe('none');
+    expect(anthropicErrorReason('Something else happened with Jan Novák')).toBe('other');
+  });
+
+  it('is set on the error', () => {
+    expect(new AnthropicHttpError(400, 'Your credit balance is too low').reason).toBe(
+      'credit_balance',
+    );
   });
 });
