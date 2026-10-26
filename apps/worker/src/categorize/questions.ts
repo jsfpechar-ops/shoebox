@@ -1,17 +1,40 @@
 import type { CategorizeQuestionRow } from '@shoebox/db';
 import { type CascadeResult, CZK, Money } from '@shoebox/domain';
-import { openKinds, type QuestionKind, type QuestionPayload, parseQuestionPayload } from './answers';
-export const QUESTION_PRIORITY: readonly QuestionKind[] = ['business_or_personal', 'asset_over_threshold', 'small_asset_business_use', 'supply_kind', 'car_regime', 'which_category'];
+import {
+  openKinds,
+  parseQuestionPayload,
+  type QuestionKind,
+  type QuestionPayload,
+} from './answers';
+export const QUESTION_PRIORITY: readonly QuestionKind[] = [
+  'business_or_personal',
+  'asset_over_threshold',
+  'small_asset_business_use',
+  'supply_kind',
+  'car_regime',
+  'which_category',
+];
 export interface QuestionContext {
-  readonly merchant: string | null;                      // partner name
-  readonly lines: readonly { readonly lineId: string; readonly position: number; readonly description: string | null; readonly grossCzk: string | null }[];
-  readonly extraLineKinds: readonly { readonly lineId: string; readonly kind: 'supply_kind' }[];   // from VAT ambiguity (0319)
-  readonly thresholdCzk: string;                         // rules asset.capitalization_threshold as decimal string
-  readonly suggested: Partial<Record<QuestionKind, string>>;   // e.g. business_or_personal from vendor default / LLM likelihood
-  readonly topCategories: ReadonlyMap<string, readonly { code: string; label: string; confidence: number }[]>;  // lineId → ≤3 for which_category
+  readonly merchant: string | null; // partner name
+  readonly lines: readonly {
+    readonly lineId: string;
+    readonly position: number;
+    readonly description: string | null;
+    readonly grossCzk: string | null;
+  }[];
+  readonly extraLineKinds: readonly { readonly lineId: string; readonly kind: 'supply_kind' }[]; // from VAT ambiguity (0319)
+  readonly thresholdCzk: string; // rules asset.capitalization_threshold as decimal string
+  readonly suggested: Partial<Record<QuestionKind, string>>; // e.g. business_or_personal from vendor default / LLM likelihood
+  readonly topCategories: ReadonlyMap<
+    string,
+    readonly { code: string; label: string; confidence: number }[]
+  >; // lineId → ≤3 for which_category
   readonly maxQuestions: number;
 }
-export interface PlannedQuestion { readonly kind: QuestionKind; readonly payload: QuestionPayload; }
+export interface PlannedQuestion {
+  readonly kind: QuestionKind;
+  readonly payload: QuestionPayload;
+}
 
 type Option = QuestionPayload['options'][number];
 
@@ -41,10 +64,17 @@ function toMoney(text: string | null): Money | null {
   }
 }
 
-function optionsFor(kind: QuestionKind, lineIds: readonly string[], ctx: QuestionContext): Option[] {
+function optionsFor(
+  kind: QuestionKind,
+  lineIds: readonly string[],
+  ctx: QuestionContext,
+): Option[] {
   switch (kind) {
     case 'business_or_personal':
-      return ['business', 'personal', 'mixed'].map((value) => ({ value, label: `categorize.option.${value}` }));
+      return ['business', 'personal', 'mixed'].map((value) => ({
+        value,
+        label: `categorize.option.${value}`,
+      }));
     case 'small_asset_business_use':
       return PCT_VALUES.map((value) => ({ value, label: `categorize.option.pct_${value}` }));
     case 'asset_over_threshold':
@@ -52,22 +82,35 @@ function optionsFor(kind: QuestionKind, lineIds: readonly string[], ctx: Questio
     case 'supply_kind':
       return ['service', 'goods'].map((value) => ({ value, label: `categorize.option.${value}` }));
     case 'car_regime':
-      return ['actual_costs', 'flat_rate_km', 'not_business_car'].map((value) => ({ value, label: `categorize.option.${value}` }));
+      return ['actual_costs', 'flat_rate_km', 'not_business_car'].map((value) => ({
+        value,
+        label: `categorize.option.${value}`,
+      }));
     case 'which_category': {
       const seen = new Map<string, string>();
       for (const lineId of lineIds) {
         for (const candidate of ctx.topCategories.get(lineId) ?? []) {
-          if (seen.size < MAX_CATEGORY_OPTIONS && !seen.has(candidate.code)) seen.set(candidate.code, candidate.label);
+          if (seen.size < MAX_CATEGORY_OPTIONS && !seen.has(candidate.code))
+            seen.set(candidate.code, candidate.label);
         }
       }
-      return [...seen].map(([value, text]) => ({ value, label: 'categorize.option.category', text }));
+      return [...seen].map(([value, text]) => ({
+        value,
+        label: 'categorize.option.category',
+        text,
+      }));
     }
     default:
       return [];
   }
 }
 
-function buildPayload(kind: QuestionKind, lineIds: readonly string[], options: Option[], ctx: QuestionContext): QuestionPayload {
+function buildPayload(
+  kind: QuestionKind,
+  lineIds: readonly string[],
+  options: Option[],
+  ctx: QuestionContext,
+): QuestionPayload {
   const linesInGroup = lineIds.flatMap((id) => {
     const line = ctx.lines.find((candidate) => candidate.lineId === id);
     return line ? [line] : [];
@@ -90,12 +133,18 @@ function buildPayload(kind: QuestionKind, lineIds: readonly string[], options: O
     question: `categorize.question.${kind}`,
     params,
     options,
-    ...(suggested !== undefined && options.some((option) => option.value === suggested) ? { suggested } : {}),
+    ...(suggested !== undefined && options.some((option) => option.value === suggested)
+      ? { suggested }
+      : {}),
   };
 }
 
 /** Groups the cascade's line questions and document questions per kind, skips kinds already open or answered for the same line ids, orders by QUESTION_PRIORITY, caps at maxQuestions. `params` always has `line_ids` (sorted), `item` (first line description or 'this item'), `merchant` ('' when null), `amount_czk` (sum of |grossCzk| of those lines, or null). */
-export function buildQuestions(cascade: CascadeResult, existing: readonly CategorizeQuestionRow[], ctx: QuestionContext): { readonly asked: PlannedQuestion[]; readonly deferred: QuestionKind[] } {
+export function buildQuestions(
+  cascade: CascadeResult,
+  existing: readonly CategorizeQuestionRow[],
+  ctx: QuestionContext,
+): { readonly asked: PlannedQuestion[]; readonly deferred: QuestionKind[] } {
   const groups = new Map<QuestionKind, Set<string>>();
   const add = (kind: string, lineId: string) => {
     if (!isQuestionKind(kind)) return;

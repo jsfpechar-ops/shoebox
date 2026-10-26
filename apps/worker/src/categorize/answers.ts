@@ -1,7 +1,27 @@
 import type { CategorizeQuestionRow } from '@shoebox/db';
-export type QuestionKind = 'business_or_personal' | 'which_category' | 'small_asset_business_use' | 'asset_over_threshold' | 'car_regime' | 'supply_kind' | 'relearn_vendor';
-export interface UserLineField { readonly position: number; readonly key: 'category_code' | 'business_share_pct' | 'supply_kind'; readonly value: string; }
-export interface QuestionPayload { readonly question: string; readonly params?: Record<string, unknown>; readonly options: readonly { readonly value: string; readonly label: string; readonly text?: string }[]; readonly suggested?: string; }
+export type QuestionKind =
+  | 'business_or_personal'
+  | 'which_category'
+  | 'small_asset_business_use'
+  | 'asset_over_threshold'
+  | 'car_regime'
+  | 'supply_kind'
+  | 'relearn_vendor';
+export interface UserLineField {
+  readonly position: number;
+  readonly key: 'category_code' | 'business_share_pct' | 'supply_kind';
+  readonly value: string;
+}
+export interface QuestionPayload {
+  readonly question: string;
+  readonly params?: Record<string, unknown>;
+  readonly options: readonly {
+    readonly value: string;
+    readonly label: string;
+    readonly text?: string;
+  }[];
+  readonly suggested?: string;
+}
 
 const MAX_OPTIONS = 4;
 
@@ -21,7 +41,11 @@ export function parseQuestionPayload(payload: unknown): QuestionPayload | null {
       if (!isRecord(option)) return null;
       if (typeof option.value !== 'string' || typeof option.label !== 'string') return null;
       if (option.text !== undefined && typeof option.text !== 'string') return null;
-      parsed.push(option.text === undefined ? { value: option.value, label: option.label } : { value: option.value, label: option.label, text: option.text });
+      parsed.push(
+        option.text === undefined
+          ? { value: option.value, label: option.label }
+          : { value: option.value, label: option.label, text: option.text },
+      );
     }
     if (params !== undefined && !isRecord(params)) return null;
     if (suggested !== undefined && typeof suggested !== 'string') return null;
@@ -47,7 +71,8 @@ function isAnswered(row: CategorizeQuestionRow): boolean {
 }
 
 function answerValue(row: CategorizeQuestionRow): string | null {
-  if (!isAnswered(row) || !isRecord(row.answer) || typeof row.answer.value !== 'string') return null;
+  if (!isAnswered(row) || !isRecord(row.answer) || typeof row.answer.value !== 'string')
+    return null;
   return row.answer.value;
 }
 
@@ -85,7 +110,10 @@ function fieldsFor(kind: string, value: string, positions: readonly number[]): U
 }
 
 /** The user line fields implied by the answered questions (answer.value ∈ options; unknown kinds/values ignored). `lineIdToPosition` maps `params.line_ids` to positions; a `business_or_personal` question without line_ids applies to every position. Later answers win (by answeredAt). */
-export function applyAnswers(questions: readonly CategorizeQuestionRow[], lineIdToPosition: ReadonlyMap<string, number>): UserLineField[] {
+export function applyAnswers(
+  questions: readonly CategorizeQuestionRow[],
+  lineIdToPosition: ReadonlyMap<string, number>,
+): UserLineField[] {
   const answered = questions
     .filter((row) => row.answeredAt !== null && answerValue(row) !== null)
     .sort((a, b) => (a.answeredAt?.getTime() ?? 0) - (b.answeredAt?.getTime() ?? 0));
