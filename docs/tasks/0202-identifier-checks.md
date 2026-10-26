@@ -1,6 +1,6 @@
 # 0202: Account, IBAN, DIČ checks and IČO repair candidates
 
-Status: todo
+Status: review
 Ticket: P1-EXT-01 (identifier part) | Depends on: none | Base commit: 496b1e9 | Branch: task/0202-identifier-checks | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0202-report.md
