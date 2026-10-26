@@ -374,6 +374,10 @@ describe('Phase 3 VAT seeds (0328)', () => {
       'sum_entries_then_round',
     );
   });
+  it('epo.forms.DPFDP7 has no vendored XSD year yet (tax_years empty in 2026)', () => {
+    const f = at.get('epo.forms') as typeof CZ_EPO_FORMS;
+    expect(f.DPFDP7.tax_years).toEqual([]);
+  });
 });
 
 describe('income tax and insurance rates (M06, 06 §2.1)', () => {

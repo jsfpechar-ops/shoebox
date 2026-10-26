@@ -6,7 +6,7 @@ export interface VetaNode {
   readonly attrs: ReadonlyArray<readonly [string, AttrValue]>;
 }
 export interface PisemnostInput {
-  readonly form: 'DPHDP3' | 'DPHKH1' | 'DPHSHV';
+  readonly form: 'DPHDP3' | 'DPHKH1' | 'DPHSHV' | 'DPFDP7';
   readonly verzePis: string;
   readonly appVersion: string;
   readonly vety: readonly VetaNode[];

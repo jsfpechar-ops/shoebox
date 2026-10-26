@@ -73,6 +73,16 @@ export const CZ_EPO_FORMS = {
     source_url: 'https://adisspr.mfcr.cz/adis/jepo/schema/dphshv_epo2.xsd',
     valid_for_periods_from: '2026-01-01',
   },
+  // [verify] version and verze_pis are placeholders until the owner downloads the XSD (22 T-03).
+  // tax_years lists the years whose XSD is vendored; empty means the partial XML stays hidden.
+  DPFDP7: {
+    version: '00.00.00',
+    verze_pis: '00.00',
+    xsd: 'dpfdp7_epo2.xsd',
+    source_url: 'https://adisspr.mfcr.cz/adis/jepo/schema/dpfdp7_epo2.xsd',
+    valid_for_periods_from: '2026-01-01',
+    tax_years: [] as readonly number[],
+  },
 } as const;
 
 export type SimplePeriodPolicy = typeof CZ_SIMPLE_PERIOD_POLICY;
