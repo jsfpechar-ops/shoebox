@@ -57,7 +57,11 @@ export async function answerSameInvoiceAction(form: FormData): Promise<void> {
   }
   await supabase
     .from('review_questions')
-    .update({ answer: { same: false }, answered_by: auth.userId, answered_at: new Date().toISOString() })
+    .update({
+      answer: { same: false },
+      answered_by: auth.userId,
+      answered_at: new Date().toISOString(),
+    })
     .eq('id', question)
     .eq('org_id', auth.orgId);
   revalidatePath(`/inbox/${id}`);
