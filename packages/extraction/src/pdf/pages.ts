@@ -26,7 +26,10 @@ export async function pdfPageCount(bytes: Uint8Array): Promise<number> {
  * A new PDF holding only `pages` (1-based, in the given order; a page may repeat).
  * Throws RangeError for a page outside 1..count, PdfPagesError for bytes that are not a PDF.
  */
-export async function pdfPickPages(bytes: Uint8Array, pages: readonly number[]): Promise<Uint8Array> {
+export async function pdfPickPages(
+  bytes: Uint8Array,
+  pages: readonly number[],
+): Promise<Uint8Array> {
   const src = await openPdf(bytes);
   const count = src.getPageCount();
   for (const page of pages) {
