@@ -9,6 +9,7 @@ import {
 } from '@shoebox/db';
 import {
   buildSortRequest,
+  type DocumentScan,
   groupPages,
   isProtoMediaType,
   type LlmClient,
@@ -16,11 +17,14 @@ import {
   parsePageMap,
   pdfPageCount,
   pdfPickPages,
+  precheckDocument,
   readIsdoc,
   SORT_MAX_PAGES_PER_CALL,
   SORT_PROMPT_VERSION,
   type SortPage,
   type SortPart,
+  SPLIT_MAX_PAGES,
+  scanDocument,
 } from '@shoebox/extraction';
 import type { DocSplitPayload } from '@shoebox/pipeline';
 import type { TenantHandler } from '../registry';
@@ -52,6 +56,7 @@ export interface DocSplitDeps {
   readonly enqueueRead: (orgId: string, documentId: string) => Promise<unknown>;
   readonly store?: DocSplitStore;
   readonly countPages?: (bytes: Uint8Array) => Promise<number>;
+  readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
   readonly pick?: (bytes: Uint8Array, pages: readonly number[]) => Promise<Uint8Array>;
   readonly now?: () => Date; // default () => new Date()
 }
@@ -78,6 +83,15 @@ export function createDocSplitHandler(deps: DocSplitDeps): TenantHandler<DocSpli
   const store = deps.store ?? dbDocSplitStore;
   const countPages = deps.countPages ?? pdfPageCount;
   const pick = deps.pick ?? pdfPickPages;
+  // 0516: true when the free pre-check would skip this PDF (a failure reads it instead).
+  const skippedByPrecheck = async (bytes: Uint8Array, mime: string): Promise<boolean> => {
+    try {
+      const scan = await (deps.scan ?? scanDocument)(bytes, mime);
+      return precheckDocument({ byteLength: bytes.length, pageCount: null, scan }).kind === 'skip';
+    } catch {
+      return false;
+    }
+  };
 
   const readAll = async (orgId: string, files: readonly SplitBatchFile[]): Promise<void> => {
     for (const file of files) await deps.enqueueRead(orgId, file.documentId);
@@ -104,6 +118,14 @@ export function createDocSplitHandler(deps: DocSplitDeps): TenantHandler<DocSpli
           direct.add(file.documentId);
           continue;
         }
+      }
+      // 0516: a long PDF, or one the free pre-check skips, is never sent to the sort call.
+      if (
+        mime === 'application/pdf' &&
+        (pageCount > SPLIT_MAX_PAGES || (await skippedByPrecheck(bytes, mime)))
+      ) {
+        direct.add(file.documentId);
+        continue;
       }
       sortable.push({ file, bytes, mediaType: mime, pageCount });
     }

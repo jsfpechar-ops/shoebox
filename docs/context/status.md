@@ -4,6 +4,7 @@ Updated: 2026-10-26.
 
 ## Now
 
+- 0514–0516: free pre-check skips clear non-invoices (0 tokens); bad answers fail at once. Epic CLS still to build.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
 - Lane D screens done (0400–0411, PRs #12–#19): Sysel name + app icon, register + Excel, trash, add by hand, review questions, accountant ZIP, settings, PDF click-to-fill, audit_log on fixes, nightly encrypted backup (owner adds 4 secrets). Not yet seen in a browser with real data.
@@ -25,6 +26,3 @@ Updated: 2026-10-26.
 
 - Founder decisions in 22 §A (each has a default) and legal items L-01 to L-05 in [open questions](../v3/22-open-questions.md). Phase 0 can start without them.
 
-## Owner reminders
-
-- The September identified-person VAT return for your own company is due 25.10.2026.

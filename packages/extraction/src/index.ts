@@ -10,6 +10,7 @@ export * from './llm/client';
 export * from './llm/gemini';
 export * from './llm/provider';
 export * from './pdf/pages';
+export * from './precheck/precheck';
 export * from './proto/schema';
 export * from './qr/payload';
 export * from './scan/scan';

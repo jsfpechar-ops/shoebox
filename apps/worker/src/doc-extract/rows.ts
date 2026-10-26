@@ -1,5 +1,11 @@
+import type { ReadingWrite } from '@shoebox/db';
 import { Money } from '@shoebox/domain';
-import type { ProtoExtraction, ProtoPaymentMethod } from '@shoebox/extraction';
+import {
+  PRECHECK_VERSION,
+  type PrecheckVerdict,
+  type ProtoExtraction,
+  type ProtoPaymentMethod,
+} from '@shoebox/extraction';
 import type { ValidationRow } from '@shoebox/validation';
 
 export { type ValidationRow, validationRowsOf } from '@shoebox/validation';
@@ -231,4 +237,58 @@ export function statusAfterRead(
     return 'needs_review';
   }
   return 'ready';
+}
+
+/** The reading saved for a document the free pre-check skipped (0516): no values, one message, no model call. */
+export function precheckWriteOf(
+  ids: { readonly orgId: string; readonly documentId: string },
+  verdict: Extract<PrecheckVerdict, { kind: 'skip' }>,
+  attempt: number,
+): ReadingWrite {
+  return {
+    orgId: ids.orgId,
+    documentId: ids.documentId,
+    status: verdict.status,
+    patch: {
+      class: verdict.documentClass,
+      classSource: 'rule',
+      direction: 'in',
+      taxDocStatus: verdict.status === 'supporting' ? 'not_tax_document' : 'unknown',
+      partnerSnapshot: null,
+      buyerSnapshot: null,
+      documentNumber: null,
+      variableSymbol: null,
+      issueDate: null,
+      duzp: null,
+      dueDate: null,
+      currency: 'CZK',
+      totalNet: null,
+      totalVat: null,
+      totalGross: null,
+      paymentMethod: null,
+      payToAccount: null,
+      isPaidPerDocument: null,
+    },
+    vatSummary: [],
+    fields: [],
+    validations: [
+      {
+        ruleId: 'PRECHECK_SKIPPED',
+        ruleVersion: 1,
+        severity: 'warning',
+        params: { reason: verdict.reason, messageKey: `precheck.${verdict.reason}` },
+      },
+    ],
+    run: {
+      method: 'rule',
+      model: null,
+      promptVersion: PRECHECK_VERSION,
+      attempt,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      latencyMs: 0,
+    },
+  };
 }

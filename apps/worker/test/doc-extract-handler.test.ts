@@ -379,4 +379,155 @@ describe('doc.extract handler', () => {
     expect(remembered).toHaveLength(1);
     expect(remembered[0]).toMatchObject({ ico: '27082440', orgId: ORG });
   });
+
+  it('fails a parse error at once, without a retry', async () => {
+    const failed = fakeStore();
+    await createDocExtractHandler({
+      registries: offline,
+      llm: llmReturning(null),
+      blobs,
+      model: 'm',
+      clock,
+      store: failed.store,
+    })({ orgId: ORG, documentId: DOC }, ctx(1));
+    expect(failed.failures).toEqual([{ error: 'parse', final: true }]);
+  });
+
+  it('fails a 400 at once', async () => {
+    const failed = fakeStore();
+    await createDocExtractHandler({
+      registries: offline,
+      llm: llmReturning(new AnthropicHttpError(400, '')),
+      blobs,
+      model: 'm',
+      clock,
+      store: failed.store,
+    })({ orgId: ORG, documentId: DOC }, ctx(1));
+    expect(failed.failures).toEqual([{ error: 'http_400', final: true }]);
+  });
+
+  it('still retries a 529 on attempt 1 and records it on attempt 3', async () => {
+    const error = new AnthropicHttpError(529, '');
+    const first = fakeStore();
+    await expect(
+      createDocExtractHandler({
+        registries: offline,
+        llm: llmReturning(error),
+        blobs,
+        model: 'm',
+        clock,
+        store: first.store,
+      })({ orgId: ORG, documentId: DOC }, ctx(1)),
+    ).rejects.toBe(error);
+    expect(first.failures).toEqual([]);
+    const last = fakeStore();
+    await createDocExtractHandler({
+      registries: offline,
+      llm: llmReturning(error),
+      blobs,
+      model: 'm',
+      clock,
+      store: last.store,
+    })({ orgId: ORG, documentId: DOC }, ctx(3));
+    expect(last.failures).toEqual([{ error: 'http_529', final: true }]);
+  });
+
+  it('fails a cut-off answer at once', async () => {
+    const cutOff: LlmClient = {
+      async complete() {
+        return {
+          model: 'claude-haiku-5-5',
+          stopReason: 'max_tokens',
+          text: '',
+          json: null,
+          latencyMs: 900,
+          usage: {
+            inputTokens: 1500,
+            outputTokens: 8000,
+            cacheReadInputTokens: 0,
+            cacheCreationInputTokens: 0,
+          },
+        };
+      },
+    };
+    const failed = fakeStore();
+    await createDocExtractHandler({
+      registries: offline,
+      llm: cutOff,
+      blobs,
+      model: 'm',
+      clock,
+      store: failed.store,
+    })({ orgId: ORG, documentId: DOC }, ctx(1));
+    expect(failed.failures).toEqual([{ error: 'max_tokens', final: true }]);
+    expect(failed.saved).toEqual([]);
+  });
+
+  it('skips a bank statement without a model call', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => ({
+        text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901',
+        textGood: true,
+        qrTexts: [],
+      }),
+      countPages: async () => 2,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(llm.requests).toEqual([]);
+    expect(saved[0]).toMatchObject({
+      status: 'supporting',
+      patch: { class: 'bank_statement', classSource: 'rule' },
+      run: { method: 'rule', inputTokens: 0 },
+      validations: [
+        { ruleId: 'PRECHECK_SKIPPED', params: { messageKey: 'precheck.bank_statement' } },
+      ],
+    });
+  });
+
+  it('skips a 21-page PDF without a model call', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      countPages: async () => 21,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(llm.requests).toEqual([]);
+    expect(saved[0]?.status).toBe('needs_review');
+    expect(saved[0]?.validations[0]?.params).toMatchObject({
+      messageKey: 'precheck.too_many_pages',
+    });
+  });
+
+  it('still reads an invoice', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => ({
+        text: 'FAKTURA - DAŇOVÝ DOKLAD 2026001 12345678901',
+        textGood: true,
+        qrTexts: [],
+      }),
+      countPages: async () => 1,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(llm.requests).toHaveLength(1);
+    expect(saved[0]?.run.method).not.toBe('rule');
+  });
 });

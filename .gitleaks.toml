@@ -85,3 +85,8 @@ regexes = ['''19-2000145399/0800''', '''123457/0100''', '''1234567890/0800''', '
 description = "Synthetic bank accounts of the statement parser tests (lane A briefs 0107-0114)"
 regexTarget = "match"
 regexes = ['''2400123455/2010''', '''1003-1234567899/0800''', '''CZ8720100000002400123455''', '''CZ4608000010031234567899''', '''cz46 0800 0010 0312 3456 7899''', '''CZ8720100000002400123456''']
+
+[[allowlists]]
+description = "All-zero placeholder IBAN in the pre-check test (brief 0515), not an account"
+regexTarget = "match"
+regexes = ['''CZ0000000000000000000000''']

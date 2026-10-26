@@ -177,4 +177,51 @@ describe('doc.split handler', () => {
     expect(plans[0]?.lateQuestions).toEqual([{ document: 0, otherDocumentId: 'old-1' }]);
     expect(reads).toEqual(['doc-0']);
   });
+
+  it('reads a bank statement PDF on its own, without the sort call (0516)', async () => {
+    const { store, plans } = fakeStore([file(0, 'application/pdf')]);
+    const llm = llmReturning({});
+    const reads: string[] = [];
+    const handler = createDocSplitHandler({
+      llm,
+      blobs,
+      model: 'claude-haiku-5-5',
+      store,
+      enqueueRead: async (_org, id) => {
+        reads.push(id);
+      },
+      countPages: async () => 2,
+      scan: async () => ({
+        text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901',
+        textGood: true,
+        qrTexts: [],
+      }),
+      pick: async (_bytes, list) => new Uint8Array(list),
+    });
+    await handler({ orgId: ORG, batchId: BATCH }, ctx);
+    expect(llm.requests).toHaveLength(0);
+    expect(plans).toHaveLength(0);
+    expect(reads).toEqual(['doc-0']);
+  });
+
+  it('does not send a 41-page PDF to the sort call (0516)', async () => {
+    const { store } = fakeStore([file(0, 'application/pdf')]);
+    const llm = llmReturning({});
+    const reads: string[] = [];
+    const handler = createDocSplitHandler({
+      llm,
+      blobs,
+      model: 'claude-haiku-5-5',
+      store,
+      enqueueRead: async (_org, id) => {
+        reads.push(id);
+      },
+      countPages: async () => 41,
+      scan: async () => ({ text: null, textGood: false, qrTexts: [] }),
+      pick: async (_bytes, list) => new Uint8Array(list),
+    });
+    await handler({ orgId: ORG, batchId: BATCH }, ctx);
+    expect(llm.requests).toHaveLength(0);
+    expect(reads).toEqual(['doc-0']);
+  });
 });
