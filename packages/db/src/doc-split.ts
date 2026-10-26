@@ -100,7 +100,7 @@ export interface SortPlan {
  * - A new document: inserted with org_id, source_file_id, upload_batch_id = batchId, status 'received', received_date.
  * - Every document gets document_pages rows, positions 1..n in page order.
  * - deleteDocumentIds: deleted_at = now() (soft delete; the files stay).
- * - Each question: a review_questions row (kind 'same_invoice') on the later document, payload { other_document_id: the earlier one }.
+ * - Each question: a review_questions row (kind 'same_invoice') on the later document, payload { question, options yes/no, suggested 'no', other_document_id: the earlier one } (review deck shape, 0407).
  * - Each run: an extraction_runs row (stage 'split', method 'llm', ok true, attempt 1) on the first document of the plan.
  */
 export async function applySortPlan(tx: TenantTx, plan: SortPlan): Promise<string[]> {
@@ -162,7 +162,15 @@ export async function applySortPlan(tx: TenantTx, plan: SortPlan): Promise<strin
       orgId: plan.orgId,
       documentId: laterId,
       kind: 'same_invoice',
-      payload: { other_document_id: earlierId },
+      payload: {
+        question: 'doc.pages.same_question',
+        options: [
+          { value: 'yes', label: 'doc.pages.same_yes' },
+          { value: 'no', label: 'doc.pages.same_no' },
+        ],
+        suggested: 'no',
+        other_document_id: earlierId,
+      },
     });
   }
 
