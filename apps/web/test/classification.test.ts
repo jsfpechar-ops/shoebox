@@ -51,6 +51,7 @@ function fakeSupabase(tables: Record<string, Row[]>) {
         return chain;
       },
       maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
+      // biome-ignore lint/suspicious/noThenProperty: the fake query is awaited like a Supabase builder.
       then: (resolve: (v: unknown) => void) => resolve({ data: rows(), error: null }),
       update: (values: Row) => {
         writes.push({ table, op: 'update', values, filters });
@@ -61,6 +62,7 @@ function fakeSupabase(tables: Record<string, Row[]>) {
         writes.push({ table, op: 'insert', values, filters: { ...filters } });
         return {
           select: () => chain,
+          // biome-ignore lint/suspicious/noThenProperty: the fake query is awaited like a Supabase builder.
           then: (resolve: (v: unknown) => void) => resolve({ data: null, error: null }),
         };
       },
@@ -102,7 +104,7 @@ describe('storeAnswer', () => {
     expect(r).toEqual({ ok: true, documentId: DOC, revision: 3 });
     const update = fake.writes.find((w) => w.table === 'review_questions' && w.op === 'update');
     expect(update?.values).toMatchObject({ answer: { value: 'personal' }, answered_by: USER });
-    expect((update?.values as Row).answered_at).toBeTruthy();
+    expect((update?.values as Row | undefined)?.answered_at).toBeTruthy();
     expect(update?.filters).toMatchObject({ id: Q, org_id: ORG });
   });
   it('404 for another org, 409 when already answered, 400 for a value outside the options', async () => {

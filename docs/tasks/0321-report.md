@@ -1,6 +1,6 @@
 # 0321 report
 
-Status: blocked (lint in the brief-given test file; stopped per §8)
+Status: review
 
 ## Files changed (git diff --stat)
 
