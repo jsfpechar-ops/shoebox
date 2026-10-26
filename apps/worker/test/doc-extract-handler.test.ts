@@ -462,4 +462,60 @@ describe('doc.extract handler', () => {
     expect(failed.failures).toEqual([{ error: 'max_tokens', final: true }]);
     expect(failed.saved).toEqual([]);
   });
+
+  it('skips a bank statement without a model call', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => ({ text: 'VÝPIS Z ÚČTU 1. 9. 2026 - 30. 9. 2026 12345678901', textGood: true, qrTexts: [] }),
+      countPages: async () => 2,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(llm.requests).toEqual([]);
+    expect(saved[0]).toMatchObject({
+      status: 'supporting',
+      patch: { class: 'bank_statement', classSource: 'rule' },
+      run: { method: 'rule', inputTokens: 0 },
+      validations: [{ ruleId: 'PRECHECK_SKIPPED', params: { messageKey: 'precheck.bank_statement' } }],
+    });
+  });
+
+  it('skips a 21-page PDF without a model call', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      countPages: async () => 21,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(llm.requests).toEqual([]);
+    expect(saved[0]?.status).toBe('needs_review');
+    expect(saved[0]?.validations[0]?.params).toMatchObject({ messageKey: 'precheck.too_many_pages' });
+  });
+
+  it('still reads an invoice', async () => {
+    const { store, saved } = fakeStore();
+    const llm = llmReturning(wire());
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'm',
+      clock,
+      store,
+      scan: async () => ({ text: 'FAKTURA - DAŇOVÝ DOKLAD 2026001 12345678901', textGood: true, qrTexts: [] }),
+      countPages: async () => 1,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(llm.requests).toHaveLength(1);
+    expect(saved[0]?.run.method).not.toBe('rule');
+  });
 });
