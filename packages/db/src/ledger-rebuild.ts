@@ -7,18 +7,77 @@ import { fxRates, partners } from './schema/partners';
 import { taxpayerProfiles } from './schema/tenancy';
 import type { TenantTx } from './tenant';
 
-export interface LedgerDocumentRow { readonly id: string; readonly orgId: string; readonly revision: number; readonly class: string; readonly direction: string | null; readonly status: string; readonly deleted: boolean; readonly taxDocStatus: string; readonly businessFlag: string; readonly currency: string; readonly documentNumber: string | null; readonly totalGross: string | null; readonly issueDate: string | null; readonly duzp: string | null; readonly receivedDate: string | null; readonly dueDate: string | null; readonly servicePeriodFrom: string | null; readonly servicePeriodTo: string | null; readonly paidAt: string | null; readonly vatPointDate: string | null; readonly isPaidPerDocument: boolean | null; readonly paymentMethod: string | null; readonly fxRate: string | null; readonly fxRateDate: string | null; readonly partnerId: string | null; }
-export interface LedgerLineRow { readonly id: string; readonly position: number; readonly lineType: string; readonly net: string | null; readonly vat: string | null; readonly gross: string | null; readonly categoryCode: string | null; readonly businessSharePct: string; readonly coveredByDocumentId: string | null; readonly vatTreatment: string | null; readonly vatRateType: string; readonly vatRatePct: string | null; }
-export interface LedgerRecapRow { readonly vatRateType: string; readonly vatRatePct: string; readonly base: string; readonly vat: string; }
-export interface LedgerPartnerRow { readonly country: string; readonly dic: string | null; readonly vatId: string | null; }
+export interface LedgerDocumentRow {
+  readonly id: string;
+  readonly orgId: string;
+  readonly revision: number;
+  readonly class: string;
+  readonly direction: string | null;
+  readonly status: string;
+  readonly deleted: boolean;
+  readonly taxDocStatus: string;
+  readonly businessFlag: string;
+  readonly currency: string;
+  readonly documentNumber: string | null;
+  readonly totalGross: string | null;
+  readonly issueDate: string | null;
+  readonly duzp: string | null;
+  readonly receivedDate: string | null;
+  readonly dueDate: string | null;
+  readonly servicePeriodFrom: string | null;
+  readonly servicePeriodTo: string | null;
+  readonly paidAt: string | null;
+  readonly vatPointDate: string | null;
+  readonly isPaidPerDocument: boolean | null;
+  readonly paymentMethod: string | null;
+  readonly fxRate: string | null;
+  readonly fxRateDate: string | null;
+  readonly partnerId: string | null;
+}
+export interface LedgerLineRow {
+  readonly id: string;
+  readonly position: number;
+  readonly lineType: string;
+  readonly net: string | null;
+  readonly vat: string | null;
+  readonly gross: string | null;
+  readonly categoryCode: string | null;
+  readonly businessSharePct: string;
+  readonly coveredByDocumentId: string | null;
+  readonly vatTreatment: string | null;
+  readonly vatRateType: string;
+  readonly vatRatePct: string | null;
+}
+export interface LedgerRecapRow {
+  readonly vatRateType: string;
+  readonly vatRatePct: string;
+  readonly base: string;
+  readonly vat: string;
+}
+export interface LedgerPartnerRow {
+  readonly country: string;
+  readonly dic: string | null;
+  readonly vatId: string | null;
+}
 export interface LedgerInputs {
-  readonly doc: LedgerDocumentRow; readonly lines: readonly LedgerLineRow[]; readonly recap: readonly LedgerRecapRow[];
-  readonly partner: LedgerPartnerRow | null; readonly profiles: readonly CategorizeProfileRow[]; readonly fxRates: readonly CategorizeFxRow[];
+  readonly doc: LedgerDocumentRow;
+  readonly lines: readonly LedgerLineRow[];
+  readonly recap: readonly LedgerRecapRow[];
+  readonly partner: LedgerPartnerRow | null;
+  readonly profiles: readonly CategorizeProfileRow[];
+  readonly fxRates: readonly CategorizeFxRow[];
   /** stage_version.ledger of the document, when present. */
-  readonly current: { readonly v: number; readonly h: string; readonly buildVersion: string } | null;
+  readonly current: {
+    readonly v: number;
+    readonly h: string;
+    readonly buildVersion: string;
+  } | null;
 }
 /** Everything the builders read, including soft-deleted documents (their rebuild removes stale rows). Null when the id is unknown to this org. fx rows: the document currency, 120 days back from issue_date (none for CZK). */
-export async function loadLedgerInputs(tx: TenantTx, documentId: string): Promise<LedgerInputs | null> {
+export async function loadLedgerInputs(
+  tx: TenantTx,
+  documentId: string,
+): Promise<LedgerInputs | null> {
   const [row] = await tx
     .select({
       id: documents.id,
@@ -81,7 +140,9 @@ export async function loadLedgerInputs(tx: TenantTx, documentId: string): Promis
       vat: documentVatSummary.vat,
     })
     .from(documentVatSummary)
-    .where(and(eq(documentVatSummary.orgId, row.orgId), eq(documentVatSummary.documentId, documentId)));
+    .where(
+      and(eq(documentVatSummary.orgId, row.orgId), eq(documentVatSummary.documentId, documentId)),
+    );
 
   const [partner] = row.partnerId
     ? await tx
@@ -143,11 +204,56 @@ function parseCurrent(raw: unknown): { v: number; h: string; buildVersion: strin
   return { v, h, buildVersion: String(bv) };
 }
 
-export interface TaxEntryRow { readonly entryDate: string; readonly taxYear: number; readonly basis: string; readonly lineId: string | null; readonly paymentLinkId: string | null; readonly transactionId: string | null; readonly categoryCode: string; readonly taxEffect: string; readonly amountCzk: string; readonly businessSharePct: string; readonly businessAmountCzk: string; }
-export interface VatEntryRow { readonly periodStart: string; readonly periodEnd: string; readonly vatPointDate: string; readonly vatPointRule: string; readonly lineId: string | null; readonly vatTreatment: string; readonly vatRateType: string; readonly vatRatePct: string; readonly baseCzk: string; readonly vatCzk: string; readonly deductionPct: string; readonly currency: string; readonly baseForeign: string | null; readonly fxRate: string | null; readonly fxAmount: number | null; readonly fxRateDate: string | null; readonly dphdp3Rows: readonly string[]; readonly khSection: string | null; readonly khDocumentTotalCzk: string | null; readonly shvCode: number | null; readonly counterpartyVatId: string | null; readonly evidenceNumber: string | null; }
-export interface LedgerReplaceWrite { readonly orgId: string; readonly documentId: string; readonly algoVersion: number; readonly inputHash: string; readonly tax: readonly TaxEntryRow[]; readonly vat: readonly VatEntryRow[]; }
+export interface TaxEntryRow {
+  readonly entryDate: string;
+  readonly taxYear: number;
+  readonly basis: string;
+  readonly lineId: string | null;
+  readonly paymentLinkId: string | null;
+  readonly transactionId: string | null;
+  readonly categoryCode: string;
+  readonly taxEffect: string;
+  readonly amountCzk: string;
+  readonly businessSharePct: string;
+  readonly businessAmountCzk: string;
+}
+export interface VatEntryRow {
+  readonly periodStart: string;
+  readonly periodEnd: string;
+  readonly vatPointDate: string;
+  readonly vatPointRule: string;
+  readonly lineId: string | null;
+  readonly vatTreatment: string;
+  readonly vatRateType: string;
+  readonly vatRatePct: string;
+  readonly baseCzk: string;
+  readonly vatCzk: string;
+  readonly deductionPct: string;
+  readonly currency: string;
+  readonly baseForeign: string | null;
+  readonly fxRate: string | null;
+  readonly fxAmount: number | null;
+  readonly fxRateDate: string | null;
+  readonly dphdp3Rows: readonly string[];
+  readonly khSection: string | null;
+  readonly khDocumentTotalCzk: string | null;
+  readonly shvCode: number | null;
+  readonly counterpartyVatId: string | null;
+  readonly evidenceNumber: string | null;
+}
+export interface LedgerReplaceWrite {
+  readonly orgId: string;
+  readonly documentId: string;
+  readonly algoVersion: number;
+  readonly inputHash: string;
+  readonly tax: readonly TaxEntryRow[];
+  readonly vat: readonly VatEntryRow[];
+}
 /** Takes the advisory lock, deletes the document's rows in both ledgers, inserts the new ones with one fresh build_version, writes stage_version.ledger = {v, h, build_version}. Returns the build_version (as a decimal string). */
-export async function replaceLedgerEntries(tx: TenantTx, write: LedgerReplaceWrite): Promise<string> {
+export async function replaceLedgerEntries(
+  tx: TenantTx,
+  write: LedgerReplaceWrite,
+): Promise<string> {
   await tx.execute(
     sql`select pg_advisory_xact_lock(hashtext(${write.orgId} || ':ledger:' || ${write.documentId}))`,
   );
@@ -158,10 +264,20 @@ export async function replaceLedgerEntries(tx: TenantTx, write: LedgerReplaceWri
 
   await tx
     .delete(taxLedgerEntries)
-    .where(and(eq(taxLedgerEntries.orgId, write.orgId), eq(taxLedgerEntries.documentId, write.documentId)));
+    .where(
+      and(
+        eq(taxLedgerEntries.orgId, write.orgId),
+        eq(taxLedgerEntries.documentId, write.documentId),
+      ),
+    );
   await tx
     .delete(vatLedgerEntries)
-    .where(and(eq(vatLedgerEntries.orgId, write.orgId), eq(vatLedgerEntries.documentId, write.documentId)));
+    .where(
+      and(
+        eq(vatLedgerEntries.orgId, write.orgId),
+        eq(vatLedgerEntries.documentId, write.documentId),
+      ),
+    );
 
   if (write.tax.length > 0) {
     await tx.insert(taxLedgerEntries).values(
@@ -223,7 +339,10 @@ export async function replaceLedgerEntries(tx: TenantTx, write: LedgerReplaceWri
 }
 
 /** Current rows of one document, ordered deterministically (tax: entry_date, line_id, basis; vat: vat_point_date, vat_treatment, vat_rate_type), without id/build_version: for AC-5 and ledger.verify. */
-export async function readLedgerEntries(tx: TenantTx, documentId: string): Promise<{ tax: TaxEntryRow[]; vat: VatEntryRow[]; buildVersion: string | null }> {
+export async function readLedgerEntries(
+  tx: TenantTx,
+  documentId: string,
+): Promise<{ tax: TaxEntryRow[]; vat: VatEntryRow[]; buildVersion: string | null }> {
   const tax = await tx
     .select({
       entryDate: taxLedgerEntries.entryDate,
@@ -240,7 +359,11 @@ export async function readLedgerEntries(tx: TenantTx, documentId: string): Promi
     })
     .from(taxLedgerEntries)
     .where(eq(taxLedgerEntries.documentId, documentId))
-    .orderBy(asc(taxLedgerEntries.entryDate), asc(taxLedgerEntries.lineId), asc(taxLedgerEntries.basis));
+    .orderBy(
+      asc(taxLedgerEntries.entryDate),
+      asc(taxLedgerEntries.lineId),
+      asc(taxLedgerEntries.basis),
+    );
 
   const vat = await tx
     .select({
@@ -269,7 +392,11 @@ export async function readLedgerEntries(tx: TenantTx, documentId: string): Promi
     })
     .from(vatLedgerEntries)
     .where(eq(vatLedgerEntries.documentId, documentId))
-    .orderBy(asc(vatLedgerEntries.vatPointDate), asc(vatLedgerEntries.vatTreatment), asc(vatLedgerEntries.vatRateType));
+    .orderBy(
+      asc(vatLedgerEntries.vatPointDate),
+      asc(vatLedgerEntries.vatTreatment),
+      asc(vatLedgerEntries.vatRateType),
+    );
 
   const [taxMax] = await tx
     .select({ bv: sql<string | null>`max(${taxLedgerEntries.buildVersion})::text` })
@@ -280,13 +407,20 @@ export async function readLedgerEntries(tx: TenantTx, documentId: string): Promi
     .from(vatLedgerEntries)
     .where(eq(vatLedgerEntries.documentId, documentId));
   const candidates = [taxMax?.bv, vatMax?.bv].filter((x): x is string => typeof x === 'string');
-  const buildVersion = candidates.length === 0 ? null : candidates.reduce((a, b) => (BigInt(a) >= BigInt(b) ? a : b));
+  const buildVersion =
+    candidates.length === 0 ? null : candidates.reduce((a, b) => (BigInt(a) >= BigInt(b) ? a : b));
 
   return { tax, vat: vat as VatEntryRow[], buildVersion };
 }
 
 /** Document ids of the org for a full rebuild: not deleted, issue_date >= from (when given), ordered by issue_date nulls last then id, with offset/limit. */
-export async function listDocumentsForRebuild(tx: TenantTx, orgId: string, from: string | null, offset: number, limit: number): Promise<string[]> {
+export async function listDocumentsForRebuild(
+  tx: TenantTx,
+  orgId: string,
+  from: string | null,
+  offset: number,
+  limit: number,
+): Promise<string[]> {
   const rows = await tx
     .select({ id: documents.id })
     .from(documents)
