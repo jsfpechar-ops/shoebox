@@ -37,7 +37,11 @@ describe('parseMt940', () => {
 
   it('reads the same transactions as the GPC file of the period', () => {
     expect(s.txs.map((t) => t.amount.toString())).toEqual(['12100', '-1210.5', '100']);
-    expect(s.txs.map((t) => t.externalId)).toEqual(['mt940:12345678', 'mt940:12345679', 'mt940:12345680']);
+    expect(s.txs.map((t) => t.externalId)).toEqual([
+      'mt940:12345678',
+      'mt940:12345679',
+      'mt940:12345680',
+    ]);
     const [inc, out, storno] = s.txs;
     expect(inc?.bookedOn).toBe('2026-09-15');
     expect(inc?.vs).toBe('2026001');
@@ -58,7 +62,12 @@ describe('parseMt940', () => {
 
   it('rolls the entry date over the year end', () => {
     const y = parseMt940(
-      [':25:2400123455/2010', ':60F:C261231CZK0,00', ':61:2612310102C5,00NTRF//X1', ':62F:C270102CZK5,00'].join('\n'),
+      [
+        ':25:2400123455/2010',
+        ':60F:C261231CZK0,00',
+        ':61:2612310102C5,00NTRF//X1',
+        ':62F:C270102CZK5,00',
+      ].join('\n'),
     );
     expect(y.txs[0]?.valueDate).toBe('2026-12-31');
     expect(y.txs[0]?.bookedOn).toBe('2027-01-02');

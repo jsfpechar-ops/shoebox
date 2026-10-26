@@ -75,7 +75,13 @@ describe('parseCamt053', () => {
   });
 
   it('skips the pending entry and splits the batch entry', () => {
-    expect(s.txs.map((t) => t.amount.toString())).toEqual(['12100', '-1210.5', '100', '100', '200']);
+    expect(s.txs.map((t) => t.amount.toString())).toEqual([
+      '12100',
+      '-1210.5',
+      '100',
+      '100',
+      '200',
+    ]);
     expect(s.txs.map((t) => t.externalId)).toEqual([
       'camt:12345678',
       'camt:12345679',
@@ -118,7 +124,8 @@ describe('parseCamt053', () => {
   });
 
   it('refuses a DOCTYPE and broken XML with a warning', () => {
-    const evil = '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]><Document/>';
+    const evil =
+      '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]><Document/>';
     expect(parseCamt053(evil).warnings.map((w) => w.code)).toEqual(['camt.bad_xml']);
     expect(parseCamt053('<Document>').txs).toEqual([]);
   });

@@ -6,7 +6,9 @@ const bytes = (text: string) => new TextEncoder().encode(text);
 
 describe('parseStatement', () => {
   it('dispatches MT940', () => {
-    const b = bytes(':20:S\n:25:2400123455/2010\n:60F:C260914CZK0,00\n:61:260915C5,00NTRF//R1\n:62F:C260915CZK5,00\n');
+    const b = bytes(
+      ':20:S\n:25:2400123455/2010\n:60F:C260914CZK0,00\n:61:260915C5,00NTRF//R1\n:62F:C260915CZK5,00\n',
+    );
     const s = parseStatement(b, detectStatementFormat(b, 'a.sta'));
     expect(s.format).toBe('mt940');
     expect(s.txs).toHaveLength(1);

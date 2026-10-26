@@ -143,7 +143,8 @@ function attachDetails(tx: CanonicalTx, value: string): void {
       const sub = parts[i] ?? '';
       const content = parts[i + 1] ?? '';
       if (sub >= '20' && sub <= '29') message += content;
-      else if (sub === '32' || sub === '33') name = [name, content].filter((s) => s !== '').join(' ');
+      else if (sub === '32' || sub === '33')
+        name = [name, content].filter((s) => s !== '').join(' ');
       else if (sub === '31') account = parseAccount(content);
     }
   } else {

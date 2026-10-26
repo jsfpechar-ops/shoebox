@@ -100,7 +100,7 @@ export function parseCamt053(text: string, options?: { currency?: string }): Par
     const isReversal = textAt(ntry, 'RvslInd') === 'true';
     const details = childrenNamed(child(ntry, 'NtryDtls'), 'TxDtls');
     const split = details.length > 1 && details.every((d) => detailAmount(d) !== null);
-    const parts: Array<XmlElement | null> = split ? details : [details[0] ?? null];
+    const parts: Array<XmlElement | null> = split ? [...details] : [details[0] ?? null];
 
     parts.forEach((detail, index) => {
       const amount = split
