@@ -10,6 +10,7 @@ import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
 import { PagesCard } from '../../../../src/documents/pages-card';
 import { loadJoinCandidates, loadPagesView } from '../../../../src/documents/pages-data';
+import { PdfViewer } from '../../../../src/documents/pdf-viewer';
 import { readAgainAction } from '../../../../src/documents/read-again-actions';
 import { moveToTrashAction } from '../../../../src/documents/trash-actions';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
@@ -45,11 +46,11 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const fileUrl = signed && !signed.error ? (signed.data?.signedUrl ?? null) : null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/inbox" className="text-body underline">
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
+      <Link href="/inbox" className="text-body underline lg:col-span-2">
         {t('doc.detail.back')}
       </Link>
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 lg:col-span-2">
         <h1 className="text-title">{detail.title ?? t('inbox.row.unknown_supplier')}</h1>
         <StatusBadge
           status={detail.status}
@@ -136,7 +137,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             <p className="text-body">{t('doc.detail.all_good')}</p>
           )}
           {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (
-            <form action={moveToTrashAction}>
+            <form action={moveToTrashAction} className="lg:col-span-2">
               <input type="hidden" name="id" value={id} />
               <Button type="submit" variant="secondary">
                 {t('trash.move')}
@@ -155,24 +156,29 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
         />
       ) : null}
 
-      {detail.file && fileUrl ? (
-        detail.file.mimeType.startsWith('image/') ? (
-          <img
-            src={fileUrl}
-            alt={t('doc.detail.preview_alt')}
-            className="max-w-full rounded-control border border-border"
-          />
-        ) : (
-          <a
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-body underline"
-          >
-            {t('doc.detail.open_file')}
-          </a>
-        )
-      ) : null}
+      <div className="lg:sticky lg:top-6">
+        {detail.file && fileUrl ? (
+          detail.file.mimeType.startsWith('image/') ? (
+            <img
+              src={fileUrl}
+              alt={t('doc.detail.preview_alt')}
+              className="max-w-full rounded-control border border-border"
+            />
+          ) : (
+            <>
+              {detail.file.mimeType === 'application/pdf' ? <PdfViewer url={fileUrl} /> : null}
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-body underline"
+              >
+                {t('doc.detail.open_file')}
+              </a>
+            </>
+          )
+        ) : null}
+      </div>
     </div>
   );
 }
