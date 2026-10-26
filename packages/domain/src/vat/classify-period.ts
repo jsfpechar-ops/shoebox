@@ -2,6 +2,7 @@
 // Rules come from `rules.at(period.start)`; the policy is parsed with the strict schema below.
 import type { createCzRules } from '../rules/index';
 import { ACCOUNTANT_CHECKS, RETURN_ROWS_3_13, uniqueSorted } from './checks-accountant';
+import { READY_CHECKS } from './checks-ready';
 import {
   type PeriodClassifierInput,
   type SimpleCheck,
@@ -19,10 +20,10 @@ export * from './classify-period-types';
 
 type CzRules = ReturnType<typeof createCzRules>;
 
-/** Not-ready half of the registry: 0332 fills these in. Until then each one passes. */
-const PENDING: SimpleCheckFn = () => null; // TODO(0332)
-
-const ACCOUNTANT_BY_CODE = new Map<SimpleCheckCode, SimpleCheckFn>(ACCOUNTANT_CHECKS);
+const CHECK_FN_BY_CODE = new Map<SimpleCheckCode, SimpleCheckFn>([
+  ...ACCOUNTANT_CHECKS,
+  ...READY_CHECKS,
+]);
 
 /** Order = the code list in M05 §4.3. Every code appears exactly once. */
 const SIMPLE_CHECK_ORDER: readonly SimpleCheckCode[] = [
@@ -53,7 +54,11 @@ const SIMPLE_CHECK_ORDER: readonly SimpleCheckCode[] = [
 ];
 
 export const SIMPLE_CHECKS: ReadonlyArray<readonly [SimpleCheckCode, SimpleCheckFn]> =
-  SIMPLE_CHECK_ORDER.map((code) => [code, ACCOUNTANT_BY_CODE.get(code) ?? PENDING] as const);
+  SIMPLE_CHECK_ORDER.map((code) => {
+    const check = CHECK_FN_BY_CODE.get(code);
+    if (check === undefined) throw new Error(`classify-period: no check registered for ${code}`);
+    return [code, check] as const;
+  });
 
 function groupByDocument(
   entries: readonly VatLedgerEntryDraft[],
@@ -91,6 +96,7 @@ export function classifyPeriod(input: PeriodClassifierInput, rules: CzRules): Si
     isIo: input.status === 'identifikovana_osoba',
     entriesByDocument: groupByDocument(input.entries),
     docsById: new Map(input.documents.map((doc) => [doc.documentId, doc] as const)),
+    khDocumentLimitCzk: rules.at(input.period.start).get('vat.kh_document_limit'),
   };
   const checks: SimpleCheck[] = SIMPLE_CHECKS.map(([code, check]) => {
     const found = check(ctx);

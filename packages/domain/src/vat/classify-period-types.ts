@@ -133,6 +133,8 @@ export interface SimpleCheckContext {
   readonly isIo: boolean;
   readonly entriesByDocument: ReadonlyMap<string, readonly VatLedgerEntryDraft[]>;
   readonly docsById: ReadonlyMap<string, PeriodDocument>;
+  /** vat.kh_document_limit at the period start, in whole CZK. */
+  readonly khDocumentLimitCzk: number;
 }
 /** null = pass. */
 export type SimpleCheckFn = (ctx: SimpleCheckContext) => Omit<SimpleCheck, 'code'> | null;
