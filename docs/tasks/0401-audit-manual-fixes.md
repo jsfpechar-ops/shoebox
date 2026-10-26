@@ -169,6 +169,10 @@ Every value a user fixes on the document page writes one `audit_log` row (field,
 
 Other migrations (forward-only). Hard rules 3, 4 (no document content in logs; the diff lives only in the DB).
 
+## 6. Commands
+
+As in each step.
+
 ## 7. Acceptance
 
 - [ ] drizzle-kit check passes; web typecheck 0 errors; correction tests pass.
