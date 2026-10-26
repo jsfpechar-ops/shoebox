@@ -89,15 +89,6 @@ export async function storeAnswer(
   if (question.document_id === null || question.document_id === undefined)
     return { ok: false, status: 400, error: 'no_document' };
 
-  const { data: doc, error: dError } = await supabase
-    .from('documents')
-    .select('id, revision, status')
-    .eq('id', question.document_id)
-    .eq('org_id', input.orgId)
-    .maybeSingle();
-  if (dError || !doc) return { ok: false, status: 404, error: 'not_found' };
-  if (doc.status === 'finalized') return { ok: false, status: 409, error: 'finalized' };
-
   if (question.answer !== null && question.answer !== undefined)
     return { ok: false, status: 409, error: 'already_answered' };
 
@@ -111,6 +102,15 @@ export async function storeAnswer(
         (option as { value?: unknown }).value === input.value,
     );
   if (!allowed) return { ok: false, status: 400, error: 'bad_value' };
+
+  const { data: doc, error: dError } = await supabase
+    .from('documents')
+    .select('id, revision, status')
+    .eq('id', question.document_id)
+    .eq('org_id', input.orgId)
+    .maybeSingle();
+  if (dError || !doc) return { ok: false, status: 404, error: 'not_found' };
+  if (doc.status === 'finalized') return { ok: false, status: 409, error: 'finalized' };
 
   const { error: wError } = await supabase
     .from('review_questions')
