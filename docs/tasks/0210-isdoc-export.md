@@ -1,6 +1,6 @@
 # 0210: ISDOC 6.0.2 export of one document
 
-Status: todo
+Status: review
 Ticket: P2 M10 §4.8 ISDOC export | Depends on: none | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0210-report.md
