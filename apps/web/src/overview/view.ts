@@ -7,8 +7,8 @@ import {
   type LedgerTotalsEntry,
   type LegalDate,
   type LimitMeter,
-  mergeOverviewTotals,
   type MergedOverviewTotals,
+  mergeOverviewTotals,
   type OverviewDocument,
   type OverviewTotals,
   upcomingDeadlines,
@@ -36,7 +36,10 @@ export function buildOverviewView(input: {
 }): OverviewView {
   const { profile, documents, asOf, rules } = input;
   const documentTotals = computeOverviewTotals(documents, profile?.vatStatus ?? 'neplatce', asOf);
-  const totals = mergeOverviewTotals(documentTotals, computeLedgerTotals(input.ledgerEntries ?? [], asOf));
+  const totals = mergeOverviewTotals(
+    documentTotals,
+    computeLedgerTotals(input.ledgerEntries ?? [], asOf),
+  );
   // Meters stay hidden until at least one counted document exists (M11 §8 empty states).
   const meters =
     profile === null || totals.countedCount === 0
