@@ -1,6 +1,6 @@
 import type { LegalDate } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
-import { Badge, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
+import { Badge, Button, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
 import Link from 'next/link';
 import { requireActiveRole } from '../../../../src/auth/org-context';
 import { AutoRefresh } from '../../../../src/documents/auto-refresh';
@@ -8,6 +8,7 @@ import { EDITABLE, editKeyOf } from '../../../../src/documents/correction';
 import { loadDocumentDetail } from '../../../../src/documents/detail-data';
 import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
+import { moveToTrashAction } from '../../../../src/documents/trash-actions';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -118,6 +119,14 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           ) : (
             <p className="text-body">{t('doc.detail.all_good')}</p>
           )}
+          {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (
+            <form action={moveToTrashAction}>
+              <input type="hidden" name="id" value={id} />
+              <Button type="submit" variant="secondary">
+                {t('trash.move')}
+              </Button>
+            </form>
+          ) : null}
         </>
       )}
 
