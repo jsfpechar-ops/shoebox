@@ -328,6 +328,21 @@ create index on ingest_items (org_id, state) where state in ('pending_upload','u
 create index on ingest_items (org_id, body_sha256) where body_sha256 is not null;
 create index on ingest_items (org_id, inbound_email_id);
 
+create table document_pages (                                       -- pages of a document across files (page sorting, 0060)
+  org_id uuid not null references organizations(id) on delete cascade,
+  document_id uuid not null references documents(id) on delete cascade,
+  position smallint not null check (position >= 1),
+  source_file_id uuid not null references source_files(id),
+  file_page smallint not null check (file_page >= 1),               -- 1 for an image
+  region text not null default '',                                  -- '' whole page; else 'top','left',…
+  supplier_key text not null default '', doc_number text not null default '',  -- page look-over hints
+  label_n smallint, label_of smallint,                              -- printed "page n of m"
+  has_totals boolean not null default false, starts_document boolean not null default true,
+  primary key (document_id, position)
+);                                                                  -- no rows = the whole source file
+create index on document_pages (org_id, source_file_id);
+-- documents.upload_batch_id uuid (0060): the files of one upload drop; indexed (org_id, upload_batch_id).
+
 create table document_links (
   org_id uuid not null references organizations(id) on delete cascade,
   from_document_id uuid not null references documents(id) on delete cascade,

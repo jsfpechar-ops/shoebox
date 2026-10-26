@@ -1,4 +1,4 @@
-# 0081 report: Read again
+# 0500 report: Read again
 
 Status: review
 
@@ -12,7 +12,7 @@ Status: review
 - apps/web/test/upload.test.ts (fake dep, one test)
 - apps/web/app/(app)/inbox/[id]/page.tsx (failed branch with Read again button)
 - packages/i18n/messages/en.json (3 keys: doc.detail.failed, doc.read_again.button)
-- docs/tasks/0081-read-again.md (Status only)
+- docs/tasks/0500-read-again.md (Status only)
 
 ## Commands
 - pnpm --filter @shoebox/web test -- read-again upload: 23 files, 165 tests passed. The filter did not narrow the run; the whole web suite ran.

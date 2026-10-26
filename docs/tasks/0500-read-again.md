@@ -1,4 +1,4 @@
-# 0081: "Read again" for a document that could not be read
+# 0500: "Read again" for a document that could not be read
 
 Status: review
 Ticket: Page sorting (owner request 2026-10-26, proposal https://claude.ai/artifact/BAej5jjZ6mcbXh6EEupUPQ) | Depends on: none | Base commit: 496b1e9 | Branch: claude/project-thread-z0dj04 | PR base: phase/0
@@ -288,4 +288,4 @@ As in the [template](TEMPLATE.md): an excerpt not found, a test failing twice, 2
 
 ## 9. Report
 
-Write `docs/tasks/0081-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, anything that surprised you.
+Write `docs/tasks/0500-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, anything that surprised you.
