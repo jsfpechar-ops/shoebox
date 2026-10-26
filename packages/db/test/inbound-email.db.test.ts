@@ -70,9 +70,11 @@ describe.skipIf(DATABASE_URL === undefined)('inbound e-mail store', () => {
       purpose: 'documents' as const,
       emlPath: `org/${ORG}/eml/m1.eml`,
     };
-    const first = await store.insertEmail(row);
-    expect(first).toMatch(/^[0-9a-f-]{36}$/);
-    expect(await store.insertEmail(row)).toBeNull();
+    const inserted = await store.insertEmail(row);
+    expect(inserted.created).toBe(true);
+    expect(inserted.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(await store.insertEmail(row)).toEqual({ id: inserted.id, created: false });
+    const first: string | null = inserted.id;
 
     const loaded = await db.withTenant(ORG, (tx) => loadInboundEmail(tx, first ?? ''));
     expect(loaded).toEqual({

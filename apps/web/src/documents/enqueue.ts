@@ -1,4 +1,10 @@
-import { docExtractJob, docSplitJob, emailReceivedJob, jobIdFromKey, jobKey } from '@shoebox/pipeline';
+import {
+  docExtractJob,
+  docSplitJob,
+  emailReceivedJob,
+  jobIdFromKey,
+  jobKey,
+} from '@shoebox/pipeline';
 import { PgBoss } from 'pg-boss';
 
 let started: Promise<PgBoss> | undefined;

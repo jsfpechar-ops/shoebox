@@ -16,8 +16,8 @@ export interface InboundEmailInsert {
 export interface InboundEmailStore {
   /** Org id whose current secret, or previous secret still in its grace period, matches (secret compared upper-case). */
   findOrg(slug: string, secret: string, now: Date): Promise<string | null>;
-  /** Inserts the row; returns its id, or null when (org_id, message_id) already exists. */
-  insertEmail(row: InboundEmailInsert): Promise<string | null>;
+  /** Inserts the row, or finds the existing one for (org_id, message_id); `created` says which. */
+  insertEmail(row: InboundEmailInsert): Promise<{ id: string; created: boolean }>;
   close(): Promise<void>;
 }
 
@@ -41,15 +41,17 @@ export function createInboundEmailStore(serviceUrl: string): InboundEmailStore {
     },
 
     async insertEmail(row) {
-      const rows = await client<{ id: string }[]>`
+      const rows = await client<{ id: string; created: boolean }[]>`
         insert into inbound_emails
           (org_id, message_id, from_address, to_address, subject, received_at, purpose, eml_path)
         values
           (${row.orgId}, ${row.messageId}, ${row.fromAddress}, ${row.toAddress}, ${row.subject},
            ${row.receivedAt}, ${row.purpose}, ${row.emlPath})
-        on conflict (org_id, message_id) do nothing
-        returning id`;
-      return rows[0]?.id ?? null;
+        on conflict (org_id, message_id) do update set message_id = excluded.message_id
+        returning id, (xmax = 0) as created`;
+      const found = rows[0];
+      if (!found) throw new Error('inbound_emails upsert returned no row');
+      return { id: found.id, created: found.created };
     },
 
     async close() {

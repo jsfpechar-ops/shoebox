@@ -56,7 +56,7 @@ export interface InboundDeps {
   readonly secret: string;
   findOrg(slug: string, secret: string, now: Date): Promise<string | null>;
   putEml(path: string, body: Uint8Array): Promise<void>;
-  insertEmail(row: InboundEmailInsert): Promise<string | null>;
+  insertEmail(row: InboundEmailInsert): Promise<{ id: string; created: boolean }>;
   enqueue(orgId: string, inboundEmailId: string): Promise<void>;
   now(): Date;
 }
@@ -84,11 +84,7 @@ export async function handleInboundEmail(
   if (deps.secret.length === 0) {
     return { status: 401, body: { error: 'unauthorized' } };
   }
-  const verdict = verifyWebhook(
-    [deps.secret],
-    req.signature,
-    `${req.to}\n${sha256Hex(req.body)}`,
-  );
+  const verdict = verifyWebhook([deps.secret], req.signature, `${req.to}\n${sha256Hex(req.body)}`);
   if (!verdict.ok) {
     return { status: 401, body: { error: 'unauthorized' } };
   }
@@ -104,7 +100,7 @@ export async function handleInboundEmail(
     }
     const path = emlPath(orgId, sha256Hex(messageId));
     await deps.putEml(path, req.body);
-    const id = await deps.insertEmail({
+    const stored = await deps.insertEmail({
       orgId,
       messageId,
       fromAddress: req.from,
@@ -114,10 +110,11 @@ export async function handleInboundEmail(
       purpose: address.purpose,
       emlPath: path,
     });
-    if (!id) {
+    // A repeat is queued again: the first attempt may have stored the row but failed to queue.
+    await deps.enqueue(orgId, stored.id);
+    if (!stored.created) {
       return { status: 200, body: { decision: 'duplicate' } };
     }
-    await deps.enqueue(orgId, id);
     return { status: 202, body: { decision: 'accept' } };
   } catch {
     return { status: 503, body: { error: 'retry' } };

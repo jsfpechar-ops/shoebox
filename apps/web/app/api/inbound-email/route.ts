@@ -28,7 +28,14 @@ export async function POST(request: Request): Promise<Response> {
           await blobs.put(path, body, 'message/rfc822');
         } catch (error) {
           // The same mail stored before: the object already exists, which is fine.
-          if (!(error instanceof Error && 'status' in error && (error.status === 409 || error.status === 400))) throw error;
+          if (
+            !(
+              error instanceof Error &&
+              'status' in error &&
+              (error.status === 409 || error.status === 400)
+            )
+          )
+            throw error;
         }
       },
       insertEmail: (row) => db.insertEmail(row),
