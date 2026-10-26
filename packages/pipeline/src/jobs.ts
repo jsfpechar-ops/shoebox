@@ -250,6 +250,32 @@ export const bankImportStatementJob = defineTenantJob({
   entityId: (payload) => payload.sourceFileId,
 });
 
+/** M07 §6.2: match the transactions of one import (or an explicit batch). Enqueued after bank.import.statement. */
+export const bankMatchTransactionsJob = defineTenantJob({
+  name: 'bank.match.transactions',
+  payload: tenantPayload({
+    transactionIds: z.array(z.uuid()).min(1).max(5000).optional(),
+    statementImportId: z.uuid().optional(),
+  }).refine((p) => p.transactionIds !== undefined || p.statementImportId !== undefined, {
+    message: 'transactionIds or statementImportId is required',
+  }),
+  version: 1,
+  entityId: (p) =>
+    p.statementImportId ??
+    createHash('sha256')
+      .update([...(p.transactionIds ?? [])].sort().join(','))
+      .digest('hex')
+      .slice(0, 32),
+});
+
+/** M07 §6.2: re-score the unmatched transactions of the lookback window for one document that became ready. `trigger` = the extraction run id. */
+export const bankMatchDocumentJob = defineTenantJob({
+  name: 'bank.match.document',
+  payload: tenantPayload({ documentId: z.uuid(), trigger: z.string().min(1).max(64) }),
+  version: 1,
+  entityId: (p) => `${p.documentId}:${p.trigger}`,
+});
+
 /** M02: read one document (Haiku 5.5), then run the checks. Enqueued by the upload API. */
 export const docExtractJob = defineTenantJob({
   name: 'doc.extract',
