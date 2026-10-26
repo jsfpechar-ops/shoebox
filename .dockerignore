@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/.turbo
+.git
+.github
+docs
+research
+testdata
+supabase
+tools
+**/*.test.ts
+**/*.test.tsx
