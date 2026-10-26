@@ -78,12 +78,7 @@ export async function rebuildDocument(
   orgId: string,
   documentId: string,
   deps: Required<Pick<LedgerDeps, 'store' | 'rules' | 'logger'>>,
-): Promise<{
-  changed: boolean;
-  buildVersion?: string;
-  skipped?: 'missing';
-  periodsAffected?: string[];
-}> {
+): Promise<{ changed: boolean; buildVersion?: string; skipped?: 'missing' }> {
   const inputs = await deps.store.load(tx, documentId);
   if (!inputs) return { changed: false, skipped: 'missing' };
 
@@ -117,7 +112,17 @@ export async function rebuildDocument(
     },
     'ledger document rebuilt',
   );
-  return { changed: true, buildVersion, periodsAffected: drafts.periods };
+  return { changed: true, buildVersion };
+}
+
+/** Period starts of the document's freshly written VAT rows (the rebuild result carries none). */
+async function periodsOf(
+  deps: Pick<Resolved, 'store'>,
+  tx: TenantTx,
+  documentId: string,
+): Promise<string[]> {
+  const rows = await deps.store.read(tx, documentId);
+  return [...new Set(rows.vat.map((row) => row.periodStart))].sort();
 }
 
 export function createLedgerRebuildDocumentHandler(
@@ -126,7 +131,9 @@ export function createLedgerRebuildDocumentHandler(
   const resolved = resolveDeps(deps);
   return async (payload, ctx) => {
     const result = await rebuildDocument(ctx.tx, payload.orgId, payload.documentId, resolved);
-    for (const periodStart of result.changed ? (result.periodsAffected ?? []) : []) {
+    for (const periodStart of result.changed
+      ? await periodsOf(resolved, ctx.tx, payload.documentId)
+      : []) {
       const family = await (deps.familyFor ?? (async () => 'PAYER' as const))(
         ctx.tx,
         payload.orgId,
