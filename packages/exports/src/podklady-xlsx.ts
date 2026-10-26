@@ -5,7 +5,7 @@ import {
   type Money,
   type PodkladySummary,
 } from '@shoebox/domain';
-import { type XlsxCell, type XlsxSheet as Sheet, createXlsxWorkbook } from './xlsx';
+import { createXlsxWorkbook, type XlsxSheet as Sheet, type XlsxCell } from './xlsx';
 
 export const PODKLADY_SHEETS = [
   'Summary',
@@ -78,7 +78,10 @@ function summaryRows(s: PodkladySummary, o: PodkladyXlsxOptions): Row[] {
     ['Interim', yn(s.watermark)],
     [],
     ['Income', num(headline.income)],
-    [headline.label === 'flat' ? 'Flat-rate expenses' : 'Expenses', num(headline.expenses)],
+    // Actual expenses in haléře (Σ business amounts); the domain headline rounds to whole CZK.
+    headline.label === 'flat'
+      ? ['Flat-rate expenses', num(headline.expenses)]
+      : ['Expenses', num(totals.deductibleTotal)],
     ['Base before adjustments', num(headline.base)],
     ['Advances paid', num(s.advancesPaid)],
     ['Private part', num(totals.privatePart)],
@@ -165,7 +168,7 @@ function assetRows(list: PodkladySummary['assets']['assets'], o: PodkladyXlsxOpt
 function privateRows(s: PodkladySummary): Row[] {
   const p = s.privateUse;
   const rows: Row[] = [
-    ['Personal documents', String(p.personalCount), num(p.personalSum)],
+    ['Personal documents', pct(String(p.personalCount)), num(p.personalSum)],
     [],
     ['Document', 'Line', 'Description', 'Total CZK', 'Share %', 'Business CZK', 'Private CZK'],
   ];

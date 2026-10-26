@@ -1,5 +1,6 @@
 export const packageName = '@shoebox/exports' as const;
 export * from './isdoc/build';
+export { buildPodkladyXlsx, PODKLADY_SHEETS, podkladySheets } from './podklady-xlsx';
 export * from './pohoda/build';
 export * from './pohoda/mapping';
 export * from './pohoda/types';
