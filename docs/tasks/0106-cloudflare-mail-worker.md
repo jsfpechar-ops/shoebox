@@ -145,7 +145,7 @@ export default _default; // implement as: export default { email: (message, env)
 3. Create `apps/email-worker/wrangler.toml`:
 
 ```toml
-# Cloudflare Email Worker for the Sysel inbox (M01 §4.1.2). Deploy: see docs/context/inbound-email-setup.md
+# Cloudflare Email Worker for the Sysel inbox (M01 §4.1.2). Deploy: see deploy/inbound-email.md
 name = "sysel-mail"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
