@@ -1,4 +1,26 @@
-// VAT periods API (0351): pure card builder and request parsers. Pure, no I/O. Money stays a string.
+// VAT periods API (0351): card builder and request parsers (pure), plus small org-scoped loaders.
+// Money stays a string.
+
+import { entryRowToDraft, legalDate, type PeriodEntryRow } from '@shoebox/db';
+import {
+  buildPeriodPreview,
+  computeDphdp3,
+  computeKh,
+  computeShv,
+  createCzRules,
+  type KhDocumentLookup,
+  type LegalDate,
+  Money,
+  monthAfter,
+  type PeriodPreview,
+  type PreviewDocumentMeta,
+  type ShvComputation,
+  type ShvRow,
+  type VatLedgerEntryDraft,
+} from '@shoebox/domain';
+import type { createSupabaseServerClient } from '../supabase/server';
+
+type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export type CardKind =
   | 'ready'
@@ -47,6 +69,7 @@ export interface CardInputs {
   readonly obligations: ReadonlyArray<{
     kind: string;
     periodStart: string | null;
+    periodEnd?: string | null;
     dueDate: string;
     state: string;
     amountEstimate: string | null;
@@ -199,7 +222,7 @@ export function buildPeriodCards(input: CardInputs): PeriodCard[] {
     seen.add(key);
     cards.push({
       periodStart: o.periodStart,
-      periodEnd: monthEnd(o.periodStart),
+      periodEnd: o.periodEnd ?? monthEnd(o.periodStart),
       form,
       kind: 'overdue_missing',
       filingId: null,
@@ -248,4 +271,334 @@ export function parsePeriodStart(raw: string): string | null {
 export function parseForm(raw: string | null): 'DPHDP3' | 'DPHKH1' | 'DPHSHV' | null {
   if (raw === null) return 'DPHDP3';
   return isForm(raw) ? raw : null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Loaders (org-scoped Supabase reads under the user's RLS). Kept small; numerics are cast to text
+// in the select so money never passes through a JSON number.
+// ---------------------------------------------------------------------------------------------
+
+const PAGE = 1000;
+const ID_CHUNK = 200;
+
+interface FilingDbRow {
+  readonly id: string;
+  readonly type: string;
+  readonly kind: string;
+  readonly origin: string;
+  readonly period_start: string;
+  readonly period_end: string;
+  readonly state: string;
+  readonly bundle_id: string | null;
+  readonly xsd_valid: boolean | null;
+  readonly totals: Record<string, unknown> | null;
+  readonly simple_check: Record<string, unknown> | null;
+  readonly filed_on: string | null;
+  readonly amends_filing_id: string | null;
+  readonly discovered_on: string | null;
+}
+
+interface ObligationDbRow {
+  readonly kind: string;
+  readonly period_start: string | null;
+  readonly period_end: string | null;
+  readonly due_date: string;
+  readonly state: string;
+  readonly amount_estimate: string | null;
+}
+
+interface ProfileDbRow {
+  readonly vat_status: string;
+  readonly vat_period: string | null;
+}
+
+const OBLIGATION_KINDS = ['vat_return', 'kh', 'sh', 'vat_payment', 'vat_amendment', 'kh_nasledne'];
+
+export async function loadPeriodCardInputs(
+  supabase: SupabaseClient,
+  orgId: string,
+  year: number,
+  today: string,
+): Promise<CardInputs | null> {
+  const from = `${year}-01-01`;
+  const to = `${year}-12-31`;
+  const profile = await supabase
+    .from('taxpayer_profiles')
+    .select('vat_status,vat_period')
+    .eq('org_id', orgId)
+    .lte('valid_from', to)
+    .order('valid_from', { ascending: false })
+    .limit(1)
+    .maybeSingle<ProfileDbRow>();
+  if (profile.error) throw new Error('profile_load_failed');
+  const status = profile.data?.vat_status;
+  if (status !== 'platce' && status !== 'identifikovana_osoba') return null;
+
+  const filings = await supabase
+    .from('filings')
+    .select(
+      'id,type,kind,origin,period_start,period_end,state,bundle_id,xsd_valid,totals,simple_check,filed_on,amends_filing_id,discovered_on',
+    )
+    .eq('org_id', orgId)
+    .gte('period_start', from)
+    .lte('period_start', to);
+  if (filings.error) throw new Error('filing_load_failed');
+
+  const obligations = await supabase
+    .from('obligations')
+    .select('kind,period_start,period_end,due_date,state,amount_estimate:amount_estimate::text')
+    .eq('org_id', orgId)
+    .in('kind', OBLIGATION_KINDS)
+    .gte('period_start', from)
+    .lte('period_start', to);
+  if (obligations.error) throw new Error('obligation_load_failed');
+
+  const periods = new Set<string>();
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await supabase
+      .from('vat_ledger_entries')
+      .select('period_start')
+      .eq('org_id', orgId)
+      .gte('period_start', from)
+      .lte('period_start', to)
+      .order('id')
+      .range(offset, offset + PAGE - 1);
+    if (page.error) throw new Error('ledger_load_failed');
+    const rows = (page.data ?? []) as { period_start: string }[];
+    for (const r of rows) periods.add(r.period_start);
+    if (rows.length < PAGE) break;
+  }
+
+  return {
+    status,
+    today,
+    filings: ((filings.data ?? []) as FilingDbRow[]).map((r) => ({
+      id: r.id,
+      type: r.type,
+      kind: r.kind,
+      origin: r.origin,
+      periodStart: r.period_start,
+      periodEnd: r.period_end,
+      state: r.state,
+      bundleId: r.bundle_id,
+      xsdValid: r.xsd_valid,
+      totals: r.totals ?? {},
+      simpleCheck: r.simple_check ?? {},
+      filedOn: r.filed_on,
+      amendsFilingId: r.amends_filing_id,
+      discoveredOn: r.discovered_on,
+    })),
+    obligations: ((obligations.data ?? []) as ObligationDbRow[]).map((o) => ({
+      kind: o.kind,
+      periodStart: o.period_start,
+      periodEnd: o.period_end,
+      dueDate: o.due_date,
+      state: o.state,
+      amountEstimate: o.amount_estimate,
+    })),
+    periodsWithEntries: [...periods].sort(),
+  };
+}
+
+interface EntryDbRow {
+  readonly period_start: string;
+  readonly period_end: string;
+  readonly vat_point_date: string;
+  readonly vat_point_rule: string;
+  readonly document_id: string;
+  readonly line_id: string | null;
+  readonly vat_treatment: string;
+  readonly vat_rate_type: string;
+  readonly vat_rate_pct: string;
+  readonly base_czk: string;
+  readonly vat_czk: string;
+  readonly deduction_pct: string;
+  readonly currency: string;
+  readonly base_foreign: string | null;
+  readonly fx_rate: string | null;
+  readonly fx_amount: number | null;
+  readonly fx_rate_date: string | null;
+  readonly dphdp3_rows: string[];
+  readonly kh_section: string | null;
+  readonly kh_document_total_czk: string | null;
+  readonly shv_code: number | null;
+  readonly counterparty_vat_id: string | null;
+  readonly evidence_number: string | null;
+}
+
+const ENTRY_COLUMNS = [
+  'period_start',
+  'period_end',
+  'vat_point_date',
+  'vat_point_rule',
+  'document_id',
+  'line_id',
+  'vat_treatment',
+  'vat_rate_type',
+  'vat_rate_pct:vat_rate_pct::text',
+  'base_czk:base_czk::text',
+  'vat_czk:vat_czk::text',
+  'deduction_pct:deduction_pct::text',
+  'currency',
+  'base_foreign:base_foreign::text',
+  'fx_rate:fx_rate::text',
+  'fx_amount',
+  'fx_rate_date',
+  'dphdp3_rows',
+  'kh_section',
+  'kh_document_total_czk:kh_document_total_czk::text',
+  'shv_code',
+  'counterparty_vat_id',
+  'evidence_number',
+].join(',');
+
+function entryOf(r: EntryDbRow): PeriodEntryRow {
+  return {
+    periodStart: r.period_start,
+    periodEnd: r.period_end,
+    vatPointDate: r.vat_point_date,
+    vatPointRule: r.vat_point_rule,
+    lineId: r.line_id,
+    vatTreatment: r.vat_treatment,
+    vatRateType: r.vat_rate_type,
+    vatRatePct: r.vat_rate_pct,
+    baseCzk: r.base_czk,
+    vatCzk: r.vat_czk,
+    deductionPct: r.deduction_pct,
+    currency: r.currency,
+    baseForeign: r.base_foreign,
+    fxRate: r.fx_rate,
+    fxAmount: r.fx_amount,
+    fxRateDate: r.fx_rate_date,
+    dphdp3Rows: r.dphdp3_rows,
+    khSection: r.kh_section,
+    khDocumentTotalCzk: r.kh_document_total_czk,
+    shvCode: r.shv_code,
+    counterpartyVatId: r.counterparty_vat_id,
+    evidenceNumber: r.evidence_number,
+    documentId: r.document_id,
+    documentRevision: 0,
+    buildVersion: '0',
+  };
+}
+
+interface DocMetaDbRow {
+  readonly id: string;
+  readonly document_number: string | null;
+  readonly duzp: string | null;
+  readonly vat_point_date: string | null;
+  readonly partner: { name: string | null; country: string | null } | null;
+}
+
+export interface PreviewInputs {
+  readonly status: 'platce' | 'identifikovana_osoba';
+  readonly periodStart: string;
+  readonly entries: readonly PeriodEntryRow[];
+  readonly docs: readonly DocMetaDbRow[];
+}
+
+/** The period's ledger entries with document and partner meta; null when the period has no entries or no VAT status. */
+export async function loadPreviewInputs(
+  supabase: SupabaseClient,
+  orgId: string,
+  periodStart: string,
+): Promise<PreviewInputs | null> {
+  const profile = await supabase
+    .from('taxpayer_profiles')
+    .select('vat_status,vat_period')
+    .eq('org_id', orgId)
+    .lte('valid_from', periodStart)
+    .order('valid_from', { ascending: false })
+    .limit(1)
+    .maybeSingle<ProfileDbRow>();
+  if (profile.error) throw new Error('profile_load_failed');
+  const status = profile.data?.vat_status;
+  if (status !== 'platce' && status !== 'identifikovana_osoba') return null;
+
+  const entries: PeriodEntryRow[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const page = await supabase
+      .from('vat_ledger_entries')
+      .select(ENTRY_COLUMNS)
+      .eq('org_id', orgId)
+      .eq('period_start', periodStart)
+      .order('document_id')
+      .order('id')
+      .range(offset, offset + PAGE - 1);
+    if (page.error) throw new Error('ledger_load_failed');
+    const rows = (page.data ?? []) as unknown as EntryDbRow[];
+    entries.push(...rows.map(entryOf));
+    if (rows.length < PAGE) break;
+  }
+  if (entries.length === 0) return null;
+
+  const ids = [...new Set(entries.map((e) => e.documentId))];
+  const docs: DocMetaDbRow[] = [];
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const res = await supabase
+      .from('documents')
+      .select('id,document_number,duzp,vat_point_date,partner:partners(name,country)')
+      .eq('org_id', orgId)
+      .in('id', ids.slice(i, i + ID_CHUNK));
+    if (res.error) throw new Error('document_load_failed');
+    docs.push(...((res.data ?? []) as unknown as DocMetaDbRow[]));
+  }
+  return { status, periodStart, entries, docs };
+}
+
+function monthsOf(entries: readonly VatLedgerEntryDraft[], start: LegalDate): LegalDate[] {
+  const end = entries.reduce<string>((m, e) => (e.periodEnd > m ? e.periodEnd : m), start);
+  const out: LegalDate[] = [];
+  for (let m = start; m <= end; m = monthAfter(m)) out.push(m);
+  return out;
+}
+
+function mergeShv(months: readonly ShvComputation[], start: LegalDate): ShvComputation | null {
+  const first = months[0];
+  if (first === undefined) return null;
+  const rows: ShvRow[] = [];
+  let total = Money.zero('CZK');
+  for (const m of months) {
+    rows.push(...m.rows);
+    total = total.add(m.total);
+  }
+  return { monthStart: start, rows, total };
+}
+
+/** Pure: computes the preview of one form from loaded rows (the same pure domain code the worker runs). */
+export function computePreview(
+  form: 'DPHDP3' | 'DPHKH1' | 'DPHSHV',
+  input: PreviewInputs,
+): PeriodPreview {
+  const rules = createCzRules();
+  const start = legalDate(input.periodStart, 'period_start');
+  const drafts = input.entries.map(entryRowToDraft);
+  const dp3 = computeDphdp3(drafts, input.status, rules, start);
+  const meta = new Map<string, PreviewDocumentMeta>(
+    input.docs.map((d) => [
+      d.id,
+      { partnerName: d.partner?.name ?? null, documentNumber: d.document_number },
+    ]),
+  );
+  const byId = new Map(input.docs.map((d) => [d.id, d] as const));
+  const lookup: KhDocumentLookup = (documentId) => {
+    const d = byId.get(documentId);
+    if (d === undefined) return undefined;
+    const date = d.duzp ?? d.vat_point_date;
+    return {
+      duzp: date === null ? null : legalDate(date, 'documents.duzp'),
+      partnerCountry: d.partner?.country ?? null,
+    };
+  };
+  const payer = input.status === 'platce';
+  const kh = payer ? computeKh(drafts, dp3, lookup) : null;
+  const shv = payer
+    ? mergeShv(
+        monthsOf(drafts, start)
+          .map((m) => computeShv(drafts, rules, m))
+          .filter((s) => s.rows.length > 0),
+        start,
+      )
+    : null;
+  return buildPeriodPreview(form, drafts, meta, dp3, kh, shv);
 }
