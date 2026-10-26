@@ -1,6 +1,7 @@
 export const packageName = '@shoebox/db' as const;
 export * from './doc-split';
 export * from './document-categorize';
+export * from './ledger-rebuild';
 export * from './document-pages';
 export * from './document-reading';
 export { createDbPing, type DbPing } from './health';
