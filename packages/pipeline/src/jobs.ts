@@ -232,3 +232,12 @@ export const docExtractJob = defineTenantJob({
   version: 1,
   entityId: (payload) => payload.documentId,
 });
+
+/** M01 page sorting (replaces §4.7): sort the pages of one upload drop into documents, then queue their reads. */
+export const docSplitJob = defineTenantJob({
+  name: 'doc.split',
+  payload: tenantPayload({ batchId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.batchId,
+});
+export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;
