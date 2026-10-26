@@ -11,6 +11,7 @@ export * from './income-tax/pausalni-dan';
 export * from './income-tax/private-use';
 export * from './income-tax/readiness';
 export * from './income-tax/reserve';
+export * from './income-tax/summary';
 export * from './income-tax/totals';
 export * from './income-tax/vat-note';
 export * from './ledgers/allocate';
