@@ -1,6 +1,6 @@
 # 0104 report
 
-Status: blocked
+Status: review
 
 ## Files changed (steps 1 to 4)
 
@@ -36,3 +36,12 @@ Done: steps 1 to 4. Left: step 5 (guard.ts and guard.test.ts).
 
 - Decide step 5 (above). After that, run the guard test and typecheck.
 - Set SHOEBOX_INBOUND_WEBHOOK_SECRET, DATABASE_URL, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the web app env (secrets, owner only).
+
+## Cont-1 (step 5)
+
+- Files: apps/web/src/auth/guard.ts (+1), apps/web/test/guard.test.ts (+1). Commits "0104-cont-1 step 1" and "step 2".
+- `pnpm --filter @shoebox/web exec vitest run test/guard.test.ts test/inbound-email-webhook.test.ts 2>&1 | tail -30`: 2 files, 19 tests passed.
+- `pnpm --filter @shoebox/web typecheck 2>&1 | tail -30`: no errors.
+- `pnpm exec biome check apps/web 2>&1 | tail -30`: 4 errors, 1 warning, all in files not touched here (apps/web/app/api/inbound-email/route.ts, apps/web/src/inbound-email/webhook.ts, apps/web/test/inbound-email-webhook.test.ts, apps/web/src/documents/enqueue.ts, apps/web/app/(app)/inbox/[id]/page.tsx). Left as is; the brief names no fix for them.
+- Question from the earlier run is resolved: the PUBLIC_PATHS anchor was found in guard.ts.
+- Owner steps left: the env secrets listed above, and the merge decision for the branch.
