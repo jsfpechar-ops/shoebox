@@ -5,6 +5,7 @@ import {
   type OverviewDocument,
 } from '@shoebox/domain';
 import { createSupabaseServerClient } from '../supabase/server';
+import { LEDGER_SELECT, toLedgerEntry } from './ledger';
 import {
   DOCUMENTS_SELECT,
   type OverviewProfile,
@@ -12,7 +13,6 @@ import {
   toOverviewDocument,
   toOverviewProfile,
 } from './rows';
-import { LEDGER_SELECT, toLedgerEntry } from './ledger';
 import { buildOverviewView, type OverviewView } from './view';
 
 interface LoadedRows {
