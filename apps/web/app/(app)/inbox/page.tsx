@@ -219,7 +219,7 @@ export default async function InboxPage({
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-body text-foreground">
-                    <Link href={`/inbox/${row.id}`} className="underline">
+                    <Link prefetch={false} href={`/inbox/${row.id}`} className="underline">
                       {row.title ?? t('inbox.row.unknown_supplier')}
                     </Link>
                   </span>

@@ -28,7 +28,7 @@ export function CategoryBlocks({ groups }: { groups: CategoryGroup[] }) {
               <ul className="grid gap-1 pl-4">
                 {row.entries.map((e) => (
                   <li key={e.key}>
-                    <Link href={`/inbox/${e.documentId}`} className="underline">
+                    <Link prefetch={false} href={`/inbox/${e.documentId}`} className="underline">
                       {[e.date, e.amount].filter((x) => x !== null).join(' · ') || e.documentId}
                     </Link>
                   </li>

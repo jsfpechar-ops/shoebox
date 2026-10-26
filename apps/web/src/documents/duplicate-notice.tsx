@@ -23,7 +23,7 @@ export function DuplicateNotice({
     <Card className="flex flex-col gap-3 p-6">
       <p className="text-body">{t('doc.duplicate.notice')}</p>
       {originalId ? (
-        <Link href={`/inbox/${originalId}`} className="text-body underline">
+        <Link prefetch={false} href={`/inbox/${originalId}`} className="text-body underline">
           {t('doc.duplicate.open_original')}
         </Link>
       ) : null}

@@ -331,35 +331,35 @@ export async function loadPeriodCardInputs(
 ): Promise<CardInputs | null> {
   const from = `${year}-01-01`;
   const to = `${year}-12-31`;
-  const profile = await supabase
-    .from('taxpayer_profiles')
-    .select('vat_status,vat_period')
-    .eq('org_id', orgId)
-    .lte('valid_from', to)
-    .order('valid_from', { ascending: false })
-    .limit(1)
-    .maybeSingle<ProfileDbRow>();
+  const [profile, filings, obligations] = await Promise.all([
+    supabase
+      .from('taxpayer_profiles')
+      .select('vat_status,vat_period')
+      .eq('org_id', orgId)
+      .lte('valid_from', to)
+      .order('valid_from', { ascending: false })
+      .limit(1)
+      .maybeSingle<ProfileDbRow>(),
+    supabase
+      .from('filings')
+      .select(
+        'id,type,kind,origin,period_start,period_end,state,bundle_id,xsd_valid,totals,simple_check,filed_on,amends_filing_id,discovered_on',
+      )
+      .eq('org_id', orgId)
+      .gte('period_start', from)
+      .lte('period_start', to),
+    supabase
+      .from('obligations')
+      .select('kind,period_start,period_end,due_date,state,amount_estimate:amount_estimate::text')
+      .eq('org_id', orgId)
+      .in('kind', OBLIGATION_KINDS)
+      .gte('period_start', from)
+      .lte('period_start', to),
+  ]);
   if (profile.error) throw new Error('profile_load_failed');
   const status = profile.data?.vat_status;
   if (status !== 'platce' && status !== 'identifikovana_osoba') return null;
-
-  const filings = await supabase
-    .from('filings')
-    .select(
-      'id,type,kind,origin,period_start,period_end,state,bundle_id,xsd_valid,totals,simple_check,filed_on,amends_filing_id,discovered_on',
-    )
-    .eq('org_id', orgId)
-    .gte('period_start', from)
-    .lte('period_start', to);
   if (filings.error) throw new Error('filing_load_failed');
-
-  const obligations = await supabase
-    .from('obligations')
-    .select('kind,period_start,period_end,due_date,state,amount_estimate:amount_estimate::text')
-    .eq('org_id', orgId)
-    .in('kind', OBLIGATION_KINDS)
-    .gte('period_start', from)
-    .lte('period_start', to);
   if (obligations.error) throw new Error('obligation_load_failed');
 
   const periods = new Set<string>();

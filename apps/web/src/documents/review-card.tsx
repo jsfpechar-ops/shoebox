@@ -172,7 +172,7 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
           {t('review.skip')}
         </Button>
         {card.documentId !== null && (
-          <Link href={`/inbox/${card.documentId}`} className="text-body underline">
+          <Link prefetch={false} href={`/inbox/${card.documentId}`} className="text-body underline">
             {t('review.open')}
           </Link>
         )}
