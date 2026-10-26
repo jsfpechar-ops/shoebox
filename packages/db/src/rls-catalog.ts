@@ -42,6 +42,7 @@ export const READ_ONLY_FOR_USERS: readonly string[] = [
   'ingest_items',
   'statement_imports',
   'match_suggestions',
+  'tax_reserve_estimates',
 ];
 
 /**

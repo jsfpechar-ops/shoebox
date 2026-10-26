@@ -699,6 +699,20 @@ create index on vat_ledger_entries (org_id, period_start);
 create index on vat_ledger_entries (org_id, document_id);
 ```
 
+Cached tax-reserve estimate (M06 §4.11, migration 0045): one row per org, rebuilt by `podklady.reserve.refresh`; users select only.
+
+```sql
+create table tax_reserve_estimates (                                -- M06 §4.11 cached reserve; rebuilt by the worker
+  org_id uuid primary key references organizations(id) on delete cascade,
+  as_of date not null,                                              -- Europe/Prague date the estimate is for
+  tax_year smallint not null,
+  kind text not null check (kind in ('estimate','pausalni_dan')),
+  payload jsonb not null default '{}',                              -- TaxReserveEstimate | PausalniDanReserve, Money as decimal strings
+  ledger_hash text,                                                 -- hash of the entries used (M04 build_version), for debouncing
+  computed_at timestamptz not null default now()
+);
+```
+
 ## 8. Outputs
 
 ```sql
