@@ -52,6 +52,13 @@
       "when": 1760745600008,
       "tag": "0015_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1760745600060,
+      "tag": "0060_document_pages",
+      "breakpoints": true
     }
   ]
 }
