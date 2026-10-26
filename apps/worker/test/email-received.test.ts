@@ -1,7 +1,12 @@
 import type { TenantTx } from '@shoebox/db';
 import { describe, expect, it } from 'vitest';
 import { createEmailReceivedHandler, type EmailReceivedDeps } from '../src/email-received/handler';
-import { type MailPart, spamVerdictOf, triageAttachments } from '../src/email-received/triage';
+import {
+  isBulkMail,
+  type MailPart,
+  spamVerdictOf,
+  triageAttachments,
+} from '../src/email-received/triage';
 
 const ORG = 'eeeeeeee-0000-4000-8000-000000000105';
 const MAIL = 'eeeeeeee-0000-4000-8000-0000000001e5';
@@ -63,6 +68,26 @@ describe('triageAttachments', () => {
       '<p>hi</p>',
     );
     expect(out).toHaveLength(1);
+  });
+
+  it('drops images of a bulk mail but keeps its PDF', () => {
+    const out = triageAttachments(
+      [
+        part({ filename: 'banner.jpg', mimeType: 'image/jpeg', content: big(20_000) }),
+        part({ filename: 'faktura.pdf', mimeType: 'application/pdf' }),
+      ],
+      null,
+      { bulk: true },
+    );
+    expect(out.map((c) => c.mimeType)).toEqual(['application/pdf']);
+  });
+});
+
+describe('isBulkMail', () => {
+  it('List-Unsubscribe is bulk; Precedence bulk is bulk; a Subject alone is not', () => {
+    expect(isBulkMail([{ key: 'List-Unsubscribe', value: '<mailto:x@example.com>' }])).toBe(true);
+    expect(isBulkMail([{ key: 'Precedence', value: 'bulk' }])).toBe(true);
+    expect(isBulkMail([{ key: 'Subject', value: 'Faktura 2026001' }])).toBe(false);
   });
 });
 
