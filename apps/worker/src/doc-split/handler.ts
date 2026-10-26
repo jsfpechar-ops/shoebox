@@ -135,7 +135,12 @@ export function createDocSplitHandler(deps: DocSplitDeps): TenantHandler<DocSpli
       const pages: SortPage[] = pageMaps.map((pm) => {
         const ref = refs[pm.page - 1];
         if (!ref) throw new Error('doc.split: page outside the look-over');
-        return { fileIndex: ref.fileIndex, filePage: ref.filePage, blank: pm.blank, items: pm.items };
+        return {
+          fileIndex: ref.fileIndex,
+          filePage: ref.filePage,
+          blank: pm.blank,
+          items: pm.items,
+        };
       });
       plan = planSort(payload.orgId, payload.batchId, sortableFiles, groupPages(pages), runs);
     } catch {

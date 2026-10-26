@@ -48,7 +48,12 @@ function llmReturning(json: unknown | Error): LlmClient & { requests: LlmRequest
         text: '',
         json,
         latencyMs: 400,
-        usage: { inputTokens: 900, outputTokens: 80, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 },
+        usage: {
+          inputTokens: 900,
+          outputTokens: 80,
+          cacheReadInputTokens: 0,
+          cacheCreationInputTokens: 0,
+        },
       };
     },
   };
@@ -98,7 +103,11 @@ describe('doc.split handler', () => {
     const { handler, llm, reads, statuses, plans } = setup([file(0), file(1)], {
       pages: [
         { page: 1, blank: false, items: [item()] },
-        { page: 2, blank: false, items: [item({ supplier_ico: '', doc_number: '', has_totals: true })] },
+        {
+          page: 2,
+          blank: false,
+          items: [item({ supplier_ico: '', doc_number: '', has_totals: true })],
+        },
       ],
     });
     await handler({ orgId: ORG, batchId: BATCH }, ctx);
@@ -116,8 +125,14 @@ describe('doc.split handler', () => {
     const { handler, llm, plans } = setup([file(0, 'application/pdf')], { pages: [] }, 25);
     await handler({ orgId: ORG, batchId: BATCH }, ctx);
     expect(llm.requests).toHaveLength(2);
-    expect(llm.requests[0]?.messages[0]?.content[0]).toEqual({ type: 'text', text: 'Strany 1–20:' });
-    expect(llm.requests[1]?.messages[0]?.content[0]).toEqual({ type: 'text', text: 'Strany 21–25:' });
+    expect(llm.requests[0]?.messages[0]?.content[0]).toEqual({
+      type: 'text',
+      text: 'Strany 1–20:',
+    });
+    expect(llm.requests[1]?.messages[0]?.content[0]).toEqual({
+      type: 'text',
+      text: 'Strany 21–25:',
+    });
     expect(plans[0]?.documents).toHaveLength(25);
   });
 
