@@ -101,13 +101,13 @@ export async function findOrCreateMoneyAccount(
       ? await tx.execute<{ id: string; bank_code: string | null; currency: string }>(
           sql`select id, bank_code, currency from money_accounts
             where org_id = ${orgId} and iban = ${iban}
-            order by created_at limit 1`,
+            order by id limit 1`,
         )
       : await tx.execute<{ id: string; bank_code: string | null; currency: string }>(
           sql`select id, bank_code, currency from money_accounts
             where org_id = ${orgId} and account_number = ${account}
               and (${bankCode}::text is null or bank_code is null or bank_code = ${bankCode}::text)
-            order by created_at limit 1`,
+            order by id limit 1`,
         );
   const [match] = found;
   if (match) {

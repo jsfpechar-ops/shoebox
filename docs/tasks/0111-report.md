@@ -28,14 +28,13 @@ Commits: `0111 step 1` (035aafc), `0111 step 2` (a5bd874), `0111 step 3` (9e0d00
 2. Biome `--write` formatted the new files, including the verbatim `dedupe.test.ts` and db test. Only whitespace and line breaks changed.
 3. §4 gave only the signatures of the store functions. I wrote the bodies from the "Rules" text.
 4. `loadStatementSource` has no `orgId` parameter, so its query filters by `id` only and relies on the tenant transaction (RLS). The other queries name `org_id`.
-5. `findOrCreateMoneyAccount` orders by `money_accounts.created_at`. I did not check that column against 05 (not in the file list). The CI db test will show it.
+5. `findOrCreateMoneyAccount` orders by `money_accounts.created_at`. Fixed after the report: it now orders by `id`, because money_accounts has no created_at column.
 6. New account name: `<account>/<bankCode>` when an account is given, else the IBAN, else `'bank'`. The brief's wording allowed this reading.
 7. Orphan reversals are only counted in `orphanReversals`. No `bank.reversal_orphan` warning is emitted here. The return type has no place for it, so brief 0112 must handle it.
 
 ## 5. Questions
 
 - Is an `id`-only lookup in `loadStatementSource` acceptable, or should it take `orgId`? The signature in the brief is fixed.
-- Confirm `money_accounts.created_at` exists (Deviation 5).
 
 ## 6. Owner steps left
 
