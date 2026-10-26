@@ -1,5 +1,6 @@
 import { ledgerHashOf } from '@shoebox/db';
 import type { MemberRole } from '@shoebox/domain';
+import { XLSX_MIME } from '@shoebox/exports';
 import type { createSupabaseServerClient } from '../supabase/server';
 
 type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -20,6 +21,9 @@ export interface FilingView {
   readonly filedOn: string | null;
   readonly submissionRef: string | null;
   readonly generatedAt: string | null;
+  /** PODKLADY_DPFO only (0365). */
+  readonly pdfPath?: string | null;
+  readonly xlsxPath?: string | null;
 }
 
 export type DownloadDecision =
@@ -27,6 +31,8 @@ export type DownloadDecision =
       readonly ok: true;
       readonly paths: readonly { path: string; name: string }[];
       readonly markDownloaded: boolean;
+      /** Set for PODKLADY_DPFO (pdf, xlsx); the XML and ZIP routes derive theirs. */
+      readonly contentType?: string;
     }
   | {
       readonly ok: false;
@@ -85,6 +91,22 @@ function refusalFor(f: FilingView, currentLedgerHash: string): Refusal | null {
   return null;
 }
 
+/** PODKLADY_DPFO: pdf or xlsx only; no XSD and no hash rule (a changed ledger is reported by the preview, 0365). */
+function decidePodkladyDownload(filing: FilingView, format: string | null): DownloadDecision {
+  if (format !== 'pdf' && format !== 'xlsx') return { ok: false, status: 400, error: 'bad_format' };
+  if (!DOWNLOADABLE_STATES.includes(filing.state))
+    return { ok: false, status: 409, error: 'not_generated' };
+  const path = format === 'pdf' ? filing.pdfPath : filing.xlsxPath;
+  if (path === null || path === undefined)
+    return { ok: false, status: 409, error: 'not_generated' };
+  return {
+    ok: true,
+    paths: [{ path, name: `podklady-${filing.periodStart.slice(0, 4)}.${format}` }],
+    markDownloaded: filing.state === 'generated',
+    contentType: format === 'pdf' ? 'application/pdf' : XLSX_MIME,
+  };
+}
+
 export function decideDownload(
   filing: FilingView | null,
   bundle: readonly FilingView[],
@@ -92,6 +114,7 @@ export function decideDownload(
   format: string | null,
 ): DownloadDecision {
   if (filing === null) return { ok: false, status: 404, error: 'not_found' };
+  if (filing.type === 'PODKLADY_DPFO') return decidePodkladyDownload(filing, format);
   if (format !== 'xml' && format !== 'zip') return { ok: false, status: 400, error: 'bad_format' };
   const refusal = refusalFor(filing, currentLedgerHash);
   if (refusal !== null) return refusal;
@@ -151,7 +174,7 @@ export function decideMarkFiled(
 }
 
 const FILING_COLUMNS =
-  'id,type,kind,origin,period_start,period_end,state,bundle_id,xsd_valid,totals,simple_check,xml_path,filed_on,submission_ref,generated_at';
+  'id,type,kind,origin,period_start,period_end,state,bundle_id,xsd_valid,totals,simple_check,xml_path,filed_on,submission_ref,generated_at,pdf_path,xlsx_path';
 
 interface FilingDbRow {
   readonly id: string;
@@ -169,6 +192,8 @@ interface FilingDbRow {
   readonly filed_on: string | null;
   readonly submission_ref: string | null;
   readonly generated_at: string | null;
+  readonly pdf_path: string | null;
+  readonly xlsx_path: string | null;
 }
 
 function viewOf(r: FilingDbRow): FilingView {
@@ -188,6 +213,8 @@ function viewOf(r: FilingDbRow): FilingView {
     filedOn: r.filed_on,
     submissionRef: r.submission_ref,
     generatedAt: r.generated_at,
+    pdfPath: r.pdf_path,
+    xlsxPath: r.xlsx_path,
   };
 }
 
