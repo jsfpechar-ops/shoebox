@@ -116,7 +116,7 @@ function deriveReceived(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreat
   ) {
     return { treatment: 'rcv_out_of_scope' };
   }
-  if (line.rcCommodityCode !== null || (flags.reverseCharge92a && supplier.czDic !== null)) {
+  if ((line.rcCommodityCode !== null || flags.reverseCharge92a) && supplier.czDic !== null) {
     return { treatment: 'rcv_domestic_reverse_charge' };
   }
   if (flags.customsDeclaration) return { treatment: 'rcv_import_customs' };
@@ -163,9 +163,9 @@ function deriveIssued(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreatme
     (isEuBusiness && customer.vatIdValid !== true);
   if (isB2c) {
     if (!isPayer) return { treatment: 'iss_no_vat' };
-    return {
-      treatment: line.rcCommodityCode !== null ? 'iss_domestic_reverse_charge' : 'iss_domestic_vat',
-    };
+    // ZDPH § 92a: the customer must be a payer (CZ DIČ); B2C or no DIČ → ordinary output VAT.
+    const reverseCharge = line.rcCommodityCode !== null && customer?.czDic !== null && customer?.czDic !== undefined;
+    return { treatment: reverseCharge ? 'iss_domestic_reverse_charge' : 'iss_domestic_vat' };
   }
 
   // Foreign business or non-EU customer: the supply kind decides.
