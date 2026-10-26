@@ -83,6 +83,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@shoebox/bank':
+        specifier: workspace:*
+        version: link:../../packages/bank
       '@shoebox/db':
         specifier: workspace:*
         version: link:../../packages/db
