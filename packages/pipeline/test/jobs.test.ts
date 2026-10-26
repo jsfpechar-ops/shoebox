@@ -252,7 +252,12 @@ describe('M05 VAT jobs', () => {
   const ORG = '11111111-1111-4111-8111-111111111111';
   const USER = '33333333-3333-4333-8333-333333333333';
   it('vat.filing.generate validates the M05 payload and keys on period and kind', () => {
-    const payload = { orgId: ORG, periodStart: '2026-08-01', kind: 'radne', requestedBy: USER };
+    const payload = {
+      orgId: ORG,
+      periodStart: '2026-08-01',
+      kind: 'radne' as const,
+      requestedBy: USER,
+    };
     expect(vatFilingGenerateJob.payload.parse(payload)).toEqual(payload);
     expect(() => vatFilingGenerateJob.payload.parse({ ...payload, kind: 'x' })).toThrow();
     expect(vatFilingGenerateJob.name).toBe('vat.filing.generate');

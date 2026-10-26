@@ -9,9 +9,9 @@ import type { VatEntryRow } from './ledger-rebuild';
 import { documentLines, documentLinks, validationResults } from './schema/document-details';
 import { documents } from './schema/documents';
 import { filingDocuments, filingEntries, filings } from './schema/filings';
+import { vatLedgerEntries } from './schema/ledgers';
 import { obligations } from './schema/obligations';
 import { partners } from './schema/partners';
-import { vatLedgerEntries } from './schema/ledgers';
 import { taxpayerProfiles } from './schema/tenancy';
 import type { TenantTx } from './tenant';
 
@@ -506,7 +506,8 @@ export async function listFilings(
   filter: { periodStart?: string; types?: readonly string[]; states?: readonly string[] },
 ): Promise<FilingRow[]> {
   const conditions = [eq(filings.orgId, orgId)];
-  if (filter.periodStart !== undefined) conditions.push(eq(filings.periodStart, filter.periodStart));
+  if (filter.periodStart !== undefined)
+    conditions.push(eq(filings.periodStart, filter.periodStart));
   if (filter.types !== undefined && filter.types.length > 0) {
     conditions.push(inArray(filings.type, filter.types as FilingTypeValue[]));
   }
