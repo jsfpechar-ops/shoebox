@@ -38,4 +38,5 @@ export {
   withTenant,
 } from './tenant';
 export { purgeTrash, type TrashPurge } from './trash-purge';
+export * from './vat-entry-map';
 export * from './vendor-memory';
