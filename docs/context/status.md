@@ -4,6 +4,7 @@ Updated: 2026-10-25.
 
 ## Now
 
+- Lane A intake (2026-10-26): duplicate detection + page notice (0100–0101), browser photo prep incl. HEIC (0102); e-mail inbox briefs 0103–0106 (live once a domain exists).
 - ISDOC read without AI (0075–0077, shoebox #3): ISDOC in a PDF, `.isdoc` or `.isdocx` skips Haiku; same checks; page says "No AI was used".
 - Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.
 - Přehled screen done (0070–0074, #98–#106): totals, limit meters, deadlines (holidays + generators seeded in rules), loader, English UI; Czech copy dormant in `packages/i18n/later/`. Not yet seen with real data (e2e covers the empty state only).
