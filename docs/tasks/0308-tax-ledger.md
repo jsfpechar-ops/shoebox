@@ -1,6 +1,6 @@
 # 0308: `buildTaxLedgerEntries` (income tax, cash basis)
 
-Status: todo
+Status: done
 Ticket: P1-LEDG-01 | Depends on: 0301, 0305, 0306, 0307 | Base commit: 496b1e9 | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
