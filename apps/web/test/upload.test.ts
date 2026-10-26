@@ -176,7 +176,11 @@ describe('uploadDocuments', () => {
 
 describe('bank statements in the upload', () => {
   const gpc = `074${'0'.repeat(6)}2400123455${'SYSEL TEST'.padEnd(20)}${'0'.repeat(89)}`;
-  const file = (name: string, text: string, type = '') => ({ name, type, bytes: new TextEncoder().encode(text) });
+  const file = (name: string, text: string, type = '') => ({
+    name,
+    type,
+    bytes: new TextEncoder().encode(text),
+  });
 
   it('sends a GPC or MT940 file to bank import instead of making a document', async () => {
     const f = fakeDeps();
@@ -209,7 +213,9 @@ describe('bank statements in the upload', () => {
 
   it('rejects a text file that is not a statement', async () => {
     const f = fakeDeps();
-    const items = await uploadDocuments(f.deps, { orgId: ORG, userId: USER }, [file('notes.gpc', 'hello')]);
+    const items = await uploadDocuments(f.deps, { orgId: ORG, userId: USER }, [
+      file('notes.gpc', 'hello'),
+    ]);
     expect(items).toEqual([{ fileName: 'notes.gpc', status: 'rejected', reason: 'type' }]);
   });
 });
