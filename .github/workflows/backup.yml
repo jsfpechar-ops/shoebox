@@ -32,8 +32,16 @@ jobs:
       - name: Secrets present?
         id: check
         run: |
+          case "$SUPABASE_URL" in ""|https://*) ;; *)
+            echo "::error::SUPABASE_URL must be the https://<project>.supabase.co address (Supabase > Project Settings > Data API > Project URL), not the postgresql:// database string."
+            exit 1 ;;
+          esac
+          case "$BACKUP_DATABASE_URL" in ""|postgres://*|postgresql://*) ;; *)
+            echo "::error::BACKUP_DATABASE_URL must be the postgresql:// connection string (Supabase > Connect > Session pooler)."
+            exit 1 ;;
+          esac
           if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
-            echo "::notice::Backup secrets are not set yet; nothing to do."
+            echo "::warning::Secret BACKUP_DATABASE_URL or BACKUP_PASSPHRASE is missing; database backup skipped."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -95,8 +103,12 @@ jobs:
       - name: Secrets present?
         id: check
         run: |
+          case "$SUPABASE_URL" in ""|https://*) ;; *)
+            echo "::error::SUPABASE_URL must be the https://<project>.supabase.co address (Supabase > Project Settings > Data API > Project URL), not the postgresql:// database string."
+            exit 1 ;;
+          esac
           if [ -z "$BACKUP_PASSPHRASE" ] || [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::notice::File backup secrets are not set yet; nothing to do."
+            echo "::warning::Secret BACKUP_PASSPHRASE, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing; file backup skipped."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
