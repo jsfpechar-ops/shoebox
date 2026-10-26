@@ -10,7 +10,8 @@ function part(zip: Uint8Array, wanted: string): string {
     const size = view.getUint32(p + 18, true);
     const nameLength = view.getUint16(p + 26, true);
     const name = dec.decode(zip.subarray(p + 30, p + 30 + nameLength));
-    if (name === wanted) return dec.decode(zip.subarray(p + 30 + nameLength, p + 30 + nameLength + size));
+    if (name === wanted)
+      return dec.decode(zip.subarray(p + 30 + nameLength, p + 30 + nameLength + size));
     p += 30 + nameLength + size;
   }
   throw new Error(`no part ${wanted}`);
@@ -50,7 +51,9 @@ describe('createXlsx', () => {
 
   it('writes text inline, decimal strings as numbers, skips empty cells', () => {
     const sheet = part(zip, 'xl/worksheets/sheet1.xml');
-    expect(sheet).toContain('<c r="B2" t="inlineStr"><is><t xml:space="preserve">Úklid &amp; spol.</t></is></c>');
+    expect(sheet).toContain(
+      '<c r="B2" t="inlineStr"><is><t xml:space="preserve">Úklid &amp; spol.</t></is></c>',
+    );
     expect(sheet).toContain('<c r="C2"><v>8150.00</v></c>');
     expect(sheet).not.toContain('r="B3"');
     expect(sheet).toContain('<c r="C3" t="inlineStr"><is><t xml:space="preserve">n/a</t></is></c>');
