@@ -77,7 +77,7 @@ describe.skipIf(DATABASE_URL === undefined)('0001 + 0003: enums, tenancy tables 
 
   beforeAll(async () => {
     sql = postgres(url, { max: 1, onnotice: () => undefined });
-    // From scratch: drop every public table, schema app and the enums (extensions and auth stay).
+    // From scratch: drop every public table, schema app, schema analytics and the enums (extensions and auth stay).
     const dropTypes = Object.keys(ENUMS)
       .map((name) => `drop type if exists public.${name} cascade;`)
       .join('\n');
@@ -91,6 +91,7 @@ describe.skipIf(DATABASE_URL === undefined)('0001 + 0003: enums, tenancy tables 
         end loop;
       end $$;
       drop schema if exists app cascade;
+      drop schema if exists analytics cascade;
       ${dropTypes}
     `);
     await runMigrations(url);
