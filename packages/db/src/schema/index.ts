@@ -9,4 +9,5 @@ export * from './ledgers';
 export * from './obligations';
 export * from './partners';
 export * from './platform';
+export * from './reserve';
 export * from './tenancy';
