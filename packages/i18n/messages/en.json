@@ -739,5 +739,13 @@
   "vat.reason.s_prior_period_credit_note": "A credit note refers to an earlier month.",
   "vat.reason.s_rc_commodity": "A reverse-charge document needs its goods category.",
   "vat.reason.s_partial_share_deduction": "A document with a partial VAT deduction needs a check.",
-  "vat.reason.s_business_flag_unknown": "We can't tell if a document is for business."
+  "vat.reason.s_business_flag_unknown": "We can't tell if a document is for business.",
+  "podklady.link": "Income-tax summary",
+  "podklady.action.prepare": "Prepare summary",
+  "podklady.action.preparing": "Preparing. This page updates in a minute.",
+  "podklady.action.failed": "That didn't work. Try again.",
+  "podklady.page.title": "Income-tax summary",
+  "podklady.page.unavailable": "The summary can't be shown right now. Try again later.",
+  "podklady.page.numbers": "Main numbers",
+  "podklady.page.not_included": "Not in this summary"
 }
