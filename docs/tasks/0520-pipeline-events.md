@@ -1,6 +1,6 @@
 # 0520: pipeline_events, a log of why documents did not go straight to ready
 
-Status: todo
+Status: blocked
 Ticket: owner ask 2026-10-26 (failure logging for analytics) | Depends on: none | Base commit: 886fc60 | Branch: claude/project-thread-5vgi6d | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
