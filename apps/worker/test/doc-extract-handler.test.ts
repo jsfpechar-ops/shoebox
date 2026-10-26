@@ -219,6 +219,39 @@ describe('doc.extract handler', () => {
     expect(llm.requests).toEqual([]);
   });
 
+  it('reads a sorted document from its chosen pages in one call', async () => {
+    const { store, saved } = fakeStore({ mimeType: 'image/jpeg' });
+    const llm = llmReturning(wire());
+    const sorted: ReadingStore = {
+      ...store,
+      loadPages: async () => [
+        {
+          position: 1,
+          sourceFileId: 'f1',
+          storagePath: 'a',
+          mimeType: 'image/jpeg',
+          filePage: 1,
+          region: '',
+        },
+        {
+          position: 2,
+          sourceFileId: 'f2',
+          storagePath: 'b',
+          mimeType: 'image/png',
+          filePage: 1,
+          region: '',
+        },
+      ],
+    };
+    await createDocExtractHandler({ llm, blobs, model: 'claude-haiku-5-5', clock, store: sorted })(
+      { orgId: ORG, documentId: DOC },
+      ctx(),
+    );
+    const content = llm.requests[0]?.messages[0]?.content ?? [];
+    expect(content.map((b) => b.type)).toEqual(['image', 'image', 'text', 'text']);
+    expect(saved).toHaveLength(1);
+  });
+
   it('checks the total against the payment QR amount and stores it as a field', async () => {
     const { store, saved } = fakeStore();
     await createDocExtractHandler({
