@@ -120,6 +120,13 @@
       "when": 1792979529210,
       "tag": "0041_ledgers",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792992900000,
+      "tag": "0030_spreadsheet_imports",
+      "breakpoints": true
     }
   ]
 }

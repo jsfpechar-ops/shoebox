@@ -507,7 +507,7 @@ create table import_mappings (                                      -- saved col
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references organizations(id) on delete cascade,
   kind text not null check (kind in ('documents','bank_statement')),
-  money_account_id uuid references money_accounts(id) on delete cascade,   -- bank_statement only
+  money_account_id uuid,   -- bank_statement only; TODO(M07): the FK to money_accounts lands with M07
   header_signature char(64) not null,                              -- sha256 of the folded header row
   sheet_name text,
   mapping jsonb not null,                                          -- {target_field: column_index}; settings-like
@@ -520,7 +520,7 @@ create table import_mappings (                                      -- saved col
 create table spreadsheet_imports (                                  -- M01 §4.13 (Phase 2)
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references organizations(id) on delete cascade,
-  source_file_id uuid not null references source_files(id),
+  source_file_id uuid not null references source_files(id) on delete cascade,   -- cascade: the RLS role matrix deletes parents first
   mapping_id uuid references import_mappings(id) on delete set null,
   state text not null default 'parsed' check (state in ('parsed','importing','done','failed','undone')),
   row_count integer not null default 0, imported_count integer not null default 0,

@@ -1,6 +1,6 @@
 # 0212: Spreadsheet import tables and row writer
 
-Status: todo
+Status: review
 Ticket: P2-IMP-02 (part 1) | Depends on: 0211 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0212-report.md
