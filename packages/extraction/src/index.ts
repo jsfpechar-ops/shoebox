@@ -13,6 +13,7 @@ export * from './pdf/pages';
 export * from './proto/schema';
 export * from './qr/payload';
 export * from './scan/scan';
+export * from './precheck/precheck';
 export * from './sort/group';
 export * from './sort/page-map';
 export * from './sort/read-parts';
