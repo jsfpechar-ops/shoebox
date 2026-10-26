@@ -27,7 +27,9 @@ function fake(file: Uint8Array | null, opts: { imported?: boolean; name?: string
     blobs: { get: async () => file ?? new Uint8Array() },
     store: {
       loadSource: async () =>
-        file === null ? null : { id: FILE, storagePath: `${ORG}/files/x`, originalFilename: opts.name ?? 'vypis.sta' },
+        file === null
+          ? null
+          : { id: FILE, storagePath: `${ORG}/files/x`, originalFilename: opts.name ?? 'vypis.sta' },
       findImport: async () => (opts.imported ? 'imp-old' : null),
       findOrCreateAccount: async (_tx, _org, identity, format) => {
         accounts.push({ identity, format });
@@ -46,7 +48,8 @@ function fake(file: Uint8Array | null, opts: { imported?: boolean; name?: string
   return { deps, imports, txs, accounts };
 }
 
-const run = (deps: BankImportDeps) => createBankImportHandler(deps)({ orgId: ORG, sourceFileId: FILE }, ctx);
+const run = (deps: BankImportDeps) =>
+  createBankImportHandler(deps)({ orgId: ORG, sourceFileId: FILE }, ctx);
 
 describe('bank.import.statement', () => {
   it('imports an MT940 file: account, import row, transactions', async () => {
@@ -54,7 +57,12 @@ describe('bank.import.statement', () => {
     await run(f.deps);
     expect(f.accounts).toEqual([
       {
-        identity: { account: '2400123455', bankCode: '2010', iban: 'CZ8720100000002400123455', currency: 'CZK' },
+        identity: {
+          account: '2400123455',
+          bankCode: '2010',
+          iban: 'CZ8720100000002400123455',
+          currency: 'CZK',
+        },
         format: 'mt940',
       },
     ]);
@@ -112,20 +120,33 @@ describe('bank.import.statement', () => {
     });
     const csv = fake(bytes('date;amount\n2026-09-15;100\n'), { name: 'vypis.csv' });
     await run(csv.deps);
-    expect(csv.imports[0]).toMatchObject({ format: 'csv_generic', state: 'needs_mapping', txTotal: 0 });
+    expect(csv.imports[0]).toMatchObject({
+      format: 'csv_generic',
+      state: 'needs_mapping',
+      txTotal: 0,
+    });
     expect(csv.txs).toEqual([]);
   });
 
   it('asks for the account when the file names none', async () => {
-    const f = fake(bytes(':20:S\n:25:\n:60F:C260914CZK0,00\n:61:260915C5,00NTRF//R1\n:62F:C260915CZK5,00\n'));
+    const f = fake(
+      bytes(':20:S\n:25:\n:60F:C260914CZK0,00\n:61:260915C5,00NTRF//R1\n:62F:C260915CZK5,00\n'),
+    );
     await run(f.deps);
-    expect(f.imports[0]).toMatchObject({ format: 'mt940', state: 'needs_account', moneyAccountId: null });
+    expect(f.imports[0]).toMatchObject({
+      format: 'mt940',
+      state: 'needs_account',
+      moneyAccountId: null,
+    });
     expect(f.accounts).toEqual([]);
   });
 
   it('records a file over 10 MB as failed', async () => {
     const f = fake(new Uint8Array(10 * 1024 * 1024 + 1));
     await run(f.deps);
-    expect(f.imports[0]).toMatchObject({ state: 'failed', errors: [{ code: 'bank.import.too_large' }] });
+    expect(f.imports[0]).toMatchObject({
+      state: 'failed',
+      errors: [{ code: 'bank.import.too_large' }],
+    });
   });
 });

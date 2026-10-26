@@ -1,9 +1,9 @@
 import {
   type CanonicalTx,
   computeDedupeHash,
+  type DetectionResult,
   dedupeSeqs,
   detectStatementFormat,
-  type DetectionResult,
   type ParsedStatement,
   parseStatement,
   StatementFormatNeededError,
@@ -165,10 +165,10 @@ export function createBankImportHandler(
     }
 
     const identity: AccountIdentity = {
-      account: ref.account,
-      bankCode: ref.bankCode,
+      ...(ref.account === undefined ? {} : { account: ref.account }),
+      ...(ref.bankCode === undefined ? {} : { bankCode: ref.bankCode }),
       iban: ref.iban,
-      currency: ref.currency,
+      ...(ref.currency === undefined ? {} : { currency: ref.currency }),
     };
     const account = await deps.store.findOrCreateAccount(tx, orgId, identity, parsed.format);
 
