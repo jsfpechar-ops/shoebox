@@ -1,6 +1,6 @@
 # 0324 report
 
-Status: review
+Status: done
 
 ## Files changed
 - `packages/db/src/ledger-rebuild.ts` (new): loadLedgerInputs, replaceLedgerEntries, readLedgerEntries, listDocumentsForRebuild, plus the exported row types.

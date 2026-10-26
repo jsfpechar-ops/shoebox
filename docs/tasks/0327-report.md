@@ -1,6 +1,6 @@
 # 0327 report
 
-Status: blocked
+Status: done
 
 ## Files changed
 - apps/web/src/overview/ledger.ts (new): LEDGER_SELECT, toLedgerEntry
