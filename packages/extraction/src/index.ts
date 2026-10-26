@@ -10,3 +10,4 @@ export * from './pdf/pages';
 export * from './proto/schema';
 export * from './sort/group';
 export * from './sort/page-map';
+export * from './sort/read-parts';
