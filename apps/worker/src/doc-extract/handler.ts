@@ -29,6 +29,7 @@ import {
 import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
 import { icoChecksumValid, icoRepairCandidates, runProtoChecks } from '@shoebox/validation';
 import type { TenantHandler } from '../registry';
+import { defaultRegistryDeps, type RegistryDeps, registryRows } from './registry-checks';
 import {
   documentPatchOf,
   fieldsOf,
@@ -63,6 +64,7 @@ export interface DocExtractDeps {
   readonly clock: Clock;
   readonly store?: ReadingStore; // default dbReadingStore
   readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
+  readonly registries?: RegistryDeps; // default defaultRegistryDeps()
 }
 
 const NO_SCAN: DocumentScan = { text: null, textGood: false, qrTexts: [] };
@@ -313,6 +315,16 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
         // Any throw after parsing (e.g. an invalid currency code) counts as a parse failure.
         return onError(error, 'parse');
       }
+    }
+
+    // Registry warnings (never blocking), added to the saved reading only.
+    if (read.extraction !== null) {
+      const found = await registryRows(
+        read.extraction,
+        { ico: doc.orgIco, dic: doc.orgDic },
+        deps.registries ?? defaultRegistryDeps(),
+      );
+      write = { ...write, validations: [...write.validations, ...found] };
     }
 
     try {

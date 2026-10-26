@@ -171,6 +171,9 @@ importers:
       '@shoebox/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@shoebox/registries':
+        specifier: workspace:*
+        version: link:../../packages/registries
       '@shoebox/validation':
         specifier: workspace:*
         version: link:../../packages/validation

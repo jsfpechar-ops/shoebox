@@ -3,9 +3,14 @@ import { fixedClock } from '@shoebox/domain';
 import { AnthropicHttpError, type LlmClient, type LlmRequest } from '@shoebox/extraction';
 import { describe, expect, it } from 'vitest';
 import { createDocExtractHandler, type ReadingStore } from '../src/doc-extract/handler';
+import type { RegistryDeps } from '../src/doc-extract/registry-checks';
 
 const ORG = '11111111-1111-4111-8111-111111111111';
 const DOC = '22222222-2222-4222-8222-222222222222';
+const offline: RegistryDeps = {
+  crpdph: { status: async () => ({ status: 'unavailable', reason: 'timeout' }) },
+  vies: { check: async () => ({ status: 'unavailable', reason: 'vies_unavailable' }) },
+};
 
 function wire(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -104,10 +109,14 @@ describe('doc.extract handler', () => {
   it('reads, checks and saves a clean invoice as ready', async () => {
     const { store, calls, saved } = fakeStore();
     const llm = llmReturning(wire());
-    await createDocExtractHandler({ llm, blobs, model: 'claude-haiku-5-5', clock, store })(
-      { orgId: ORG, documentId: DOC },
-      ctx(),
-    );
+    await createDocExtractHandler({
+      registries: offline,
+      llm,
+      blobs,
+      model: 'claude-haiku-5-5',
+      clock,
+      store,
+    })({ orgId: ORG, documentId: DOC }, ctx());
     expect(calls).toEqual(['status:extracting']);
     expect(llm.requests[0]?.model).toBe('claude-haiku-5-5');
     expect(saved).toHaveLength(1);
@@ -140,7 +149,7 @@ describe('doc.extract handler', () => {
         totals: { net: '100.00', vat: '30.00', gross: '130.00' },
       }),
     );
-    await createDocExtractHandler({ llm, blobs, model: 'm', clock, store })(
+    await createDocExtractHandler({ registries: offline, llm, blobs, model: 'm', clock, store })(
       { orgId: ORG, documentId: DOC },
       ctx(),
     );
@@ -151,7 +160,7 @@ describe('doc.extract handler', () => {
   it('skips a document that was already read', async () => {
     const { store, calls, saved } = fakeStore({ status: 'ready' });
     const llm = llmReturning(wire());
-    await createDocExtractHandler({ llm, blobs, model: 'm', clock, store })(
+    await createDocExtractHandler({ registries: offline, llm, blobs, model: 'm', clock, store })(
       { orgId: ORG, documentId: DOC },
       ctx(),
     );
@@ -162,10 +171,14 @@ describe('doc.extract handler', () => {
 
   it('does nothing for a missing document', async () => {
     const { store, saved } = fakeStore(null);
-    await createDocExtractHandler({ llm: llmReturning(wire()), blobs, model: 'm', clock, store })(
-      { orgId: ORG, documentId: DOC },
-      ctx(),
-    );
+    await createDocExtractHandler({
+      registries: offline,
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'm',
+      clock,
+      store,
+    })({ orgId: ORG, documentId: DOC }, ctx());
     expect(saved).toEqual([]);
   });
 
@@ -174,6 +187,7 @@ describe('doc.extract handler', () => {
     const first = fakeStore();
     await expect(
       createDocExtractHandler({
+        registries: offline,
         llm: llmReturning(error),
         blobs,
         model: 'm',
@@ -184,6 +198,7 @@ describe('doc.extract handler', () => {
     expect(first.failures).toEqual([]);
     const last = fakeStore();
     await createDocExtractHandler({
+      registries: offline,
       llm: llmReturning(error),
       blobs,
       model: 'm',
@@ -196,7 +211,7 @@ describe('doc.extract handler', () => {
   it('fails an unsupported file type at once', async () => {
     const { store, failures } = fakeStore({ mimeType: 'text/plain' });
     const llm = llmReturning(wire());
-    await createDocExtractHandler({ llm, blobs, model: 'm', clock, store })(
+    await createDocExtractHandler({ registries: offline, llm, blobs, model: 'm', clock, store })(
       { orgId: ORG, documentId: DOC },
       ctx(),
     );
@@ -207,6 +222,7 @@ describe('doc.extract handler', () => {
   it('checks the total against the payment QR amount and stores it as a field', async () => {
     const { store, saved } = fakeStore();
     await createDocExtractHandler({
+      registries: offline,
       llm: llmReturning(wire()),
       blobs,
       model: 'm',
@@ -228,6 +244,7 @@ describe('doc.extract handler', () => {
   it('saves the reading as before when the scan throws', async () => {
     const { store, saved } = fakeStore();
     await createDocExtractHandler({
+      registries: offline,
       llm: llmReturning(wire()),
       blobs,
       model: 'm',
@@ -244,6 +261,7 @@ describe('doc.extract handler', () => {
     const { store, saved } = fakeStore();
     const memory: ReadingStore = { ...store, knownSupplierIcos: async () => ['25596641'] };
     await createDocExtractHandler({
+      registries: offline,
       llm: llmReturning(
         wire({
           supplier: {
@@ -277,6 +295,7 @@ describe('doc.extract handler', () => {
     const { store, saved } = fakeStore();
     const memory: ReadingStore = { ...store, knownSupplierIcos: async () => [] };
     await createDocExtractHandler({
+      registries: offline,
       llm: llmReturning(
         wire({
           supplier: {
@@ -316,6 +335,7 @@ describe('doc.extract handler', () => {
       transaction: async (fn: (sp: unknown) => unknown) => fn(savepointTx),
     } as unknown as TenantTx;
     await createDocExtractHandler({
+      registries: offline,
       llm: llmReturning(wire()),
       blobs,
       model: 'm',
