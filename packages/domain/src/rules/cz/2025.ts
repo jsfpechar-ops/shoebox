@@ -12,6 +12,7 @@ import {
   HOLIDAYS_ACT,
   TAX_PROCEDURE_ACT,
 } from './deadlines';
+import { CZ_DPHDP3_ROW_MAP, CZ_KH_ROUTING } from './epo';
 
 const VALID_FROM = '2025-01-01';
 const VALID_TO = '2025-12-31';
@@ -26,6 +27,9 @@ const CASH_ACT = 'https://www.zakonyprolidi.cz/cs/2004-254#p4';
 /** GFŘ methodology for the control statement (A.4/B.2 vs A.5/B.3 split at 10 000 Kč incl. VAT). */
 const KH_METHODOLOGY =
   'https://financnisprava.gov.cz/assets/cs/prilohy/d-seznam-dani/Metodicka_informace_k_vyplneni_KH_20240101.pdf';
+/** EPO: published structure of the DPHDP3 form (přiznání k DPH), rows and XML attributes. [verify] */
+const DPHDP3_STRUCTURE =
+  'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_detail.faces?zkratka=DPHDP3';
 /** Finanční správa: paušální daň for 2025 (bands, monthly advances, income ceilings). */
 const PAUSALNI_DAN_2025 =
   'https://financnisprava.gov.cz/cs/dane/dane/dan-z-prijmu/pausalni-dan/informace-k-institutu-pausalni-dane-pro-rok-2025';
@@ -118,6 +122,12 @@ export const RULES_CZ_2025: readonly RuleEntryInput[] = [
   // ZDPH § 47 and příloha č. 2: none of the seeded categories is a reduced-rate service by default
   // (06 §2.1: `[]`, "[verify per service]" in M04 §4.2).
   { ...base('vat.reduced_rate_categories', `${ZDPH}#p47`, []), verified_at: '2026-10-26' },
+  // DPHDP3 row map (M05 §4.2 step 8, research/czech-tax-filings.md §2). Rows 40/41/42/50 carry
+  // `confirmed: false` until Phase 3 checks their attrs against the XSD; see cz/epo.ts.
+  { ...base('epo.dphdp3_row_map', DPHDP3_STRUCTURE, CZ_DPHDP3_ROW_MAP), verified_at: '2026-10-26' },
+  // KH sections per treatment (research/czech-tax-filings.md §1.3.1); the 10 000 Kč split is
+  // `vat.kh_document_limit`.
+  { ...base('epo.kh_routing', KH_METHODOLOGY, CZ_KH_ROUTING), verified_at: '2026-10-26' },
   // ZDP § 7 odst. 7: flat-rate expense percentages and their caps (income cap 2 000 000 Kč).
   base('pausalni_vydaje.rates_caps', `${ZDP}#p7`, {
     '80': 1_600_000,
