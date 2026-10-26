@@ -8,6 +8,8 @@ import { EDITABLE, editKeyOf } from '../../../../src/documents/correction';
 import { loadDocumentDetail } from '../../../../src/documents/detail-data';
 import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
+import { PagesCard } from '../../../../src/documents/pages-card';
+import { loadPagesView } from '../../../../src/documents/pages-data';
 import { readAgainAction } from '../../../../src/documents/read-again-actions';
 import { moveToTrashAction } from '../../../../src/documents/trash-actions';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
@@ -17,6 +19,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const auth = await requireActiveRole(['owner', 'member', 'accountant', 'viewer']);
   const supabase = await createSupabaseServerClient();
   const detail = auth.ok ? await loadDocumentDetail(supabase, auth.orgId, id) : null;
+  const pagesView = detail ? await loadPagesView(supabase, detail.id) : null;
 
   if (detail === null) {
     return (
@@ -140,6 +143,14 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           ) : null}
         </>
       )}
+
+      {pagesView && !processing ? (
+        <PagesCard
+          documentId={detail.id}
+          view={pagesView}
+          canFix={auth.ok && (auth.role === 'owner' || auth.role === 'member')}
+        />
+      ) : null}
 
       {detail.file && fileUrl ? (
         detail.file.mimeType.startsWith('image/') ? (
