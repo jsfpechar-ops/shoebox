@@ -14,14 +14,16 @@ import {
   toOverviewProfile,
 } from './rows';
 import { buildOverviewView, type OverviewView } from './view';
+import { toWorkRow, WORK_SELECT, type WorkRow } from './work';
 
 interface LoadedRows {
   readonly profile: OverviewProfile | null;
   readonly documents: readonly OverviewDocument[];
   readonly ledgerEntries: readonly LedgerTotalsEntry[];
+  readonly workRows: readonly WorkRow[];
 }
 
-const NO_DATA: LoadedRows = { profile: null, documents: [], ledgerEntries: [] };
+const NO_DATA: LoadedRows = { profile: null, documents: [], ledgerEntries: [], workRows: [] };
 
 /**
  * The Přehled data of one org for `asOf` (server only). Every query is org-scoped and runs under the
@@ -60,6 +62,13 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
       )
       .limit(5000);
 
+    const workResult = await supabase
+      .from('documents')
+      .select(WORK_SELECT)
+      .eq('org_id', orgId)
+      .is('deleted_at', null)
+      .limit(5000);
+
     const ledgerResult = await supabase
       .from('tax_ledger_entries')
       .select(LEDGER_SELECT)
@@ -96,7 +105,15 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
       }
     }
 
-    rows = { profile, documents, ledgerEntries };
+    const workRows: WorkRow[] = [];
+    if (workResult.error === null && Array.isArray(workResult.data)) {
+      for (const row of workResult.data) {
+        const workRow = toWorkRow(row);
+        if (workRow !== null) workRows.push(workRow);
+      }
+    }
+
+    rows = { profile, documents, ledgerEntries, workRows };
   } catch {
     // Any throw (no session, no PostgREST, network) is no data: the screen shows its empty state.
     rows = NO_DATA;
@@ -106,6 +123,7 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
     profile: rows.profile,
     documents: rows.documents,
     ledgerEntries: rows.ledgerEntries,
+    workRows: rows.workRows,
     asOf,
     rules: createCzRules(),
   });
