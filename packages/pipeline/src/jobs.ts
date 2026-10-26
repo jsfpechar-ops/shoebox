@@ -216,6 +216,13 @@ export const opsHeartbeatJob = defineSystemJob({
   retry: { retryLimit: 0 },
 });
 
+/** M12 §4.6: hard-delete documents trashed more than 30 days ago (never retained ones). */
+export const retentionTrashPurgeJob = defineSystemJob({
+  name: 'retention.trash_purge',
+  payload: z.strictObject({}),
+  cron: '30 3 * * *',
+});
+
 /** A UUID (version-5 layout) derived from an idempotency key: same key, same pg-boss job id. */
 export function jobIdFromKey(key: string): string {
   const bytes = createHash('sha1').update(`shoebox.job:${key}`).digest().subarray(0, 16);
