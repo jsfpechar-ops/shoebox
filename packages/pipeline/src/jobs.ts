@@ -42,6 +42,8 @@ export const JOB_NAMES = [
   'vat.workbook.generate',
   'vat.amendment.detect',
   'podklady.generate',
+  'podklady.reserve.refresh',
+  'podklady.reserve.nightly',
   'obligations.generate',
   'obligations.nightly',
   'notifications.evaluate',
@@ -226,6 +228,14 @@ export const retentionTrashPurgeJob = defineSystemJob({
   cron: '30 3 * * *',
 });
 
+/** 06 §3: nightly EPO structure and XSD drift check (log alert; detection only). */
+export const opsDriftMonitorsJob = defineSystemJob({
+  name: 'ops.drift_monitors',
+  payload: z.strictObject({}),
+  cron: '15 4 * * *',
+  retry: { retryLimit: 0 },
+});
+
 /** A UUID (version-5 layout) derived from an idempotency key: same key, same pg-boss job id. */
 export function jobIdFromKey(key: string): string {
   const bytes = createHash('sha1').update(`shoebox.job:${key}`).digest().subarray(0, 16);
@@ -370,5 +380,97 @@ export const ledgerVerifyJob = defineSystemJob({
   name: 'ledger.verify',
   payload: ledgerVerifyPayload,
   cron: '45 3 * * *',
+  retry: { retryLimit: 0 },
+});
+
+/** M05 §6: evaluate the VAT obligations of one period for one family (IO or PAYER). */
+export const vatPeriodEvaluatePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  family: z.enum(['IO', 'PAYER']),
+});
+export type VatPeriodEvaluatePayload = z.infer<typeof vatPeriodEvaluatePayload>;
+export const vatPeriodEvaluateJob = defineTenantJob({
+  name: 'vat.period.evaluate',
+  payload: vatPeriodEvaluatePayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M05 §6: generate one filing (radne, opravne, dodatecne, nasledne) for a period. */
+export const vatFilingGeneratePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  kind: z.enum(['radne', 'opravne', 'dodatecne', 'nasledne']),
+  amendsFilingId: z.uuid().optional(),
+  discoveredOn: z.iso.date().optional(),
+  requestedBy: z.uuid(),
+});
+export type VatFilingGeneratePayload = z.infer<typeof vatFilingGeneratePayload>;
+export const vatFilingGenerateJob = defineTenantJob({
+  name: 'vat.filing.generate',
+  payload: vatFilingGeneratePayload,
+  version: 1,
+  entityId: (p) => `${p.periodStart}:${p.kind}`,
+});
+
+/** M05 §6: build the period workbook (xlsx). */
+export const vatWorkbookGeneratePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  requestedBy: z.uuid().optional(),
+});
+export type VatWorkbookGeneratePayload = z.infer<typeof vatWorkbookGeneratePayload>;
+export const vatWorkbookGenerateJob = defineTenantJob({
+  name: 'vat.workbook.generate',
+  payload: vatWorkbookGeneratePayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M05 §6: detect whether a period needs an amendment (opravne) after a ledger change. */
+export const vatAmendmentDetectPayload = tenantPayload({
+  periodStart: z.iso.date(),
+});
+export type VatAmendmentDetectPayload = z.infer<typeof vatAmendmentDetectPayload>;
+export const vatAmendmentDetectJob = defineTenantJob({
+  name: 'vat.amendment.detect',
+  payload: vatAmendmentDetectPayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M06 §6: build the annual podklady (PDF + XLSX) for one tax year; idempotent per ledger hash and answers version. */
+export const podkladyGeneratePayload = tenantPayload({
+  year: z.number().int().min(2024),
+  answersVersion: z.number().int().min(0),
+  requestedBy: z.uuid(),
+});
+export type PodkladyGeneratePayload = z.infer<typeof podkladyGeneratePayload>;
+export const podkladyGenerateJob = defineTenantJob({
+  name: 'podklady.generate',
+  payload: podkladyGeneratePayload,
+  version: 1,
+  entityId: (p) => `${p.year}-${p.answersVersion}`,
+});
+
+export const PODKLADY_RESERVE_REASONS = ['ledger_rebuilt', 'nightly', 'profile_changed'] as const;
+
+/** M06 §6: recompute the tax reserve and the income-tax obligations of one org. */
+export const podkladyReserveRefreshPayload = tenantPayload({
+  reason: z.enum(PODKLADY_RESERVE_REASONS),
+});
+export type PodkladyReserveRefreshPayload = z.infer<typeof podkladyReserveRefreshPayload>;
+export const podkladyReserveRefreshJob = defineTenantJob({
+  name: 'podklady.reserve.refresh',
+  payload: podkladyReserveRefreshPayload,
+  version: 1,
+  entityId: (p) => `reserve-${p.reason}`,
+});
+
+export const podkladyReserveNightlyPayload = z.strictObject({});
+export type PodkladyReserveNightlyPayload = z.infer<typeof podkladyReserveNightlyPayload>;
+/** M06 §6: nightly 02:30 Europe/Prague fan-out of podklady.reserve.refresh over the active organizations. */
+export const podkladyReserveNightlyJob = defineSystemJob({
+  name: 'podklady.reserve.nightly',
+  payload: podkladyReserveNightlyPayload,
+  cron: '30 2 * * *',
   retry: { retryLimit: 0 },
 });

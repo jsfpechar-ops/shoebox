@@ -19,15 +19,22 @@ import {
   ledgerRebuildOrgJob,
   ledgerVerifyJob,
   opsHeartbeatJob,
+  podkladyGenerateJob,
+  podkladyReserveNightlyJob,
+  podkladyReserveRefreshJob,
   tenantPayload,
+  vatAmendmentDetectJob,
+  vatFilingGenerateJob,
+  vatPeriodEvaluateJob,
+  vatWorkbookGenerateJob,
 } from '../src/jobs';
 
 const ORG = 'aaaaaaaa-0000-4000-8000-000000000001';
 const DOC = 'bbbbbbbb-0000-4000-8000-000000000002';
 
 describe('job names (03 §3.1)', () => {
-  it('lists the 36 concrete job names, unique and `<domain>.<action>`', () => {
-    expect(JOB_NAMES).toHaveLength(38);
+  it('lists the 40 concrete job names, unique and `<domain>.<action>`', () => {
+    expect(JOB_NAMES).toHaveLength(40);
     expect(new Set(JOB_NAMES).size).toBe(JOB_NAMES.length);
     for (const name of JOB_NAMES) {
       expect(name).toMatch(/^[a-z]+(\.[a-z_]+)+$/);
@@ -241,5 +248,56 @@ describe('M04 jobs', () => {
     expect(ledgerVerifyJob.scope).toBe('system');
     expect(ledgerVerifyJob.cron).toBe('45 3 * * *');
     expect(ledgerVerifyJob.payload.parse({})).toEqual({ samplePct: 1 });
+  });
+});
+
+describe('M05 VAT jobs', () => {
+  const ORG = '11111111-1111-4111-8111-111111111111';
+  const USER = '33333333-3333-4333-8333-333333333333';
+  it('vat.filing.generate validates the M05 payload and keys on period and kind', () => {
+    const payload = {
+      orgId: ORG,
+      periodStart: '2026-08-01',
+      kind: 'radne' as const,
+      requestedBy: USER,
+    };
+    expect(vatFilingGenerateJob.payload.parse(payload)).toEqual(payload);
+    expect(() => vatFilingGenerateJob.payload.parse({ ...payload, kind: 'x' })).toThrow();
+    expect(vatFilingGenerateJob.name).toBe('vat.filing.generate');
+    expect(vatFilingGenerateJob.entityId(payload)).toBe('2026-08-01:radne');
+    expect(
+      vatPeriodEvaluateJob.entityId({ orgId: ORG, periodStart: '2026-08-01', family: 'IO' }),
+    ).toBe('2026-08-01');
+    expect(vatWorkbookGenerateJob.payload.parse({ orgId: ORG, periodStart: '2026-08-01' })).toEqual(
+      {
+        orgId: ORG,
+        periodStart: '2026-08-01',
+      },
+    );
+    expect(vatAmendmentDetectJob.version).toBe(1);
+  });
+});
+
+describe('M06 podklady jobs', () => {
+  const org = '11111111-1111-4111-8111-111111111111';
+  const user = '33333333-3333-4333-8333-333333333333';
+  it('podklady.generate validates year >= 2024 and keys on year and answers version', () => {
+    const payload = { orgId: org, year: 2026, answersVersion: 2, requestedBy: user };
+    expect(podkladyGenerateJob.payload.parse(payload)).toEqual(payload);
+    expect(() => podkladyGenerateJob.payload.parse({ ...payload, year: 2023 })).toThrow();
+    expect(() => podkladyGenerateJob.payload.parse({ ...payload, answersVersion: 1.5 })).toThrow();
+    expect(podkladyGenerateJob.entityId(payload)).toBe('2026-2');
+  });
+  it('podklady.reserve.refresh accepts the three reasons only and keys on the reason', () => {
+    const payload = { orgId: org, reason: 'ledger_rebuilt' as const };
+    expect(podkladyReserveRefreshJob.payload.parse(payload)).toEqual(payload);
+    expect(() => podkladyReserveRefreshJob.payload.parse({ orgId: org, reason: 'x' })).toThrow();
+    expect(jobKey(podkladyReserveRefreshJob, payload)).toBe(
+      `${org}:podklady.reserve.refresh:reserve-ledger_rebuilt:1`,
+    );
+  });
+  it('podklady.reserve.nightly is a system cron at 02:30', () => {
+    expect(podkladyReserveNightlyJob.scope).toBe('system');
+    expect(podkladyReserveNightlyJob.cron).toBe('30 2 * * *');
   });
 });

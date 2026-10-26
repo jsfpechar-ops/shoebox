@@ -9,6 +9,9 @@ import {
   importSpreadsheetUndoJob,
   jobIdFromKey,
   jobKey,
+  type VatFilingGeneratePayload,
+  vatFilingGenerateJob,
+  vatWorkbookGenerateJob,
 } from '@shoebox/pipeline';
 import { PgBoss } from 'pg-boss';
 
@@ -120,4 +123,29 @@ export async function enqueueBankImport(orgId: string, sourceFileId: string): Pr
     id: jobIdFromKey(key),
     singletonKey: key,
   });
+}
+
+/** Queues `vat.filing.generate` for one period and kind; the key makes a second identical request a no-op. Returns the job id. */
+export async function enqueueVatFilingGenerate(
+  orgId: string,
+  input: Omit<VatFilingGeneratePayload, 'orgId'>,
+): Promise<string> {
+  const payload = vatFilingGenerateJob.payload.parse({ ...input, orgId });
+  const key = jobKey(vatFilingGenerateJob, payload);
+  const id = jobIdFromKey(key);
+  await (await boss()).send(vatFilingGenerateJob.name, payload, { id, singletonKey: key });
+  return id;
+}
+
+/** Queues `vat.workbook.generate` for one period. Returns the job id. */
+export async function enqueueVatWorkbookGenerate(
+  orgId: string,
+  periodStart: string,
+  requestedBy?: string,
+): Promise<string> {
+  const payload = vatWorkbookGenerateJob.payload.parse({ orgId, periodStart, requestedBy });
+  const key = jobKey(vatWorkbookGenerateJob, payload);
+  const id = jobIdFromKey(key);
+  await (await boss()).send(vatWorkbookGenerateJob.name, payload, { id, singletonKey: key });
+  return id;
 }

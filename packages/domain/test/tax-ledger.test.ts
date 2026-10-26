@@ -184,7 +184,7 @@ describe('golden shapes (M04 §9.1)', () => {
     ]);
   });
 
-  it('AC-9i: MacBook for an IO at 80 % → 26 990,00 and business 21 592,00; payer with 80 % keeps 20 % of the VAT as cost', () => {
+  it('AC-9i: MacBook for an IO at 80 % → 26 990,00 and business 21 592,00; a deducting payer books the net only (K-C01)', () => {
     const mac = line({
       net: czk('22305.79'),
       vat: czk('4684.21'),
@@ -204,8 +204,8 @@ describe('golden shapes (M04 §9.1)', () => {
       payments: [pay({ amountDoc: czk('26990.00'), amountAccount: czk('26990.00') })],
       profileAt: payer,
     });
-    expect(p[0]?.amountCzk.toFixed2()).toBe('23242.63');
-    expect(p[0]?.businessAmountCzk.toFixed2()).toBe('18594.10');
+    expect(p[0]?.amountCzk.toFixed2()).toBe('22305.79');
+    expect(p[0]?.businessAmountCzk.toFixed2()).toBe('17844.63');
   });
 
   it('AC-9j: IKEA card receipt → document_evidence on the issue date, no link ids', () => {

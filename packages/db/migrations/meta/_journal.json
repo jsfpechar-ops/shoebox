@@ -127,6 +127,27 @@
       "when": 1792993314570,
       "tag": "0020_money",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792993314571,
+      "tag": "0043_filings",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792993314572,
+      "tag": "0044_obligations",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792993314573,
+      "tag": "0045_tax_reserve",
+      "breakpoints": true
     }
   ]
 }

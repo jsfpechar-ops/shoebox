@@ -27,6 +27,11 @@ description = "Obviously fake HMAC test secrets (brief 0009 tests)"
 regexTarget = "match"
 regexes = ['''-secret-of-at-least-32-characters-''']
 
+[[allowlists]]
+description = "Imported-filing test fixtures: { key: 'filing.*', value: '<number>' } pairs (brief 0348)"
+regexTarget = "line"
+regexes = ['''\{ key: 'filing\.[a-z0-9_.]+', value: ''']
+
 # Czech PII, shape only (P0-PII-02, brief 0012b). Checksums live in scripts/pii_guard.py.
 # Rule-level allowlists: the files that hold synthetic vectors by design, and the M06 test RC.
 [[rules]]

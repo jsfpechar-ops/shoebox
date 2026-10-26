@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseLegalDate } from '../src/dates/index';
 import {
   CZ_RULE_ENTRIES,
   createCzRules,
@@ -10,6 +11,7 @@ import {
   RuleSetSchema,
 } from '../src/index';
 import { parseDphdp3RowMap, parseKhRouting } from '../src/rules/cz/epo';
+import type { CZ_EPO_FORMS, CZ_SIMPLE_PERIOD_POLICY } from '../src/rules/cz/vat-phase3';
 
 // Real law values (P0-DOM-05, 06 §2.1): every key is asserted on a known date and on the day
 // before a change. Sources are in the comments of src/rules/cz/2025.ts and 2026.ts.
@@ -22,12 +24,17 @@ const SEEDED_KEYS: readonly RuleKey[] = [
   'cash.payment_limit',
   'deadlines.generators',
   'epo.dphdp3_row_map',
+  'epo.forms',
   'epo.kh_routing',
+  'income_tax.credits',
+  'income_tax.rates',
   'insurance.min_advances',
+  'insurance.rates',
   'pausalni_dan.bands',
   'pausalni_dan.deadlines',
   'pausalni_dan.eligibility',
   'pausalni_vydaje.rates_caps',
+  'vat.amendment_windows',
   'vat.cnb_rate_rule',
   'vat.deadline_day',
   'vat.deduction_deferral_years',
@@ -38,7 +45,10 @@ const SEEDED_KEYS: readonly RuleKey[] = [
   'vat.rates',
   'vat.reduced_rate_categories',
   'vat.registration_thresholds',
+  'vat.return_rounding',
   'vat.ruceni_cash_threshold',
+  'vat.shv_rounding',
+  'vat.simple_period_policy',
   'vat.simplified_document_limit',
 ];
 
@@ -84,8 +94,8 @@ describe('seed files (06 §2)', () => {
   it('seeds exactly the P0-DOM-05 keys in both years', () => {
     expect([...new Set(RULES_CZ_2025.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
     expect([...new Set(RULES_CZ_2026.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
-    expect(RULES_CZ_2025).toHaveLength(23);
-    expect(RULES_CZ_2026).toHaveLength(24);
+    expect(RULES_CZ_2025).toHaveLength(31);
+    expect(RULES_CZ_2026).toHaveLength(32);
   });
 
   it('2025 segments span the calendar year; 2026 segments start on 2026-01-01', () => {
@@ -94,7 +104,7 @@ describe('seed files (06 §2)', () => {
       expect(entry.valid_to).toBe('2025-12-31');
     }
     expect(RULES_CZ_2026.every((entry) => entry.valid_from >= '2026-01-01')).toBe(true);
-    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(23);
+    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(31);
   });
 
   it('every seeded key resolves on every day of 2025 and 2026 and not before', () => {
@@ -334,6 +344,68 @@ describe('EPO row map and KH routing (brief 0310)', () => {
       expect(['adisspr.mfcr.cz', 'financnisprava.gov.cz']).toContain(
         new URL(entry.source).hostname,
       );
+    }
+  });
+});
+
+describe('Phase 3 VAT seeds (0328)', () => {
+  const at = rules.at(parseLegalDate('2026-09-15'));
+  it('simple-period policy 2026.1 forbids EU goods for an IO and allows them for a payer', () => {
+    const p = at.get('vat.simple_period_policy') as typeof CZ_SIMPLE_PERIOD_POLICY;
+    expect(p.version).toBe('2026.1');
+    expect(p.allowed_treatments.identifikovana_osoba).not.toContain('rcv_eu_goods_acquisition');
+    expect(p.allowed_treatments.platce).toContain('rcv_eu_goods_acquisition');
+    expect(p.max_docs).toBe(150);
+  });
+  it('rounding and windows', () => {
+    expect(at.get('vat.return_rounding')).toBe('sum_entries_then_round');
+    expect(at.get('vat.shv_rounding')).toBe('ceil');
+    expect(at.get('vat.amendment_windows')).toEqual({
+      dp3_dodatecne_due: 'end_of_month_after_discovery',
+      kh_nasledne_working_days: 5,
+    });
+  });
+  it('epo.forms carries the 11. 8. 2026 versions', () => {
+    const f = at.get('epo.forms') as typeof CZ_EPO_FORMS;
+    expect(f.DPHDP3.version).toBe('03.01.04');
+    expect(f.DPHKH1.version).toBe('03.01.15');
+    expect(f.DPHSHV.version).toBe('02.01.05');
+    expect(rules.at(parseLegalDate('2025-06-01')).get('vat.return_rounding')).toBe(
+      'sum_entries_then_round',
+    );
+  });
+  it('epo.forms.DPFDP7 has no vendored XSD year yet (tax_years empty in 2026)', () => {
+    const f = at.get('epo.forms') as typeof CZ_EPO_FORMS;
+    expect(f.DPFDP7.tax_years).toEqual([]);
+  });
+});
+
+describe('income tax and insurance rates (M06, 06 §2.1)', () => {
+  it('income_tax.rates: 15 % / 23 %, threshold 1 676 052 (2025) and 1 762 812 (2026)', () => {
+    expect(rules.at('2025-12-31').get('income_tax.rates')).toEqual({
+      r1: 15,
+      r2: 23,
+      threshold_annual: 1_676_052,
+    });
+    expect(rules.at('2026-01-01').get('income_tax.rates')).toEqual({
+      r1: 15,
+      r2: 23,
+      threshold_annual: 1_762_812,
+    });
+  });
+  it('income_tax.credits.taxpayer: 30 840 Kč in both years', () => {
+    for (const date of ['2025-06-30', '2026-06-30']) {
+      expect(rules.at(date).get('income_tax.credits')).toEqual({ taxpayer: 30_840 });
+    }
+  });
+  it('insurance.rates: social 29,2 % of 55 %, health 13,5 % of 50 %', () => {
+    for (const date of ['2025-01-01', '2026-12-31']) {
+      expect(rules.at(date).get('insurance.rates')).toEqual({
+        social_pct: 29.2,
+        social_base_pct: 55,
+        health_pct: 13.5,
+        health_base_pct: 50,
+      });
     }
   });
 });

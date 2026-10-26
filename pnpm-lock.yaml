@@ -174,9 +174,15 @@ importers:
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@shoebox/exports':
+        specifier: workspace:*
+        version: link:../../packages/exports
       '@shoebox/extraction':
         specifier: workspace:*
         version: link:../../packages/extraction
+      '@shoebox/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@shoebox/pipeline':
         specifier: workspace:*
         version: link:../../packages/pipeline
@@ -186,6 +192,9 @@ importers:
       '@shoebox/registries':
         specifier: workspace:*
         version: link:../../packages/registries
+      '@shoebox/tax-xml':
+        specifier: workspace:*
+        version: link:../../packages/tax-xml
       '@shoebox/validation':
         specifier: workspace:*
         version: link:../../packages/validation
@@ -277,6 +286,9 @@ importers:
       '@shoebox/domain':
         specifier: workspace:*
         version: link:../domain
+      pdf-lib:
+        specifier: 1.17.1
+        version: 1.17.1
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -361,7 +373,14 @@ importers:
         version: 4.1.11(@types/node@22.20.5)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.5)(jiti@2.7.0)(tsx@4.23.15)
 
   packages/tax-xml:
+    dependencies:
+      '@shoebox/domain':
+        specifier: workspace:*
+        version: link:../domain
     devDependencies:
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

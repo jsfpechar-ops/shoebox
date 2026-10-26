@@ -62,7 +62,7 @@ Deferred from LEDG-03 (needs other lanes/phases): `POST /documents/{id}/edit-imp
 | Ticket | Scope | Depends on | Files |
 |---|---|---|---|
 | Phase 3 P3-VAT-01..12 | written: see Phase 3 below | 0311, 0310, 0325 | — |
-| Phase 4 podklady | accountant workbook from both ledgers (`VAT_WORKBOOK`, income-tax summary), ZIP of evidence | 0325, Phase 3 | `apps/worker/src/podklady/*` |
+| Phase 4 podklady | written: see Phase 4 below (0352–0367); the evidence ZIP stays with M10 (lane D's accountant ZIP, 0400s) | 0325, Phase 3 | — |
 
 Open items carried by TODOs in code: D-05 policy default (`issue_date` vs `service_period_end`), `categories.direction` two-valued vs `both`, `deduction_pct` semantics (0311), `validation.tol.sum` rule key for the tax-ledger remainder (0308), SH codes as a rule key, `XI` in `vat.eu_member_states`.
 
@@ -103,3 +103,36 @@ Order and parallelism (merge each into the lane branch before its dependants sta
 4. 0344 alone (Sonnet), then 0345, 0346, 0348, 0350 in parallel (0346 and 0348 both touch `worker/src/vat/service.ts`: 0348 first, then 0346 rebases), then 0351.
 
 Phase 3 facts the briefs fix (report them in the gate): no official XSD in the repo (owner downloads; filings stay `draft`/unvalidated until then, `TODO(decision-xsd)`); derived DPHDP3 attrs 44/46/62–66 `confirmed:false`; Cloudflare is an October entry under `issue_date` (M05 §9 #2 says September); English labels/sheets (rule 6) against M05's Czech; `obligations` rows are written by lane C until M09's generator exists; MFA, preview PDF and all screens are lane D / owner decisions.
+
+## Phase 4 podklady (briefs written, executor Haiku 5.5 unless noted)
+
+Income-tax podklady for OSVČ (M06): yearly summary from `tax_ledger_entries` as PDF + XLSX for every regime, paušální daň check, tax-reserve tile, income-tax obligations, and the partial DPFDP7 XML for flat-rate users behind a flag. Migration 0045 only; 0046–0049 stay free.
+
+| # | Brief | Depends on | Files (owned) |
+|---|---|---|---|
+| 0352 | Rule seeds `income_tax.rates`, `income_tax.credits`, `insurance.rates` | — | `rules/cz/2025.ts`, `cz/2026.ts`, `test/rules-values.test.ts` |
+| 0353 | K-C01 fix (payer basis = net) + `computeAnnualTotals` (**Sonnet 5.5**: money) | — | `ledgers/tax.ts` (edit), `test/tax-ledger.test.ts` (edit), `income-tax/totals.ts`, `test/annual-totals.test.ts` |
+| 0354 | `checkPodkladyReadiness` + `podkladyAnswersSchema` (strict, no RČ) | — | `income-tax/{answers,readiness}.ts`, `test/readiness.test.ts` |
+| 0355 | `computeFlatRateComparison` (caps from rules, floor) | 0354 | `income-tax/flat-rate.ts`, `test/flat-rate.test.ts` |
+| 0356 | `checkPausalniDan` (band, advances, eligibility, 11. 1. 2027) | 0354 | `income-tax/pausalni-dan.ts`, `test/pausalni-dan.test.ts` |
+| 0357 | `listAssets`, `summarizePrivateUse`, `buildVatNote` | — | `income-tax/{assets,private-use,vat-note}.ts`, `test/podklady-lists.test.ts` |
+| 0358 | `computeTaxReserve` + `incomeTaxObligationsFor` | 0352, 0353, 0354 | `income-tax/{reserve,obligations}.ts`, two tests |
+| 0359 | `buildPodkladySummary` + all podklady copy (`en.json`) | 0353–0357 | `income-tax/summary.ts`, `test/podklady-summary.test.ts`, `i18n/messages/en.json` |
+| 0360 | Podklady XLSX (`buildPodkladyXlsx`) | 0359, 0350 | `exports/src/podklady-xlsx.ts`, `test/podklady-xlsx.test.ts` |
+| 0361 | Podklady PDF (`buildPodkladyPdf`, pdf-lib, ≤ 4 pages) | 0359 | `exports/src/podklady-pdf.ts`, `exports/package.json`, `test/podklady-pdf.test.ts` |
+| 0362 | Migration 0045 `tax_reserve_estimates` + RLS + Drizzle + 05 | — | `db/migrations/0045_tax_reserve.sql`, journal, `db/src/schema/reserve.ts`, `rls-catalog.ts`, testkit factory, `db/test/migrations/tax-reserve.db.test.ts`, `docs/v3/05` §7 |
+| 0363 | Podklady db I/O (rows, filing insert, reserve cache) | 0343, 0362 | `db/src/podklady.ts`, `db/test/podklady.db.test.ts` |
+| 0364 | Jobs `podklady.generate`, `podklady.reserve.refresh` (+ nightly), obligations upsert, ledger hook | 0358–0361, 0363, 0343 | `pipeline/src/jobs.ts`, `worker/src/podklady/{generate,reserve,register}.ts`, `worker/src/main.ts`, `worker/src/ledger/handler.ts` (hook), `db/src/filings.ts` (type widen), `worker/test/podklady-job.test.ts` |
+| 0365 | API: preview, generate, download (pdf/xlsx), tax-reserve; lane D view contract | 0359, 0363, 0364, 0345 | `web/src/podklady/{view,preview,load,generate}.ts`, `web/src/documents/enqueue.ts`, `web/src/vat/filings.ts` (edit), `web/app/api/v1/podklady/**`, `web/app/api/v1/dashboard/tax-reserve/route.ts`, `web/test/podklady-api.test.ts` |
+| 0366 | `serializeDpfdp7Partial`, `validateRodneCislo`, DPFDP7 form rules + manifest (XSD not vendored) | 0336, 0355 | `tax-xml/src/{xml,forms}.ts` (edit), `tax-xml/src/dpfdp7-partial.ts`, `xsd/DPFDP7/manifest.json`, `rules/cz/vat-phase3.ts`, golden XML |
+| 0367 | `POST /podklady/{year}/dpfdp7-partial` (owner only, RČ never stored) | 0365, 0366 | `web/src/podklady/dpfdp7.ts`, `web/app/api/v1/podklady/[year]/dpfdp7-partial/route.ts`, `web/test/dpfdp7-route.test.ts` |
+
+Order and parallelism (merge each into the lane branch before its dependants start):
+
+1. 0352, 0353 (Sonnet), 0354, 0357, 0362 in parallel (disjoint; 0353/0354/0357 each append lines to `domain/src/index.ts`: keep all).
+2. 0355, 0356, 0358, 0363 in parallel (0358 needs 0352 + 0353 + 0354; 0363 needs 0362 and Phase 3's 0343).
+3. 0359 alone (composes 0353–0357, owns `en.json` keys); 0366 in parallel with it (needs 0336 + 0355).
+4. 0360, 0361 in parallel (both edit `exports/src/index.ts`: keep both lines).
+5. 0364 alone, then 0365, then 0367.
+
+Phase 4 facts the briefs fix (report them in the gate): ČSSZ/ZP přehledy are out of M06 scope (checklist item only; the reserve tile gives the social/health estimate); M06 §9 S4 `baseActual 141 540,19` vs the whole-Kč formula (141 540: the formula wins, haléře stay in the XLSX) and the MacBook at 100 % in S4 vs 80 % in M04 AC-9i (fixture booked at 100 %); English PDF/XLSX/copy against M06's Czech (rule 6); `pausalni_dan_notice` (backlog) is `pausalni_dan_entry/exit` (04 §9.2); no `notifications` table yet, so "changed after hand-off" is computed live by the preview; PDF via pdf-lib (already in `packages/extraction`), Helvetica + transliteration until a Unicode font is chosen; the DPFDP7 XSD is not in the repo (flag off, `tax_years: []`), every attribute name `[verify]` (T-03); answers travel as a `draft` PODKLADY_DPFO filing, never in a job payload; K-C01 is closed by 0353 (payer basis = net, `LEDGER_ALGO_VERSION` 2). Screens (P4-POD-07) are lane D's against the 0365 contract.

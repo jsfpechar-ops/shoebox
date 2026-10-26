@@ -1,0 +1,10 @@
+{
+  "form": "DPHSHV",
+  "version": "02.01.05",
+  "verze_pis": "02.01",
+  "main": "dphshv_epo2.xsd",
+  "source_url": "https://adisspr.mfcr.cz/adis/jepo/schema/dphshv_epo2.xsd",
+  "sha256": null,
+  "fetched_at": null,
+  "valid_for_periods_from": "2026-01-01"
+}

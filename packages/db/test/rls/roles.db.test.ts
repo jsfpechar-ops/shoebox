@@ -5,6 +5,7 @@ import {
   NO_USER_INSERT,
   OWNER_ONLY_TABLES,
   READ_ONLY_FOR_USERS,
+  USER_UPDATE_ONLY,
 } from '../../src/rls-catalog';
 import {
   asUser,
@@ -159,21 +160,38 @@ describe.skipIf(DATABASE_URL === undefined)(
     it('owner and member insert, update and delete exactly where the role matrix allows', async () => {
       for (const table of tenants.tables) {
         for (const role of ['owner', 'member'] as const) {
-          const allowed = mayWrite(table, role);
+          // USER_UPDATE_ONLY tables: users update (owner, member) but insert and delete nothing.
+          const updateOnly = USER_UPDATE_ONLY.includes(table);
+          const allowed = mayWrite(table, role) && !updateOnly;
+          const mayUpdate = mayWrite(table, role);
           const row = await buildRow(sql, table, tenants.ctx.A);
           if (!NO_USER_INSERT.includes(table)) {
             const code = await errorCodeAs(sql, USERS.A[role], (tx) => insertRow(tx, table, row));
             expect(code, `${table}: insert as ${role}`).toBe(allowed ? null : '42501');
           }
-          const counts = await asUser(sql, USERS.A[role], async (tx) => ({
-            updated: await updateCount(tx, table, ORG_A),
-            deleted: await deleteCount(tx, table, ORG_A),
-          }));
-          if (allowed) {
+          const counts = await asUser(sql, USERS.A[role], async (tx) => {
+            if (table === 'documents') {
+              // A filed return keeps its evidence: filing rows reference documents without cascade
+              // (05 §8). Clear them as the service role inside this rolled-back transaction.
+              await tx`reset role`;
+              await tx`delete from filing_entries where org_id = ${ORG_A}`;
+              await tx`delete from filing_documents where org_id = ${ORG_A}`;
+              await tx`set local role authenticated`;
+            }
+            return {
+              updated: await updateCount(tx, table, ORG_A),
+              deleted: await deleteCount(tx, table, ORG_A),
+            };
+          });
+          if (mayUpdate) {
             expect(counts.updated, `${table}: update as ${role}`).toBeGreaterThanOrEqual(1);
+          } else {
+            expect(counts.updated, `${table}: update as ${role}`).toBe(0);
+          }
+          if (allowed) {
             expect(counts.deleted, `${table}: delete as ${role}`).toBeGreaterThanOrEqual(1);
           } else {
-            expect(counts, `${table} as ${role}`).toEqual({ updated: 0, deleted: 0 });
+            expect(counts.deleted, `${table}: delete as ${role}`).toBe(0);
           }
         }
       }

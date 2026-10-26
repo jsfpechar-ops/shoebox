@@ -13,6 +13,7 @@ import {
   TAX_PROCEDURE_ACT,
 } from './deadlines';
 import { CZ_DPHDP3_ROW_MAP, CZ_KH_ROUTING } from './epo';
+import { CZ_EPO_FORMS, CZ_SIMPLE_PERIOD_POLICY } from './vat-phase3';
 
 const VALID_FROM = '2026-01-01';
 const VERIFIED_AT = '2026-10-18';
@@ -31,6 +32,9 @@ const KH_METHODOLOGY =
 /** EPO: published structure of the DPHDP3 form (přiznání k DPH), rows and XML attributes. [verify] */
 const DPHDP3_STRUCTURE =
   'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_detail.faces?zkratka=DPHDP3';
+/** EPO: published list of the XML structures (DPHDP3, DPHKH1, DPHSHV). [verify] */
+const EPO_STRUCTURES =
+  'https://adisspr.mfcr.cz/dpr/adis/idpr_pub/epo2_info/popis_struktury_seznam.faces';
 /** ČSSZ: minimum advances for 2026 (5 720 Kč paid until June, 5 005 Kč from July; zákon č. 90/2026 Sb.). */
 const CSSZ_2026 = 'https://www.cssz.gov.cz/zmena-vyse-minimalnich-zaloh-osvc-v-roce-2024';
 
@@ -137,6 +141,19 @@ export const RULES_CZ_2026: readonly RuleEntryInput[] = [
   // KH sections per treatment (research/czech-tax-filings.md §1.3.1); the 10 000 Kč split is
   // `vat.kh_document_limit`.
   { ...base('epo.kh_routing', KH_METHODOLOGY, CZ_KH_ROUTING), verified_at: '2026-10-26' },
+  // M05 §4.3 simple-period policy (version 2026.1), §4.4 rounding (D-11 default), §4.5 SH rounding,
+  // §4.11 amendment windows (TA-10 defaults), §4.8 EPO form versions (CTF §1.1, dated 11. 8. 2026).
+  {
+    ...base('vat.simple_period_policy', `${ZDPH}#p101`, CZ_SIMPLE_PERIOD_POLICY),
+    verified_at: '2026-10-26',
+  },
+  base('vat.return_rounding', `${ZDPH}#p37`, 'sum_entries_then_round'),
+  base('vat.shv_rounding', `${ZDPH}#p102`, 'ceil'),
+  base('vat.amendment_windows', `${ZDPH}#p141`, {
+    dp3_dodatecne_due: 'end_of_month_after_discovery',
+    kh_nasledne_working_days: 5,
+  }),
+  { ...base('epo.forms', EPO_STRUCTURES, CZ_EPO_FORMS), verified_at: '2026-10-26' },
   // ZDP § 7 odst. 7: flat-rate expense percentages and their caps (income cap 2 000 000 Kč).
   base('pausalni_vydaje.rates_caps', `${ZDP}#p7`, {
     '80': 1_600_000,
@@ -182,6 +199,18 @@ export const RULES_CZ_2026: readonly RuleEntryInput[] = [
   // retroactive to 2026-01-01; ČSSZ collects 5 720 Kč until June and offsets). Health: VZP, minimum
   // base 24 483,50 Kč → 3 306 Kč (https://www.vzp.cz/platci/informace/osvc/osvc-minimalni-vyse-zaloh).
   base('insurance.min_advances', CSSZ_2026, { social: 5_005, health: 3_306 }),
+  // ZDP § 16 odst. 1: 15 % up to 36 × the average wage (48 967 Kč), 23 % above. [verify-failed] rulecalc.com cites 47 544 Kč (nař. 365/2025 Sb.); other sources and the brief say 48 967 Kč.
+  base('income_tax.rates', `${ZDP}#p16`, { r1: 15, r2: 23, threshold_annual: 1_762_812 }),
+  // ZDP § 35ba odst. 1 písm. a): basic credit for the taxpayer, 30 840 Kč.
+  base('income_tax.credits', `${ZDP}#p35ba`, { taxpayer: 30_840 }),
+  // Social: zákon č. 589/1992 Sb. § 7 odst. 1 písm. e) bod 1 (29,2 %), § 5b odst. 1 (base 55 % from 2024).
+  // Health: zákon č. 592/1992 Sb. § 2 odst. 1 (13,5 %), § 3a odst. 1 (base 50 %). Source shown: social.
+  base('insurance.rates', 'https://www.zakonyprolidi.cz/cs/1992-589#p5b', {
+    social_pct: 29.2,
+    social_base_pct: 55,
+    health_pct: 13.5,
+    health_base_pct: 50,
+  }),
   // ZDP § 26 odst. 2 písm. a): tangible movable assets with an entry price above 80 000 Kč (since 2021).
   base('asset.capitalization_threshold', `${ZDP}#p26`, 80_000),
   // Zákon č. 254/2004 Sb. § 4 odst. 1: payments above 270 000 Kč per day and counterparty are cashless,

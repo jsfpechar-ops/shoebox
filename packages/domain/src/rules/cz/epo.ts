@@ -217,6 +217,22 @@ export const CZ_DPHDP3_ROW_MAP: Dphdp3RowMap = [
   },
 ];
 
+/** Derived DPHDP3 rows (M05 §4.4 step 4, §4.6): attrs [base, tax] or [value]; `confirmed:false` until checked against the XSD (T-02). */
+export const CZ_DPHDP3_DERIVED_ROWS: readonly {
+  row: string;
+  attrs: readonly string[];
+  confirmed: boolean;
+}[] = [
+  { row: '43', attrs: ['nar_zdp23', 'od_zdp23'], confirmed: true },
+  { row: '44', attrs: ['nar_zdp5', 'od_zdp5'], confirmed: false },
+  { row: '46', attrs: ['odp_sum_nar'], confirmed: false },
+  { row: '62', attrs: ['dan_zocelk'], confirmed: false },
+  { row: '63', attrs: ['odp_zocelk'], confirmed: false },
+  { row: '64', attrs: ['dano_da'], confirmed: false },
+  { row: '65', attrs: ['dano_no'], confirmed: false },
+  { row: '66', attrs: ['dano'], confirmed: false },
+];
+
 export function parseDphdp3RowMap(value: unknown): Dphdp3RowMap {
   return Dphdp3RowMapSchema.parse(value);
 }

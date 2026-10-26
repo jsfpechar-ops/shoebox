@@ -6,8 +6,11 @@ import { registerDocExtract } from './doc-extract/register';
 import { registerDocSplit } from './doc-split/register';
 import { registerEmailReceived } from './email-received/register';
 import { registerImportRun } from './import-run/register';
+import { registerDriftMonitors } from './jobs/ops/drift-monitors';
 import { registerLedgerJobs } from './ledger/register';
+import { registerPodkladyJobs } from './podklady/register';
 import { registerTrashPurge } from './retention/trash-purge';
+import { registerVatJobs } from './vat/register';
 import { loadWorkerConfig, startWorker } from './worker';
 
 const worker = await startWorker(loadWorkerConfig(process.env), {
@@ -20,7 +23,10 @@ const worker = await startWorker(loadWorkerConfig(process.env), {
     registerDocSplit(registry, process.env, logger);
     registerImportRun(registry, process.env, logger);
     registerTrashPurge(registry, db, process.env, logger);
+    registerDriftMonitors(registry, process.env, logger);
     registerLedgerJobs(registry, db, logger);
+    registerPodkladyJobs(registry, db, process.env, logger);
+    registerVatJobs(registry, process.env, logger);
   },
 });
 

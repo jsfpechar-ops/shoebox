@@ -14,6 +14,7 @@ import {
   ORG_COLUMN,
   orgColumnOf,
   READ_ONLY_FOR_USERS,
+  USER_UPDATE_ONLY,
 } from '../../src/rls-catalog';
 
 /**
@@ -210,10 +211,16 @@ export function auditCatalog(
     }
     for (const privilege of PRIVILEGES.slice(1)) {
       const covered = userPolicyCovers(info.policies, privilege);
-      if (READ_ONLY_FOR_USERS.includes(table) && covered) {
-        add(`is in READ_ONLY_FOR_USERS but a user policy allows ${privilege}`);
+      const updateOnly = USER_UPDATE_ONLY.includes(table);
+      const mayUse = updateOnly ? privilege === 'UPDATE' : !READ_ONLY_FOR_USERS.includes(table);
+      if (!mayUse && covered) {
+        add(
+          updateOnly
+            ? `is in USER_UPDATE_ONLY but a user policy allows ${privilege}`
+            : `is in READ_ONLY_FOR_USERS but a user policy allows ${privilege}`,
+        );
       }
-      if (!READ_ONLY_FOR_USERS.includes(table) && !covered) {
+      if (mayUse && !covered) {
         add(`no user policy allows ${privilege} (add it or list the table in READ_ONLY_FOR_USERS)`);
       }
     }
