@@ -1,0 +1,15 @@
+/** M07 §4.6: matcher configuration (product, not law). `version` is stored on every link and suggestion. */
+export const MATCHER_CONFIG = {
+  version: 1,
+  autoThreshold: 0.9, suggestThreshold: 0.6, minMargin: 0.1,
+  roundingToleranceCzk: '1.00', bankFxTolerancePct: '2', cardFxTolerancePct: '3',
+  weights: { bias: -4.0, amountExact: 3.0, amountRounding: 2.5, amountFxMax: 1.5, amountPartial: 1.0,
+             vsExact: 4.0, vsConflict: -3.0, msgDocNumber: 3.0, accountMatch: 2.5, accountOtherPartner: -3.0,
+             nameMax: 3.0, dateMax: 1.5, dateOutside: -1.0, alias: 1.0, unique: 1.0 },
+  windows: { transfer: { before: 3, after: 45, plateauAfterDue: 5, defaultDueDays: 30 },
+             card: { before: 3, after: 7, plateau: 1 }, payout: { before: 5, after: 5 },
+             filing: { before: 0, after: 30 } },
+  subsetSum: { maxDocs: 20, maxSubsetSize: 6 },
+  cardEvidenceWaitDays: 10, radarGraceDays: 7 /* = 'radar.grace_days' read by M09 */, sweepLookbackDays: 400,
+} as const;
+export type MatcherConfig = typeof MATCHER_CONFIG;
