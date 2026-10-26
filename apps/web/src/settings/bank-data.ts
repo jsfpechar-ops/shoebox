@@ -33,7 +33,7 @@ export interface TxRow {
 export interface BankView {
   readonly accounts: readonly {
     id: string;
-    /** '2400123455/2010', else the IBAN, else the name. */
+    /** '<account>/<bank code>', else the IBAN, else the name. */
     label: string;
     lastImport: { from: LegalDate | null; to: LegalDate | null; added: number } | null;
   }[];
