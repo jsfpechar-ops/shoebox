@@ -46,6 +46,8 @@ export const JOB_NAMES = [
   'notifications.evaluate',
   'notifications.digest',
   'notifications.urgent',
+  // Bank jobs (M07)
+  'bank.import.statement',
 ] as const;
 
 /** Families that 03 §3.1 owns as `<family>.*` (M07, M10, M12); members are named by the module. */
@@ -238,6 +240,14 @@ export const emailReceivedJob = defineTenantJob({
   payload: tenantPayload({ inboundEmailId: z.uuid() }),
   version: 1,
   entityId: (payload) => payload.inboundEmailId,
+});
+
+/** M07 §6.2: import one uploaded bank statement file. Enqueued by the statement upload action. */
+export const bankImportStatementJob = defineTenantJob({
+  name: 'bank.import.statement',
+  payload: tenantPayload({ sourceFileId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.sourceFileId,
 });
 
 /** M02: read one document (Haiku 5.5), then run the checks. Enqueued by the upload API. */

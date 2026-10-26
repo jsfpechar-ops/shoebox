@@ -7,7 +7,7 @@ Updated: 2026-10-26.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
 - Lane D screens done (0400–0411, PRs #12–#19): Sysel name + app icon, register + Excel, trash, add by hand, review questions, accountant ZIP, settings, PDF click-to-fill, audit_log on fixes, nightly encrypted backup (owner adds 4 secrets). Not yet seen in a browser with real data.
-- Lane A intake (2026-10-26): duplicate detection + page notice (0100–0101), browser photo prep incl. HEIC (0102); e-mail inbox code 0103–0106 (Cloudflare worker → signed webhook → `email.received` → `doc.split`); goes live after the steps in `deploy/inbound-email.md` (domain).
+- Lane A intake (2026-10-26): duplicates, photos, e-mail inbox (0100–0106, live after `deploy/inbound-email.md`). Bank import 0107–0114: GPC/CAMT.053/MT940 parsers, money tables 0020, `bank.import.statement`, statements dropped in the Inbox upload, Settings bank card. Matching briefs 0115+ next.
 - Lane C wave 1 (0301–0314, #20): categories, VAT treatment, tax and VAT ledgers (pure), tables 0040–0041; wave 2 wires them in.
 
 - Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.

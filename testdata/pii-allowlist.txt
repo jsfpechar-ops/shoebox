@@ -1,5 +1,5 @@
 # Czech PII guard allowlist (scripts/pii_guard.py). One value per line: value;reason;source
-# Accepted only under testdata/, packages/*/test/, packages/*/fixtures/, docs/ and .gitleaks.toml. Never a real person.
+# Accepted only under testdata/, packages/*/test/, apps/*/test/, packages/*/fixtures/, docs/ and .gitleaks.toml. Never a real person.
 7801011229;synthetic test RC for the DPFDP7 partial XML tests;docs/v3/modules/M06 section 9 item 5
 27074358;ICO mod-11 test vector (company id, public);docs/v3/modules/M03 section 4.2 icoValid
 CZ6508000000192000145399;public sample IBAN (bank documentation example), used in logger redaction tests;packages/platform/test/logger.test.ts, decisions 2026-10-18 [privacy]
@@ -15,3 +15,7 @@ DE89370400440532013000;public sample IBAN (DE documentation example);packages/va
 CZ7103192745;synthetic natural-person DIČ (mod 11 test vector);packages/validation/test/ids.test.ts
 CZ510101123;synthetic 9-digit DIČ shape test vector;packages/validation/test/ids.test.ts
 19-2000145398/0800;synthetic invalid account test vector;packages/extraction/test/text-identifiers.test.ts
+2400123455/2010;synthetic own account (mod-11 valid, made up), bank statement parser tests;packages/bank/test, apps/*/test, briefs 0107-0114
+CZ8720100000002400123455;IBAN of the synthetic own account 2400123455/2010;packages/bank/test, apps/*/test
+1003-1234567899/0800;synthetic counterparty account (mod-11 valid, made up), bank statement parser tests;packages/bank/test
+CZ4608000010031234567899;IBAN of the synthetic counterparty 1003-1234567899/0800;packages/bank/test

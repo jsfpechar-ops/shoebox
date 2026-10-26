@@ -19,6 +19,7 @@
     "e2e": "playwright test --config ../../playwright.config.ts"
   },
   "dependencies": {
+    "@shoebox/bank": "workspace:*",
     "@shoebox/db": "workspace:*",
     "@shoebox/domain": "workspace:*",
     "@shoebox/exports": "workspace:*",
