@@ -1025,6 +1025,14 @@ Acceptance:
 - [ ] A recipient guard refuses addresses outside org members, invited accountants and share recipients the user typed (no mail to suppliers, AGENTS rule 8).
 Packages/files: packages/platform/src/mailer.ts, packages/platform/src/mailer-ses.ts, docs/runbooks/secret-rotation.md
 
+### P1-TRUST-01: Home-screen manifest and audit log for manual fixes
+Spec: M01 §4.1.1 Web upload and camera (PWA) · M11 §13.1 Server actions (write `audit_log`) · 02 Phase 1 item 11 | Depends on: core loop (0045–0053) | Size: S | Executor: Haiku 5.5 | Risk: normal
+Goal: the core loop already built lacks both: add `manifest.webmanifest` (name, icons, "Vyfotit doklad" shortcut) and make "Fix a value" write one `audit_log` row (field, old value, new value, user, time). No document content beyond the field key in logs.
+Acceptance:
+- [ ] `apps/web/e2e/manifest.spec.ts`: the manifest is served and linked; axe 0.
+- [ ] A test on the fix-a-value action: one `audit_log` row per changed field with old and new value; RLS keeps it in the org.
+Packages/files: apps/web/app/manifest.ts, apps/web/src/documents/
+
 ### P1-GATE-01: Phase 1 gate
 Spec: 02 Phase 1 (Exit criteria) · M12 §4.10 Evaluation harness (Metrics and CI gates) · M01 §9.1 AC-1–AC-5 · M09 §9 AC-1, AC-2, AC-4, AC-5 · 07 §8 Accessibility | Depends on: every P1 ticket, P0-EVAL-03 | Size: S | Executor: Haiku 5.5 | Risk: normal
 Goal: prove the scanner and organizer on the golden set and staging; the owner confirms in the PR.
@@ -1208,6 +1216,23 @@ Acceptance:
 - [ ] `packages/bank/test/pre-payment.test.ts` with fake CRPDPH: unreliable → blocking for `platce`, warning for `neplatce`; unpublished account above `vat.ruceni_cash_threshold` → blocking; outage → warning only (A15); blocking hides the QR until "Rozumím…" (audited).
 - [ ] ABO writer validated against the table-driven layout for 3 fixtures; flag stays off until the owner's bank-import checklist (A14) is done.
 Packages/files: packages/bank/src/pay/, apps/web/app/(app)/doklad/[id]/pay/
+
+### P2-PAY-02: SEPA XML payment file for EUR
+Spec: M07 §4.9.4 SEPA XML batch export · M07 §4.9.1 Pre-payment checks · 05 §6 `payment_orders` | Depends on: P2-PAY-01 | Size: S | Executor: Haiku 5.5 | Risk: HIGH (money)
+Goal: a `pain.001` file for selected unpaid EUR documents, same checks and exclusions as ABO. Nothing initiates a payment.
+Acceptance:
+- [ ] `packages/bank/test/sepa.test.ts`: 3 fixtures produce XML that validates against the `pain.001.001.03` XSD; amounts from `Money`; IBAN mod-97 and missing-IBAN items are excluded with the right error code; CZK items are refused.
+- [ ] `[verify]` result recorded: which of Fio, ČS, ČSOB, KB accept the file (and whether any accept CZK in it).
+Packages/files: packages/bank/src/pay/sepa/
+
+### P2-CLOSE-01: Close the month (database lock)
+Spec: M04 §4.16 Closed months · 05 §8 `period_closes` · M10 §4.1 late arrivals | Depends on: P2-PKG-01 | Size: M | Executor: Haiku 5.5 | Risk: HIGH (migration, RLS)
+Goal: "Uzavřít měsíc" writes `period_closes`; a trigger refuses changes to documents of a closed month; `reopen_period(period_start, reason)` reopens with an audit row.
+Acceptance:
+- [ ] Migration + RLS test `packages/db/test/rls/period-closes.db.test.ts` (cross-tenant isolation, member cannot reopen).
+- [ ] `packages/db/test/migrations/period-close.db.test.ts`: update/delete of a document, line, VAT summary or field in a closed month raises `period_closed`, also from the worker role; moving a document into a closed month raises; after reopen the update passes and `audit_log` holds the reason.
+- [ ] A new document dated in a closed month lands `needs_review` with the closed-month question.
+Packages/files: packages/db/migrations/, apps/web/app/(app)/pro-ucetni/
 
 ### Epic PKG: accountant package
 
@@ -1519,7 +1544,8 @@ graph LR
 ## Later (no tickets yet)
 
 - Issued invoicing (M08)
-- Fio / MONETA token sync (`features.bank_fio_api`, after L-01) and a PSD2 aggregator
+- Fio / MONETA token sync (`features.bank_fio_api`, after L-01; not ordered yet, owner 2026-10-26). No PSD2 aggregator (too expensive, owner 2026-10-26)
+- ABRA Flexi export, only if a pilot accountant uses it
 - REST API + webhooks + MCP server, personal access tokens, OAuth
 - PWA offline capture and share target
 - Accountant multi-client portal

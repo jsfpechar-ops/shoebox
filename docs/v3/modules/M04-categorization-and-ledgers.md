@@ -368,6 +368,15 @@ M04's job writes the VAT ledger; the routing is M05's pure `buildVatLedgerEntrie
 
 `classifyTransaction(tx)` (pure) proposes `transactions.category_code` for movements that need no document (`match_state='no_document_needed'`): own-account transfers (counterparty account ∈ org money accounts) → `transfer_own_accounts`; authority accounts (rule `bank.authority_accounts`, M07: FÚ VAT prefix 705 + VS = DIČ [verify T-14], ČSSZ/OSSZ, health insurers, paušální daň account) → `tax_vat_payment | tax_income_payment | tax_pausal_advance | ins_social_own | ins_health_own`; municipality tourist-fee account (`municipal.tourist_fee.<city>.account` [verify]) → `pt_tourist_fee`; bank fee lines → `exp_bank_fees`. `ledger.rebuild_transaction` creates one entry with `document_id null`, `transaction_id`, signed amount (`−` for remitted pass-through), `basis='payment'`.
 
+### 4.16 Closed months (Phase 2, owner 2026-10-26)
+
+The user closes a month ("Uzavřít měsíc") once it is handed to the accountant or filed. Closing writes a `period_closes` row (05 §8) and an `audit_log` row.
+- **Which documents a month holds:** a document belongs to the month of its key date, the same key date M10 uses for the package (`vat_point_date` for payers and identified persons, else DUZP, else issue date).
+- **Database lock:** a trigger on `documents`, `document_lines`, `document_vat_summary` and `document_fields` raises `period_closed` on insert, update or delete when the row's document belongs to a closed month, or when an update would move it into one. The check is in the database so no code path (server action, worker, import) can skip it. Rebuilt ledgers (§4.13) are derived and not locked.
+- **Late arrivals:** a new document whose key date falls in a closed month is still accepted; it lands with status `needs_review` and question "Doklad patří do uzavřeného měsíce" with two answers: "Otevřít měsíc" or "Zaúčtovat do dalšího otevřeného měsíce" (M10 late arrivals still list it).
+- **Reopen:** `public.reopen_period(period_start, reason)` (owner only, reason required) sets `reopened_at/by/reason` and writes `audit_log`. Closing again makes a new row. The accountant package for that month gets a new version on the next generation (M10).
+- Filed-period protection (§4.14, M03 `PERIOD_LOCKED`) stays as it is; a closed month is a stronger, user-chosen lock on top.
+
 ## 5. Data
 
 ### 5.1 Read / written
