@@ -9,7 +9,6 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-18 [workflow] Orchestrator + executor model: orchestrator writes briefs, Haiku 5.5 executes; Sonnet 5.5 only for the three reasons in workflow; 60k checkpoint, 100k hard stop, 30 tool calls. (owner)
 - 2026-10-18 [workflow] New-file briefs carry the full test file; the executor implements until it passes and may not edit it. Reason: greenfield code has no anchors. (orchestrator)
 - 2026-10-18 [scope] Manual entry ("Přidat ručně") and substitute documents (náhradní doklad) are always available; spreadsheet import in Phase 2. Reason: replace the Excel list small OSVČ keep today. (owner)
-- 2026-10-18 [design] UI style Minimalism/Swiss + Accessible & Ethical, Inter, tokens in 07-design-system. Source: ui-ux-pro-max skill. (owner asked, orchestrator chose)
 - 2026-10-18 [schema] Document status `rejected` renamed to `supporting` (kept, linked, never booked). (orchestrator)
 - 2026-10-18 [schema] All module "proposed schema changes" merged into 05 as one canonical, final-form DDL (validated on PostgreSQL 16); Later tables (global priors, batch API, Fio connections, support grants) kept in 05 §9.1 but not migrated. Modules point to 05. (orchestrator)
 - 2026-10-18 [rules] One rule-key list in 06 §2; duplicates removed. (orchestrator)
@@ -44,3 +43,4 @@ Format: `- YYYY-MM-DD [area] decision. Reason. (who)`
 - 2026-10-25 [onboarding] `/vitejte`: IČO, ARES fills the rest, ≤ 3 chip steps (0060–0064). (owner)
 - 2026-10-25 [test-env] Supabase + one free Render service (web+worker, `deploy/render-test.yaml`); `tsx`; auto sign-in, no login (0055). (owner)
 - 2026-10-26 [ingest] Page sorting (stack.sort + document_pages, pdf-lib) replaces doc.split; briefs 0500-0509. (owner)
+- 2026-10-26 [scope] Phase 1: home-screen manifest + audit log of manual fixes. No SEPA file, month lock or PSD2 aggregator; Fio stays Later. (owner)
