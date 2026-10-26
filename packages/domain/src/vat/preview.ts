@@ -74,7 +74,10 @@ function compareText(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-function documentNumberOf(meta: ReadonlyMap<string, PreviewDocumentMeta>, documentId: string): string {
+function documentNumberOf(
+  meta: ReadonlyMap<string, PreviewDocumentMeta>,
+  documentId: string,
+): string {
   return meta.get(documentId)?.documentNumber ?? '';
 }
 
@@ -90,7 +93,10 @@ function sortEntries(
   );
 }
 
-function toEntry(e: VatLedgerEntryDraft, meta: ReadonlyMap<string, PreviewDocumentMeta>): PreviewEntry {
+function toEntry(
+  e: VatLedgerEntryDraft,
+  meta: ReadonlyMap<string, PreviewDocumentMeta>,
+): PreviewEntry {
   const m = meta.get(e.documentId);
   return {
     documentId: e.documentId,
@@ -148,7 +154,11 @@ function buildKhSections(
           evidenceNumber: r.cEvidDd,
           dppd: r.dppd,
           ...khAmounts(r),
-          entries: entriesFor(entries, meta, (e) => e.khSection === 'A2' && e.documentId === r.documentId),
+          entries: entriesFor(
+            entries,
+            meta,
+            (e) => e.khSection === 'A2' && e.documentId === r.documentId,
+          ),
         });
       }
     } else if (section === 'A4') {
@@ -159,7 +169,11 @@ function buildKhSections(
           evidenceNumber: r.cEvidDd,
           dppd: r.dppd,
           ...khAmounts(r),
-          entries: entriesFor(entries, meta, (e) => e.khSection === 'A4' && e.documentId === r.documentId),
+          entries: entriesFor(
+            entries,
+            meta,
+            (e) => e.khSection === 'A4' && e.documentId === r.documentId,
+          ),
         });
       }
     } else if (section === 'B2') {
@@ -170,7 +184,11 @@ function buildKhSections(
           evidenceNumber: r.cEvidDd,
           dppd: r.dppd,
           ...khAmounts(r),
-          entries: entriesFor(entries, meta, (e) => e.khSection === 'B2' && e.documentId === r.documentId),
+          entries: entriesFor(
+            entries,
+            meta,
+            (e) => e.khSection === 'B2' && e.documentId === r.documentId,
+          ),
         });
       }
     } else {
@@ -183,7 +201,11 @@ function buildKhSections(
           evidenceNumber: null,
           dppd: null,
           ...khAmounts(agg),
-          entries: entriesFor(entries, meta, (e) => e.khSection === section && ids.has(e.documentId)),
+          entries: entriesFor(
+            entries,
+            meta,
+            (e) => e.khSection === section && ids.has(e.documentId),
+          ),
         });
       }
     }
@@ -223,7 +245,9 @@ export function buildPeriodPreview(
   kh: KhComputation | null,
   shv: ShvComputation | null,
 ): PeriodPreview {
-  const rowKeys = Object.keys(dp3.rows).sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
+  const rowKeys = Object.keys(dp3.rows).sort(
+    (a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10),
+  );
   const rows: PreviewRow[] = [];
   for (const row of rowKeys) {
     const rounded = dp3.rows[row];
