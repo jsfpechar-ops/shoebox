@@ -32,8 +32,8 @@ export interface DocView {
   readonly amountDue: Money;
   /** amountDue − Σ links (M07 §4.6.2), document currency. */
   readonly openAmount: Money;
-  readonly documentNumber?: string;
-  readonly variableSymbol?: string;
+  readonly documentNumber?: string | undefined;
+  readonly variableSymbol?: string | undefined;
   readonly issueDate?: LegalDate;
   readonly dueDate?: LegalDate;
   readonly servicePeriodTo?: LegalDate;

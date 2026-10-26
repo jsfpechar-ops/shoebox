@@ -135,7 +135,7 @@ describe('scoreBatch', () => {
   it('adds uniqueness when one transaction and one document match on amount', () => {
     const [s] = scoreBatch([cand(tx(), doc(plain))], base);
     expect(s?.score).toBe(0.818);
-    expect(codes(s)).toEqual(['amount_exact', 'date', 'unique']);
+    expect(codes(s!)).toEqual(['amount_exact', 'date', 'unique']);
   });
   it('no uniqueness with two documents of the same amount', () => {
     const t = tx();

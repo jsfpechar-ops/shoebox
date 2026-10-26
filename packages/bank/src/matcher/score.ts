@@ -1,9 +1,17 @@
-import { MATCHER_CONFIG, type MatcherConfig } from './config';
+import type { MatchMethod } from '@shoebox/domain';
 import { compareAmount } from './amount';
+import { MATCHER_CONFIG, type MatcherConfig } from './config';
 import { dateFactor, windowKindOf } from './dates';
 import { docKeys, messageHasDocKey, normMerchant, normName, tokenSetRatio } from './text';
-import type { Candidate, CandidateScore, DocView, Feature, FeatureCode, MatchContext, TxView } from './types';
-import type { MatchMethod } from '@shoebox/domain';
+import type {
+  Candidate,
+  CandidateScore,
+  DocView,
+  Feature,
+  FeatureCode,
+  MatchContext,
+  TxView,
+} from './types';
 
 /** Logistic function. */
 export function sigmoid(x: number): number {
@@ -18,7 +26,9 @@ function scoreOf(logit: number, capped: boolean): number {
 }
 
 function txAccountOf(t: TxView): string | undefined {
-  return t.counterpartyAccount && t.counterpartyBankCode ? `${t.counterpartyAccount}/${t.counterpartyBankCode}` : undefined;
+  return t.counterpartyAccount && t.counterpartyBankCode
+    ? `${t.counterpartyAccount}/${t.counterpartyBankCode}`
+    : undefined;
 }
 
 function srcOf(t: TxView): string {
@@ -28,7 +38,8 @@ function srcOf(t: TxView): string {
 function nameSimilarity(src: string, d: DocView, ctx: MatchContext): number {
   if (src === '') return 0;
   let best = 0;
-  if (d.partnerName !== undefined) best = Math.max(best, tokenSetRatio(src, normName(d.partnerName)));
+  if (d.partnerName !== undefined)
+    best = Math.max(best, tokenSetRatio(src, normName(d.partnerName)));
   if (d.partnerId !== undefined) {
     for (const a of ctx.aliases) {
       if ((a.kind === 'merchant' || a.kind === 'name') && a.partnerId === d.partnerId) {
@@ -40,7 +51,11 @@ function nameSimilarity(src: string, d: DocView, ctx: MatchContext): number {
 }
 
 /** M07 §4.6.3: score one candidate pair. Returns null when the pair is dropped. */
-export function scoreCandidate(c: Candidate, ctx: MatchContext, cfg: MatcherConfig = MATCHER_CONFIG): CandidateScore | null {
+export function scoreCandidate(
+  c: Candidate,
+  ctx: MatchContext,
+  cfg: MatcherConfig = MATCHER_CONFIG,
+): CandidateScore | null {
   const { t, d } = c;
   const w = cfg.weights;
   const vsExact = t.vs !== undefined && docKeys(d).includes(t.vs);
@@ -82,13 +97,17 @@ export function scoreCandidate(c: Candidate, ctx: MatchContext, cfg: MatcherConf
 
   if (!vsExact && messageHasDocKey(t.message, d)) push('msg_doc_number', w.msgDocNumber);
 
-  const txKeys = [txAccountOf(t), t.counterpartyIban?.toUpperCase()].filter((v): v is string => v !== undefined);
+  const txKeys = [txAccountOf(t), t.counterpartyIban?.toUpperCase()].filter(
+    (v): v is string => v !== undefined,
+  );
   const accountMatch = txKeys.some(
     (v) =>
       d.partnerAccounts.includes(v) ||
       (d.partnerId !== undefined &&
         (ctx.knownAccounts.some((k) => k.value === v && k.partnerId === d.partnerId) ||
-          ctx.aliases.some((a) => a.kind === 'account' && a.value === v && a.partnerId === d.partnerId))),
+          ctx.aliases.some(
+            (a) => a.kind === 'account' && a.value === v && a.partnerId === d.partnerId,
+          ))),
   );
   if (accountMatch) {
     push('account_match', w.accountMatch);
@@ -96,7 +115,9 @@ export function scoreCandidate(c: Candidate, ctx: MatchContext, cfg: MatcherConf
     txKeys.some(
       (v) =>
         ctx.knownAccounts.some((k) => k.value === v && k.partnerId !== d.partnerId) ||
-        ctx.aliases.some((a) => a.kind === 'account' && a.value === v && a.partnerId !== d.partnerId),
+        ctx.aliases.some(
+          (a) => a.kind === 'account' && a.value === v && a.partnerId !== d.partnerId,
+        ),
     )
   ) {
     push('account_other_partner', w.accountOtherPartner);
@@ -126,7 +147,8 @@ export function scoreCandidate(c: Candidate, ctx: MatchContext, cfg: MatcherConf
   let method: MatchMethod;
   if (vsExact && (amount.kind === 'exact' || amount.kind === 'rounding')) method = 'vs_amount';
   else if (vsExact) method = 'vs_only';
-  else if (features.some((f) => f.code === 'name') && t.cardMerchant !== undefined) method = 'card_merchant_fuzzy';
+  else if (features.some((f) => f.code === 'name') && t.cardMerchant !== undefined)
+    method = 'card_merchant_fuzzy';
   else if (kind === 'payout') method = 'platform_statement';
   else method = 'amount_date_counterparty';
 
@@ -148,7 +170,11 @@ export function scoreCandidate(c: Candidate, ctx: MatchContext, cfg: MatcherConf
 }
 
 /** Scores all candidates; a pair that is the only one for its transaction and document gets `unique`. */
-export function scoreBatch(cands: readonly Candidate[], ctx: MatchContext, cfg: MatcherConfig = MATCHER_CONFIG): CandidateScore[] {
+export function scoreBatch(
+  cands: readonly Candidate[],
+  ctx: MatchContext,
+  cfg: MatcherConfig = MATCHER_CONFIG,
+): CandidateScore[] {
   const scored: CandidateScore[] = [];
   for (const c of cands) {
     const s = scoreCandidate(c, ctx, cfg);
@@ -166,7 +192,10 @@ export function scoreBatch(cands: readonly Candidate[], ctx: MatchContext, cfg: 
     const unique = pairsPerTx.get(s.transactionId) === 1 && txsPerDoc.get(s.documentId)?.size === 1;
     if (!unique) return s;
     const logit = s.logit + cfg.weights.unique;
-    const features: Feature[] = [...s.features, { code: 'unique', contribution: cfg.weights.unique }];
+    const features: Feature[] = [
+      ...s.features,
+      { code: 'unique', contribution: cfg.weights.unique },
+    ];
     return { ...s, features, logit, score: scoreOf(logit, s.capped) };
   });
 }

@@ -21,16 +21,20 @@ export function compareAmount(
     if (d.currency === CZK && delta.abs().compare(tol) <= 0) {
       return { kind: 'rounding', ratio: 1, amountDoc: open, amountAccount: cmpAcc };
     }
-    if (vsExact && cmpAcc.compare(open) < 0) return { kind: 'partial', ratio: 1, amountDoc: cmpAcc, amountAccount: cmpAcc };
-    if (vsExact && cmpAcc.compare(open) > 0) return { kind: 'overpayment', ratio: 1, amountDoc: open, amountAccount: open };
+    if (vsExact && cmpAcc.compare(open) < 0)
+      return { kind: 'partial', ratio: 1, amountDoc: cmpAcc, amountAccount: cmpAcc };
+    if (vsExact && cmpAcc.compare(open) > 0)
+      return { kind: 'overpayment', ratio: 1, amountDoc: open, amountAccount: open };
     return null;
   }
 
   const orig = t.amountOriginal;
   if (orig !== undefined && orig.currency === d.currency) {
     const cmpDoc = orig.abs();
-    if (cmpDoc.equals(open)) return { kind: 'exact', ratio: 1, amountDoc: open, amountAccount: cmpAcc };
-    if (vsExact && cmpDoc.compare(open) < 0) return { kind: 'partial', ratio: 1, amountDoc: cmpDoc, amountAccount: cmpAcc };
+    if (cmpDoc.equals(open))
+      return { kind: 'exact', ratio: 1, amountDoc: open, amountAccount: cmpAcc };
+    if (vsExact && cmpDoc.compare(open) < 0)
+      return { kind: 'partial', ratio: 1, amountDoc: cmpDoc, amountAccount: cmpAcc };
     return null;
   }
 
@@ -38,9 +42,18 @@ export function compareAmount(
   if (rate === null) return null;
   const openAcc = round2(Money.fromDecimal(open.toDecimal().mul(rate), t.currency));
   if (!openAcc.isPositive()) return null;
-  const tolPct = Number(t.cardMerchant !== undefined ? cfg.cardFxTolerancePct : cfg.bankFxTolerancePct);
-  const pct = cmpAcc.subtract(openAcc).abs().toDecimal().div(openAcc.toDecimal()).mul(100).toNumber();
-  if (pct <= tolPct) return { kind: 'fx', ratio: 1 - pct / tolPct, amountDoc: open, amountAccount: cmpAcc };
+  const tolPct = Number(
+    t.cardMerchant !== undefined ? cfg.cardFxTolerancePct : cfg.bankFxTolerancePct,
+  );
+  const pct = cmpAcc
+    .subtract(openAcc)
+    .abs()
+    .toDecimal()
+    .div(openAcc.toDecimal())
+    .mul(100)
+    .toNumber();
+  if (pct <= tolPct)
+    return { kind: 'fx', ratio: 1 - pct / tolPct, amountDoc: open, amountAccount: cmpAcc };
   if (vsExact && cmpAcc.compare(openAcc) < 0) {
     const amountDoc = round2(Money.fromDecimal(cmpAcc.toDecimal().div(rate), d.currency));
     return { kind: 'partial', ratio: 1, amountDoc, amountAccount: cmpAcc };

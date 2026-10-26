@@ -1,12 +1,22 @@
-import { MATCHER_CONFIG, type MatcherConfig } from './config';
 import { compareAmount } from './amount';
+import { MATCHER_CONFIG, type MatcherConfig } from './config';
 import { dateFactor, windowKindOf } from './dates';
 import { docKeys, messageHasDocKey, normMerchant, normName, tokenSetRatio } from './text';
 import type { Candidate, DocView, MatchContext, RetrievalKey, TxView } from './types';
 
 const OPEN_STATUSES = new Set<string>(['ready', 'finalized', 'needs_review']);
-const INCOMING_CLASSES = new Set<string>(['received_invoice', 'received_receipt', 'received_advance_tax_doc', 'received_proforma']);
-const POSITIVE_CLASSES = new Set<string>(['issued_invoice', 'platform_statement', 'settlement_statement', 'received_credit_note']);
+const INCOMING_CLASSES = new Set<string>([
+  'received_invoice',
+  'received_receipt',
+  'received_advance_tax_doc',
+  'received_proforma',
+]);
+const POSITIVE_CLASSES = new Set<string>([
+  'issued_invoice',
+  'platform_statement',
+  'settlement_statement',
+  'received_credit_note',
+]);
 
 /** M07 §4.6.1: which documents a transaction may be matched with, by sign and class. */
 export function isEligible(t: Pick<TxView, 'amount'>, d: DocView): boolean {
@@ -26,7 +36,10 @@ export function generateCandidates(
   ctx: MatchContext,
   cfg: MatcherConfig = MATCHER_CONFIG,
 ): Candidate[] {
-  const txAccount = t.counterpartyAccount && t.counterpartyBankCode ? `${t.counterpartyAccount}/${t.counterpartyBankCode}` : undefined;
+  const txAccount =
+    t.counterpartyAccount && t.counterpartyBankCode
+      ? `${t.counterpartyAccount}/${t.counterpartyBankCode}`
+      : undefined;
   const txIban = t.counterpartyIban?.toUpperCase();
   const txKeys = [txAccount, txIban].filter((v): v is string => v !== undefined);
   const src = normMerchant(t.cardMerchant ?? t.counterpartyName ?? '');
@@ -36,7 +49,10 @@ export function generateCandidates(
     const via: RetrievalKey[] = [];
     if (t.vs !== undefined && docKeys(d).includes(t.vs)) via.push('vs');
     if (messageHasDocKey(t.message, d)) via.push('message');
-    if (compareAmount(t, d, ctx, false, cfg) !== null && !dateFactor(windowKindOf(t, d), t.bookedOn, d, cfg).outside) {
+    if (
+      compareAmount(t, d, ctx, false, cfg) !== null &&
+      !dateFactor(windowKindOf(t, d), t.bookedOn, d, cfg).outside
+    ) {
       via.push('amount');
     }
     const accountHit = txKeys.some(
@@ -44,7 +60,9 @@ export function generateCandidates(
         d.partnerAccounts.includes(v) ||
         (d.partnerId !== undefined &&
           (ctx.knownAccounts.some((k) => k.value === v && k.partnerId === d.partnerId) ||
-            ctx.aliases.some((a) => a.kind === 'account' && a.value === v && a.partnerId === d.partnerId))),
+            ctx.aliases.some(
+              (a) => a.kind === 'account' && a.value === v && a.partnerId === d.partnerId,
+            ))),
     );
     if (accountHit) via.push('account');
     const nameHit =
@@ -52,7 +70,10 @@ export function generateCandidates(
       ((d.partnerName !== undefined && tokenSetRatio(src, normName(d.partnerName)) >= 0.5) ||
         (d.partnerId !== undefined &&
           ctx.aliases.some(
-            (a) => (a.kind === 'merchant' || a.kind === 'name') && a.partnerId === d.partnerId && tokenSetRatio(src, a.value) >= 0.5,
+            (a) =>
+              (a.kind === 'merchant' || a.kind === 'name') &&
+              a.partnerId === d.partnerId &&
+              tokenSetRatio(src, a.value) >= 0.5,
           )));
     if (nameHit) via.push('name');
     if (via.length > 0) out.push({ t, d, via });

@@ -47,7 +47,8 @@ export function dateFactor(
     const span = w0.after - w0.plateauAfterDue;
     const xi = daysBetween(issue, x);
     if (xi >= 0 && xi <= plateauEnd) return { f: 1, outside: false, anchorDistanceDays: 0 };
-    if (xi < 0 && xi >= -w0.before) return { f: 1 - -xi / w0.before, outside: false, anchorDistanceDays: -xi };
+    if (xi < 0 && xi >= -w0.before)
+      return { f: 1 - -xi / w0.before, outside: false, anchorDistanceDays: -xi };
     if (xi > plateauEnd && xi <= plateauEnd + span) {
       const r = xi - plateauEnd;
       return { f: 1 - r / span, outside: false, anchorDistanceDays: r };
@@ -63,10 +64,18 @@ export function dateFactor(
     const dist = Math.abs(xi);
     if (dist <= w0.plateau) return { f: 1, outside: false, anchorDistanceDays: dist };
     if (xi < 0 && xi >= -w0.before) {
-      return { f: (xi + w0.before) / (w0.before - w0.plateau), outside: false, anchorDistanceDays: dist };
+      return {
+        f: (xi + w0.before) / (w0.before - w0.plateau),
+        outside: false,
+        anchorDistanceDays: dist,
+      };
     }
     if (xi > 0 && xi <= w0.after) {
-      return { f: (w0.after - xi) / (w0.after - w0.plateau), outside: false, anchorDistanceDays: dist };
+      return {
+        f: (w0.after - xi) / (w0.after - w0.plateau),
+        outside: false,
+        anchorDistanceDays: dist,
+      };
     }
     return { f: 0, outside: true, anchorDistanceDays: dist };
   }
@@ -75,7 +84,8 @@ export function dateFactor(
     if (!anchor) return NEUTRAL;
     const w0 = w.payout;
     const dist = Math.abs(daysBetween(anchor, x));
-    if (dist <= w0.after) return { f: 1 - dist / w0.after, outside: false, anchorDistanceDays: dist };
+    if (dist <= w0.after)
+      return { f: 1 - dist / w0.after, outside: false, anchorDistanceDays: dist };
     return { f: 0, outside: true, anchorDistanceDays: dist };
   }
   const periodEnd = d.servicePeriodTo ?? d.issueDate;
@@ -83,6 +93,11 @@ export function dateFactor(
   const due = d.dueDate ?? addDays(periodEnd, w.transfer.defaultDueDays);
   const hi = addDays(due, w.filing.after);
   const fromStart = daysBetween(periodEnd, x);
-  if (fromStart >= 0 && daysBetween(x, hi) >= 0) return { f: 1, outside: false, anchorDistanceDays: 0 };
-  return { f: 0, outside: true, anchorDistanceDays: fromStart < 0 ? -fromStart : daysBetween(hi, x) };
+  if (fromStart >= 0 && daysBetween(x, hi) >= 0)
+    return { f: 1, outside: false, anchorDistanceDays: 0 };
+  return {
+    f: 0,
+    outside: true,
+    anchorDistanceDays: fromStart < 0 ? -fromStart : daysBetween(hi, x),
+  };
 }

@@ -1,8 +1,35 @@
 import { parseSymbol } from '../normalize';
 
-const LEGAL_FORMS = new Set(['SRO', 'AS', 'BV', 'LTD', 'LIMITED', 'INC', 'GMBH', 'SE', 'SPOL', 'VOS', 'KS', 'PLC', 'LLC', 'SA', 'AG']);
+const LEGAL_FORMS = new Set([
+  'SRO',
+  'AS',
+  'BV',
+  'LTD',
+  'LIMITED',
+  'INC',
+  'GMBH',
+  'SE',
+  'SPOL',
+  'VOS',
+  'KS',
+  'PLC',
+  'LLC',
+  'SA',
+  'AG',
+]);
 const CITIES = new Set([
-  'PRAHA', 'BRNO', 'OSTRAVA', 'PLZEN', 'LIBEREC', 'OLOMOUC', 'PARDUBICE', 'ZLIN', 'JIHLAVA', 'KLADNO', 'TEPLICE', 'OPAVA',
+  'PRAHA',
+  'BRNO',
+  'OSTRAVA',
+  'PLZEN',
+  'LIBEREC',
+  'OLOMOUC',
+  'PARDUBICE',
+  'ZLIN',
+  'JIHLAVA',
+  'KLADNO',
+  'TEPLICE',
+  'OPAVA',
   'HAVIROV',
 ]);
 const TLD_SUFFIXES = ['.COM', '.CZ', '.SK', '.EU', '.DE', '.NET', '.ORG'];
@@ -76,7 +103,10 @@ export function tokenSetRatio(a: string, b: string): number {
 }
 
 /** Document keys: VS, digits of the document number (1–10 long), last 10 digits of it. */
-export function docKeys(d: { documentNumber?: string; variableSymbol?: string }): string[] {
+export function docKeys(d: {
+  documentNumber?: string | undefined;
+  variableSymbol?: string | undefined;
+}): string[] {
   const keys = new Set<string>();
   const vs = parseSymbol(d.variableSymbol);
   if (vs) keys.add(vs);
@@ -94,7 +124,10 @@ export function docKeys(d: { documentNumber?: string; variableSymbol?: string })
   return [...keys].sort();
 }
 
-export function messageHasDocKey(message: string | undefined, d: { documentNumber?: string; variableSymbol?: string }): boolean {
+export function messageHasDocKey(
+  message: string | undefined,
+  d: { documentNumber?: string | undefined; variableSymbol?: string | undefined },
+): boolean {
   if (!message) return false;
   const folded = foldText(message);
   const keys = new Set(docKeys(d));
