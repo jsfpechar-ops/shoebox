@@ -29,6 +29,9 @@ export const PROTO_CHECK_IDS = [
   'vat_payer',
   'paid',
   'buyer',
+  'totals_math',
+  'recap_vs_totals',
+  'qr_amount',
 ] as const;
 export type ProtoCheckId = (typeof PROTO_CHECK_IDS)[number];
 
@@ -50,12 +53,14 @@ export interface ProtoCheckInput {
     readonly due_date: string | null;
   };
   readonly currency: string | null;
-  readonly totals: { readonly gross: string | null; readonly vat?: string | null };
+  readonly totals: { readonly gross: string | null; readonly vat?: string | null; readonly net?: string | null };
   readonly vat_recap: readonly {
     readonly rate_pct: string;
     readonly base: string;
     readonly vat: string;
   }[];
+  /** Amount read from the payment QR code (0201), dot decimal. */
+  readonly qr?: { readonly amount: string | null };
   readonly payment?: { readonly method: string | null };
   readonly flags?: {
     readonly non_vat_payer_text: boolean;
@@ -215,6 +220,102 @@ function checkVat(input: ProtoCheckInput, currency: string, today: LegalDate): P
     }
   }
   return results;
+}
+
+const RECAP_KEYS = {
+  recap_net: {
+    pass: 'proto.check.recap_net.pass',
+    warn: 'proto.check.recap_net.warn',
+    fail: 'proto.check.recap_net.fail',
+  },
+  recap_vat: {
+    pass: 'proto.check.recap_vat.pass',
+    warn: 'proto.check.recap_vat.warn',
+    fail: 'proto.check.recap_vat.fail',
+  },
+} as const;
+
+/** net + VAT must equal the gross total; a printed rounding line may move it by up to 1.00. */
+function checkTotalsMath(input: ProtoCheckInput, currency: string): ProtoCheckResult[] {
+  const netText = input.totals.net ?? null;
+  const vatText = input.totals.vat ?? null;
+  const net = netText === null ? null : parseMoney(netText, currency);
+  const vat = vatText === null ? null : parseMoney(vatText, currency);
+  const gross = input.totals.gross === null ? null : parseMoney(input.totals.gross, currency);
+  if (net === null || vat === null || gross === null) return [];
+  const diff = gross.subtract(net.add(vat));
+  const params: Params = {
+    net: net.toFixed2(),
+    vat: vat.toFixed2(),
+    gross: gross.toFixed2(),
+    diff: diff.toFixed2(),
+  };
+  if (diff.isZero()) {
+    return [{ id: 'totals_math', severity: 'pass', key: 'proto.check.totals_math.pass', params }];
+  }
+  const within = roundingLineAllowed(diff, Money.parse('1.00', currency));
+  return [
+    {
+      id: 'totals_math',
+      severity: within ? 'warn' : 'fail',
+      key: within ? 'proto.check.totals_math.warn' : 'proto.check.totals_math.fail',
+      params,
+    },
+  ];
+}
+
+/** The VAT recap bases must add up to the net total, and the recap VAT to the VAT total. */
+function checkRecapVsTotals(input: ProtoCheckInput, currency: string): ProtoCheckResult[] {
+  const results: ProtoCheckResult[] = [];
+  if (input.vat_recap.length === 0) return results;
+  let bases = Money.zero(currency);
+  let vats = Money.zero(currency);
+  for (const line of input.vat_recap) {
+    const base = parseMoney(line.base, currency);
+    const vat = parseMoney(line.vat, currency);
+    if (base === null || vat === null) return results;
+    bases = bases.add(base);
+    vats = vats.add(vat);
+  }
+  const tolerance = Money.parse('0.01', currency);
+  const netText = input.totals.net ?? null;
+  const net = netText === null ? null : parseMoney(netText, currency);
+  const vatText = input.totals.vat ?? null;
+  const totalVat = vatText === null ? null : parseMoney(vatText, currency);
+  const compare = (
+    prefix: keyof typeof RECAP_KEYS,
+    recap: Money,
+    total: Money,
+  ): ProtoCheckResult => {
+    const diff = total.subtract(recap);
+    const severity: ProtoCheckSeverity = diff.isZero()
+      ? 'pass'
+      : roundingLineAllowed(diff, tolerance)
+        ? 'warn'
+        : 'fail';
+    return {
+      id: 'recap_vs_totals',
+      severity,
+      key: RECAP_KEYS[prefix][severity],
+      params: { recap: recap.toFixed2(), total: total.toFixed2(), diff: diff.toFixed2() },
+    };
+  };
+  if (net !== null) results.push(compare('recap_net', bases, net));
+  if (totalVat !== null) results.push(compare('recap_vat', vats, totalVat));
+  return results;
+}
+
+/** The amount in the payment QR code must equal the gross total. */
+function checkQrAmount(input: ProtoCheckInput, currency: string): ProtoCheckResult[] {
+  const qrText = input.qr?.amount ?? null;
+  const qr = qrText === null ? null : parseMoney(qrText, currency);
+  const gross = input.totals.gross === null ? null : parseMoney(input.totals.gross, currency);
+  if (qr === null || gross === null) return [];
+  const params: Params = { qr: qr.toFixed2(), total: gross.toFixed2() };
+  if (qr.subtract(gross).isZero()) {
+    return [{ id: 'qr_amount', severity: 'pass', key: 'proto.check.qr_amount.pass', params }];
+  }
+  return [{ id: 'qr_amount', severity: 'fail', key: 'proto.check.qr_amount.fail', params }];
 }
 
 function checkIdentifiers(input: ProtoCheckInput): ProtoCheckResult[] {
@@ -454,6 +555,9 @@ export function runProtoChecks(
   const currency = input.currency !== null && isCurrency(input.currency) ? input.currency : CZK;
   return [
     ...checkVat(input, currency, options.today),
+    ...checkTotalsMath(input, currency),
+    ...checkRecapVsTotals(input, currency),
+    ...checkQrAmount(input, currency),
     ...checkIdentifiers(input),
     ...checkDates(input, options.today),
     ...checkVatRateMissing(input, currency),

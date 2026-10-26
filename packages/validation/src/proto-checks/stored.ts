@@ -69,7 +69,7 @@ export function checkInputFromFields(
       due_date: v('dates.due_date'),
     },
     currency: v('currency'),
-    totals: { gross: v('totals.gross'), vat: v('totals.vat') },
+    totals: { gross: v('totals.gross'), vat: v('totals.vat'), net: v('totals.net') },
     vat_recap,
     payment: { method: v('payment.method') },
     issues: [],
@@ -83,6 +83,9 @@ export function checkInputFromFields(
       reverse_charge_text: fields['flags.reverse_charge_text'] === 'true',
       paid_text: fields['flags.paid_text'] === 'true',
     };
+  }
+  if (fields['qr.amount'] !== undefined) {
+    input.qr = { amount: v('qr.amount') };
   }
   return input as unknown as ProtoCheckInput;
 }
