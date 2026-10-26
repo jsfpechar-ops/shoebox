@@ -255,6 +255,9 @@ importers:
 
   packages/extraction:
     dependencies:
+      '@shoebox/validation':
+        specifier: workspace:*
+        version: link:../validation
       pdfjs-dist:
         specifier: 6.4.299
         version: 6.4.299
