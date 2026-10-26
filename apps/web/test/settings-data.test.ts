@@ -1,11 +1,27 @@
 import type { LegalDate } from '@shoebox/domain';
 import { describe, expect, it } from 'vitest';
-import { currentProfile, formatAddress, regimeLabel, vatLabel } from '../src/settings/settings-data';
+import {
+  currentProfile,
+  formatAddress,
+  regimeLabel,
+  vatLabel,
+} from '../src/settings/settings-data';
 
 describe('formatAddress', () => {
   it('writes one Czech address line', () => {
-    expect(formatAddress({ street: 'Jankovcova', house_number: '1522', orientation_number: '53', city: 'Praha', zip: '17000', country: 'CZ' })).toBe('Jankovcova 1522/53, 170 00 Praha');
-    expect(formatAddress({ house_number: '12', city: 'Lhota', zip: '25001' })).toBe('12, 250 01 Lhota');
+    expect(
+      formatAddress({
+        street: 'Jankovcova',
+        house_number: '1522',
+        orientation_number: '53',
+        city: 'Praha',
+        zip: '17000',
+        country: 'CZ',
+      }),
+    ).toBe('Jankovcova 1522/53, 170 00 Praha');
+    expect(formatAddress({ house_number: '12', city: 'Lhota', zip: '25001' })).toBe(
+      '12, 250 01 Lhota',
+    );
     expect(formatAddress(null)).toBeNull();
   });
 });

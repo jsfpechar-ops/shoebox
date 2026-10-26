@@ -6,7 +6,12 @@ type SupabaseLike = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export interface SettingsView {
   readonly firm: { name: string; ico: string; dic: string | null; address: string | null };
-  readonly tax: { vat: MessageKey; regime: MessageKey; flatRate: number | null; since: LegalDate } | null;
+  readonly tax: {
+    vat: MessageKey;
+    regime: MessageKey;
+    flatRate: number | null;
+    since: LegalDate;
+  } | null;
   readonly team: readonly { userId: string; role: MessageKey; isYou: boolean }[];
 }
 
@@ -34,11 +39,13 @@ export function formatAddress(raw: unknown): string | null {
 
   const house = text(parts.house_number);
   const orientation = text(parts.orientation_number);
-  const houseWithOrientation = house === null ? null : orientation === null ? house : `${house}/${orientation}`;
+  const houseWithOrientation =
+    house === null ? null : orientation === null ? house : `${house}/${orientation}`;
   const line = [street, houseWithOrientation].filter((p): p is string => p !== null).join(' ');
 
   const zipRaw = text(parts.zip);
-  const zip = zipRaw === null ? null : zipRaw.replace(/\s+/g, '').replace(/^(\d{3})(\d{2})$/, '$1 $2');
+  const zip =
+    zipRaw === null ? null : zipRaw.replace(/\s+/g, '').replace(/^(\d{3})(\d{2})$/, '$1 $2');
   const zipCity = [zip, city].filter((p): p is string => p !== null).join(' ');
 
   return [line, zipCity].filter((p) => p !== '').join(', ');
@@ -61,7 +68,9 @@ export function currentProfile<T extends { valid_from: string; valid_to: string 
 /** vat_status + vat_period → the onboarding label key. */
 export function vatLabel(status: string, period: string | null): MessageKey {
   if (status === 'platce') {
-    return period === 'quarterly' ? 'onboarding.vat.platce_quarterly' : 'onboarding.vat.platce_monthly';
+    return period === 'quarterly'
+      ? 'onboarding.vat.platce_quarterly'
+      : 'onboarding.vat.platce_monthly';
   }
   if (status === 'identifikovana_osoba') return 'onboarding.vat.identifikovana_osoba';
   return 'onboarding.vat.neplatce';
@@ -128,7 +137,12 @@ export async function loadSettings(
     const members = memberRes.data as MembershipRow[];
 
     const team = members
-      .map((m) => ({ userId: m.user_id, role: roleLabel(m.role), isYou: m.user_id === userId, isOwner: m.role === 'owner' }))
+      .map((m) => ({
+        userId: m.user_id,
+        role: roleLabel(m.role),
+        isYou: m.user_id === userId,
+        isOwner: m.role === 'owner',
+      }))
       .sort((a, b) => Number(b.isOwner) - Number(a.isOwner))
       .map(({ userId: id, role, isYou }) => ({ userId: id, role, isYou }));
 

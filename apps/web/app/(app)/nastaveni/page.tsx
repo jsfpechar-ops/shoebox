@@ -27,7 +27,12 @@ export default async function SettingsPage() {
   const supabase = auth.ok ? await createSupabaseServerClient() : null;
   const view =
     auth.ok && supabase
-      ? await loadSettings(supabase, auth.orgId, auth.userId, pragueToday({ now: () => Date.now() }))
+      ? await loadSettings(
+          supabase,
+          auth.orgId,
+          auth.userId,
+          pragueToday({ now: () => Date.now() }),
+        )
       : null;
 
   return (
