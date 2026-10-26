@@ -180,6 +180,9 @@ importers:
       '@shoebox/extraction':
         specifier: workspace:*
         version: link:../../packages/extraction
+      '@shoebox/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@shoebox/pipeline':
         specifier: workspace:*
         version: link:../../packages/pipeline

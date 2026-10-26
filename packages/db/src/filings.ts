@@ -325,6 +325,7 @@ export interface FilingRow {
   readonly bundleId: string | null;
   readonly formVersion: string | null;
   readonly totals: unknown;
+  readonly inputs?: unknown;
   readonly simpleCheck: unknown;
   readonly xmlPath: string | null;
   readonly pdfPath: string | null;
@@ -607,7 +608,9 @@ export async function markFilingFiled(
 export async function upsertVatObligations(
   tx: TenantTx,
   orgId: string,
-  drafts: readonly ObligationDraft[],
+  drafts: ReadonlyArray<
+    Omit<ObligationDraft, 'kind'> & { kind: string; isOptional?: boolean; note?: string | null }
+  >,
   generatorVersion: number,
 ): Promise<number> {
   if (drafts.length === 0) return 0;
@@ -625,6 +628,7 @@ export async function upsertVatObligations(
         state: d.state,
         doneSource: d.doneSource,
         sourceRule: d.sourceRule,
+        ...(d.isOptional === undefined ? {} : { isOptional: d.isOptional }),
         generatorVersion,
       })),
     )

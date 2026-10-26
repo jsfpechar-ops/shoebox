@@ -28,7 +28,7 @@ const L_SMALL = id(12);
 const L_OLD = id(13);
 const ACC_A = id(21);
 const ACC_B = id(22);
-const BUILD = 10n;
+const LEDGER_ALGO = 2n;
 
 function workerUrlFrom(serviceUrl: string): string {
   const u = new URL(serviceUrl);
@@ -42,7 +42,7 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
   let sql: Sql;
   let db: TenantDb;
   const read = (org: string, year = 2026) =>
-    db.withTenant(org, (tx) => readPodkladyRows(tx, org, year, BUILD));
+    db.withTenant(org, (tx) => readPodkladyRows(tx, org, year, LEDGER_ALGO));
 
   beforeAll(async () => {
     sql = postgres(serviceUrl, { max: 1, onnotice: () => undefined });
@@ -68,6 +68,8 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
       (${A}, '2026-04-02', 2026, 'payment', ${D_SMALL}, ${L_SMALL}, 'exp_small_assets', 'deductible_expense', '3000.00', '60', '1800.00', 9),
       (${A}, '2027-01-02', 2027, 'payment', ${D_OLD}, ${L_OLD}, 'asset_long_term', 'asset', '1.00', '100', '1.00', 10),
       (${B}, '2026-03-05', 2026, 'payment', ${D_B}, null, 'exp_other_deductible', 'deductible_expense', '777.00', '100', '777.00', 10)`;
+    // D_SMALL was built by ledger algo v1, so its entry counts as stale.
+    await sql`update documents set stage_version = jsonb_build_object('ledger', jsonb_build_object('v', case when id = ${D_SMALL} then 1 else 2 end)) where org_id in (${A}, ${B})`;
     await sql`insert into money_accounts (id, org_id, type, name) values (${ACC_A}, ${A}, 'bank', 'A'), (${ACC_B}, ${B}, 'bank', 'B')`;
     await sql`insert into transactions (org_id, money_account_id, source, booked_on, amount, currency, category_code, match_state) values
       (${A}, ${ACC_A}, 'manual', '2026-05-01', '-1500.00', 'CZK', 'ins_social_own', 'no_document_needed'),
