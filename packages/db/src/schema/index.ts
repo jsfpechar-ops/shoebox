@@ -3,6 +3,7 @@
 export * from './document-details';
 export * from './documents';
 export * from './enums';
+export * from './ledgers';
 export * from './partners';
 export * from './platform';
 export * from './tenancy';
