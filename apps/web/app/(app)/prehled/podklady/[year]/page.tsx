@@ -5,11 +5,20 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getOrgContext } from '../../../../../src/auth/org-context';
+import { AnswersForm } from '../../../../../src/podklady/answers-form';
 import { podkladyCardModel, wholeCzk } from '../../../../../src/podklady/card-view';
 import { loadPodkladyPreview } from '../../../../../src/podklady/load';
 import { PodkladyCard } from '../../../../../src/podklady/podklady-card';
 import { PODKLADY_WRITE_ROLES, parseYearParam } from '../../../../../src/podklady/preview';
+import { categoryBlocks, regimeOf, vatNoteText } from '../../../../../src/podklady/summary-blocks';
+import {
+  AssetsBlock,
+  CategoryBlocks,
+  ComparisonBlock,
+  PausalniBlock,
+} from '../../../../../src/podklady/summary-blocks-view';
 import type { PodkladyPreviewView } from '../../../../../src/podklady/view';
+import { createSupabaseServerClient } from '../../../../../src/supabase/server';
 
 export const metadata: Metadata = { title: t('podklady.page.title') };
 
@@ -69,6 +78,21 @@ export default async function PodkladyYearPage({ params }: { params: Promise<{ y
       preview = null;
     }
   }
+  const labels = new Map<string, string>();
+  if (preview !== null && !preview.empty) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const res = await supabase.from('categories').select('code, label_en');
+      for (const raw of Array.isArray(res.data) ? res.data : []) {
+        const row = raw as Record<string, unknown>;
+        if (typeof row.code === 'string' && typeof row.label_en === 'string') {
+          labels.set(row.code, row.label_en);
+        }
+      }
+    } catch {
+      labels.clear();
+    }
+  }
   const canWrite = role !== undefined && PODKLADY_WRITE_ROLES.includes(role);
   const rows = preview === null ? [] : headlineRows(preview.summary);
 
@@ -85,6 +109,9 @@ export default async function PodkladyYearPage({ params }: { params: Promise<{ y
       {preview !== null && !preview.empty ? (
         <>
           <PodkladyCard model={podkladyCardModel(preview)} canWrite={canWrite} today={asOf} />
+          {preview.canGenerate ? (
+            <AnswersForm year={year} regime={regimeOf(preview.summary)} canWrite={canWrite} />
+          ) : null}
           <section className={panel}>
             <h2 className="text-body font-semibold">{t('podklady.page.numbers')}</h2>
             <dl className="grid gap-2">
@@ -95,7 +122,14 @@ export default async function PodkladyYearPage({ params }: { params: Promise<{ y
                 </div>
               ))}
             </dl>
+            {vatNoteText(preview.summary) !== null ? (
+              <p className="text-body">{vatNoteText(preview.summary)}</p>
+            ) : null}
           </section>
+          <CategoryBlocks groups={categoryBlocks(preview.summary, labels)} />
+          <ComparisonBlock summary={preview.summary} />
+          <PausalniBlock summary={preview.summary} />
+          <AssetsBlock summary={preview.summary} />
           <section className={panel}>
             <h2 className="text-body font-semibold">{t('podklady.page.not_included')}</h2>
             <ul className="grid gap-1 text-body">

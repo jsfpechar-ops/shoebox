@@ -7,7 +7,13 @@ import { useState } from 'react';
 
 type State = 'idle' | 'busy' | 'done' | 'failed';
 
-export function PrepareSummaryButton({ year }: { year: number }) {
+export function PrepareSummaryButton({
+  year,
+  answers,
+}: {
+  year: number;
+  answers?: Record<string, unknown>;
+}) {
   const router = useRouter();
   const [state, setState] = useState<State>('idle');
 
@@ -17,7 +23,7 @@ export function PrepareSummaryButton({ year }: { year: number }) {
       const response = await fetch(`/api/v1/podklady/${year}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: '{}',
+        body: JSON.stringify(answers === undefined ? {} : { answers }),
       });
       if (response.status === 202) {
         setState('done');

@@ -1,6 +1,6 @@
 # 0421: Podklady page blocks and the questions form
 
-Status: todo
+Status: review
 Ticket: K-D04, P4-POD-07 (rest) | Depends on: 0419, 0420 | Branch: claude/project-thread-yn56ih | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 
