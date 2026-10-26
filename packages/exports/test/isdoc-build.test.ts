@@ -216,6 +216,15 @@ describe('buildIsdoc', () => {
     expect(xml).toContain('<PayableAmount>1210.40</PayableAmount>');
   });
 
+  it('stays valid for a supplier without an IČO', () => {
+    const xml =
+      buildIsdoc({
+        ...INPUT,
+        supplier: { ico: null, dic: null, name: 'Foreign Ltd', country: 'IE' },
+      }) ?? '';
+    expect(() => validate(xml)).not.toThrow();
+  });
+
   it('returns null for a foreign currency', () => {
     expect(buildIsdoc({ ...INPUT, currency: 'EUR' })).toBeNull();
   });

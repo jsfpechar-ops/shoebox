@@ -69,13 +69,10 @@ export function isdocUuid(orgId: string, documentId: string): string {
 function partyLines(party: IsdocParty): string[] {
   return [
     '    <Party>',
-    ...(party.ico
-      ? [
-          '      <PartyIdentification>',
-          `        <ID>${esc(party.ico)}</ID>`,
-          '      </PartyIdentification>',
-        ]
-      : []),
+    // Required by the XSD even for a party without an IČO (foreign supplier): then the ID is empty.
+    '      <PartyIdentification>',
+    `        <ID>${esc(party.ico ?? '')}</ID>`,
+    '      </PartyIdentification>',
     '      <PartyName>',
     `        <Name>${esc(party.name)}</Name>`,
     '      </PartyName>',
