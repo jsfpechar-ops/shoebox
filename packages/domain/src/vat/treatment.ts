@@ -1,9 +1,16 @@
 import { Decimal } from 'decimal.js';
 import type { LegalDate } from '../dates/index';
-import type { Direction, DocumentClass, TaxDocStatus, VatRateType, VatStatus, VatTreatment } from '../enums/index';
+import type {
+  Direction,
+  DocumentClass,
+  TaxDocStatus,
+  VatRateType,
+  VatStatus,
+  VatTreatment,
+} from '../enums/index';
 import type { Money } from '../money/index';
 import type { RULE_SCHEMAS } from '../rules/keys';
-import type { RulesAt, RuleResolver } from '../rules/resolver';
+import type { RuleResolver, RulesAt } from '../rules/resolver';
 import { type CategoryCode, getCategory } from '../taxonomy/categories';
 
 export type SupplyKind = 'service' | 'goods';
@@ -68,7 +75,11 @@ export const SELF_ASSESSED_TREATMENTS: readonly VatTreatment[] = [
 ];
 
 const CZ = 'CZ';
-const OUT_OF_SCOPE_TAX_EFFECTS: readonly string[] = ['pass_through', 'tax_or_insurance_payment', 'transfer'];
+const OUT_OF_SCOPE_TAX_EFFECTS: readonly string[] = [
+  'pass_through',
+  'tax_or_insurance_payment',
+  'transfer',
+];
 
 type RulesAtNow = RulesAt<typeof RULE_SCHEMAS>;
 
@@ -82,7 +93,7 @@ function isOutOfScopeCategory(code: CategoryCode, rulesAt: RulesAtNow): boolean 
 }
 
 function hasPositiveVat(line: VatTreatmentLine): boolean {
-  return line.vat !== null && line.vat.isPositive();
+  return line.vat?.isPositive() ?? false;
 }
 
 function hasPositiveRate(line: VatTreatmentLine): boolean {
@@ -99,7 +110,10 @@ function deriveReceived(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreat
   if (supplier === null) return { treatment: null, ambiguous: 'supplier' };
 
   const category = getCategory(line.categoryCode);
-  if (OUT_OF_SCOPE_TAX_EFFECTS.includes(category.taxEffect) || isOutOfScopeCategory(line.categoryCode, rulesAt)) {
+  if (
+    OUT_OF_SCOPE_TAX_EFFECTS.includes(category.taxEffect) ||
+    isOutOfScopeCategory(line.categoryCode, rulesAt)
+  ) {
     return { treatment: 'rcv_out_of_scope' };
   }
   if (line.rcCommodityCode !== null || (flags.reverseCharge92a && supplier.czDic !== null)) {
@@ -114,8 +128,10 @@ function deriveReceived(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreat
   }
   if (supplier.country === CZ) return { treatment: 'rcv_domestic_no_vat' };
 
-  if (hasPositiveVat(line)) return { treatment: 'rcv_foreign_vat_charged', note: 'TAXDOC_FOREIGN_VAT_CHARGED_B2B' };
-  if (flags.placeOfSupplyAbroad) return { treatment: 'rcv_out_of_scope', note: 'PLACE_OF_SUPPLY_ABROAD' };
+  if (hasPositiveVat(line))
+    return { treatment: 'rcv_foreign_vat_charged', note: 'TAXDOC_FOREIGN_VAT_CHARGED_B2B' };
+  if (flags.placeOfSupplyAbroad)
+    return { treatment: 'rcv_out_of_scope', note: 'PLACE_OF_SUPPLY_ABROAD' };
 
   const supplyKind: SupplyKind | null =
     input.supplyKind ?? (SERVICE_DEFAULT_CATEGORIES.includes(line.categoryCode) ? 'service' : null);
@@ -123,10 +139,12 @@ function deriveReceived(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreat
   const provisional = input.supplyKind === null ? { provisional: true as const } : {};
 
   if (isEuCountry(supplier.country, rulesAt)) {
-    const treatment: VatTreatment = supplyKind === 'goods' ? 'rcv_eu_goods_acquisition' : 'rcv_eu_service_reverse_charge';
+    const treatment: VatTreatment =
+      supplyKind === 'goods' ? 'rcv_eu_goods_acquisition' : 'rcv_eu_service_reverse_charge';
     return { treatment, ...provisional };
   }
-  const treatment: VatTreatment = supplyKind === 'service' ? 'rcv_non_eu_service_reverse_charge' : 'rcv_import_customs';
+  const treatment: VatTreatment =
+    supplyKind === 'service' ? 'rcv_non_eu_service_reverse_charge' : 'rcv_import_customs';
   return { treatment, ...provisional };
 }
 
@@ -145,7 +163,9 @@ function deriveIssued(input: VatTreatmentInput, rulesAt: RulesAtNow): VatTreatme
     (isEuBusiness && customer.vatIdValid !== true);
   if (isB2c) {
     if (!isPayer) return { treatment: 'iss_no_vat' };
-    return { treatment: line.rcCommodityCode !== null ? 'iss_domestic_reverse_charge' : 'iss_domestic_vat' };
+    return {
+      treatment: line.rcCommodityCode !== null ? 'iss_domestic_reverse_charge' : 'iss_domestic_vat',
+    };
   }
 
   // Foreign business or non-EU customer: the supply kind decides.
@@ -173,7 +193,9 @@ export function deriveVatRateType(
     return 'none';
   }
   if (treatment !== null && SELF_ASSESSED_TREATMENTS.includes(treatment)) {
-    const reduced = (rulesAt.get('vat.reduced_rate_categories') as readonly string[]).includes(categoryCode);
+    const reduced = (rulesAt.get('vat.reduced_rate_categories') as readonly string[]).includes(
+      categoryCode,
+    );
     return reduced ? 'reduced' : 'standard';
   }
   return 'none';
