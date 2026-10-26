@@ -72,11 +72,15 @@ describe.skipIf(DATABASE_URL === undefined)('0061: page fix functions', () => {
   it('separates a three-page document into three documents', async () => {
     const result = await asOwner(async (tx) => {
       const id = await doc(tx, FILE_A, [1, 2, 3]);
-      const [row] = await tx<{ ids: string[] }[]>`select public.separate_document_pages(${id}) as ids`;
+      const [row] = await tx<
+        { ids: string[] }[]
+      >`select public.separate_document_pages(${id}) as ids`;
       const ids = row?.ids ?? [];
       const pages = await tx<{ n: number }[]>`select count(*)::int as n from document_pages
         where document_id = any(${ids})`;
-      const statuses = await tx<{ status: string }[]>`select status from documents where id = any(${ids})`;
+      const statuses = await tx<
+        { status: string }[]
+      >`select status from documents where id = any(${ids})`;
       return { first: ids[0] === id, count: ids.length, pages: pages[0]?.n, statuses };
     });
     expect(result).toMatchObject({ first: true, count: 3, pages: 3 });
@@ -86,7 +90,9 @@ describe.skipIf(DATABASE_URL === undefined)('0061: page fix functions', () => {
   it('leaves a one-page document alone', async () => {
     const ids = await asOwner(async (tx) => {
       const id = await doc(tx, FILE_A, [1]);
-      const [row] = await tx<{ ids: string[] }[]>`select public.separate_document_pages(${id}) as ids`;
+      const [row] = await tx<
+        { ids: string[] }[]
+      >`select public.separate_document_pages(${id}) as ids`;
       return row?.ids;
     });
     expect(ids).toEqual([]);
@@ -103,7 +109,9 @@ describe.skipIf(DATABASE_URL === undefined)('0061: page fix functions', () => {
         from document_pages where document_id = ${a} order by position`;
       const [other] = await tx<{ gone: boolean }[]>`select deleted_at is not null as gone
         from documents where id = ${b}`;
-      const [question] = await tx<{ answered: boolean }[]>`select answered_at is not null as answered
+      const [question] = await tx<
+        { answered: boolean }[]
+      >`select answered_at is not null as answered
         from review_questions where document_id = ${b}`;
       return { ids: row?.ids, a, pages, gone: other?.gone, answered: question?.answered };
     });
@@ -125,7 +133,13 @@ describe.skipIf(DATABASE_URL === undefined)('0061: page fix functions', () => {
       return tx<{ file: string; page: number }[]>`select source_file_id as file, file_page as page
         from document_pages where document_id = ${a} order by position`;
     });
-    expect(pages.map((p) => `${p.file === FILE_B ? 'B' : 'A'}${p.page}`)).toEqual(['B1', 'B2', 'A1', 'A2', 'A3']);
+    expect(pages.map((p) => `${p.file === FILE_B ? 'B' : 'A'}${p.page}`)).toEqual([
+      'B1',
+      'B2',
+      'A1',
+      'A2',
+      'A3',
+    ]);
   });
 
   it('refuses to join a document with itself', async () => {
