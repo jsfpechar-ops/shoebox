@@ -21,6 +21,8 @@ function fakeDeps(options: { failEnqueue?: boolean; failedDocs?: string[] } = {}
   const sources = new Map<string, { id: string; row: SourceFileInsert }>();
   const docs = new Map<string, string>();
   const enqueued: string[] = [];
+  let batches = 0;
+  const inserted: { sourceFileId: string; uploadBatchId: string }[] = [];
   let n = 0;
   const deps: UploadDeps = {
     async putFile(path) {
@@ -42,15 +44,17 @@ function fakeDeps(options: { failEnqueue?: boolean; failedDocs?: string[] } = {}
     async insertDocument(row) {
       const id = `doc-${++n}`;
       docs.set(row.sourceFileId, id);
+      inserted.push({ sourceFileId: row.sourceFileId, uploadBatchId: row.uploadBatchId });
       return id;
     },
-    async enqueueRead(_org, documentId) {
+    async enqueueSort(_org, batchId) {
       if (options.failEnqueue) throw new Error('down');
-      enqueued.push(documentId);
+      enqueued.push(batchId);
     },
+    newBatchId: () => `batch-${++batches}`,
     today: () => '2026-10-25',
   };
-  return { deps, puts, sources, enqueued };
+  return { deps, puts, sources, enqueued, inserted };
 }
 
 describe('sha256Hex', () => {
@@ -147,5 +151,21 @@ describe('uploadDocuments', () => {
     const [second] = await uploadDocuments(deps, { orgId: ORG, userId: USER }, [pdf('a')]);
     expect(first?.status).toBe('accepted');
     expect(second).toEqual({ fileName: 'Faktura ř.pdf', status: 'accepted', documentId: 'doc-2' });
+  });
+
+  it('puts the files of one upload in one batch and queues one sorting job', async () => {
+    const { deps, enqueued, inserted } = fakeDeps();
+    await uploadDocuments(deps, { orgId: ORG, userId: USER }, [pdf('a'), pdf('b')]);
+    expect(enqueued).toHaveLength(1);
+    expect(inserted).toHaveLength(2);
+    expect(inserted[0]?.uploadBatchId).toBe(enqueued[0]);
+    expect(inserted[1]?.uploadBatchId).toBe(enqueued[0]);
+  });
+
+  it('queues nothing when every file was a duplicate', async () => {
+    const { deps, enqueued } = fakeDeps();
+    await uploadDocuments(deps, { orgId: ORG, userId: USER }, [pdf('a')]);
+    await uploadDocuments(deps, { orgId: ORG, userId: USER }, [pdf('a')]);
+    expect(enqueued).toHaveLength(1);
   });
 });

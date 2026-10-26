@@ -1,5 +1,5 @@
 import type { createSupabaseServerClient } from '../supabase/server';
-import { enqueueDocExtract } from './enqueue';
+import { enqueueDocSplit } from './enqueue';
 import { restartFailedRead, supabaseReadAgainDeps } from './read-again';
 import type { SourceFileInsert, UploadDeps } from './upload';
 
@@ -60,6 +60,7 @@ export function supabaseUploadDeps(supabase: SupabaseServerClient): UploadDeps {
         .insert({
           org_id: row.orgId,
           source_file_id: row.sourceFileId,
+          upload_batch_id: row.uploadBatchId,
           status: 'received',
           received_date: row.receivedDate,
         })
@@ -70,7 +71,8 @@ export function supabaseUploadDeps(supabase: SupabaseServerClient): UploadDeps {
     },
     restartIfFailed: (orgId, documentId) =>
       restartFailedRead(supabaseReadAgainDeps(supabase), orgId, documentId),
-    enqueueRead: enqueueDocExtract,
+    enqueueSort: enqueueDocSplit,
+    newBatchId: () => crypto.randomUUID(),
     today: () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date()),
   };
 }

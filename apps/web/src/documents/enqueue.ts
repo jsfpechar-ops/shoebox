@@ -1,4 +1,4 @@
-import { docExtractJob, jobIdFromKey, jobKey } from '@shoebox/pipeline';
+import { docExtractJob, docSplitJob, jobIdFromKey, jobKey } from '@shoebox/pipeline';
 import { PgBoss } from 'pg-boss';
 
 let started: Promise<PgBoss> | undefined;
@@ -36,6 +36,16 @@ export async function enqueueDocExtract(
   const base = jobKey(docExtractJob, payload);
   const key = retry === undefined ? base : `${base}:retry:${retry}`;
   await (await boss()).send(docExtractJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `doc.split` for one upload drop (page sorting); it queues the reads itself. */
+export async function enqueueDocSplit(orgId: string, batchId: string): Promise<void> {
+  const payload = docSplitJob.payload.parse({ orgId, batchId });
+  const key = jobKey(docSplitJob, payload);
+  await (await boss()).send(docSplitJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });
