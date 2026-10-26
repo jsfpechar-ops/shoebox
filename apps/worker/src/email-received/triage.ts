@@ -49,20 +49,8 @@ function extOf(name: string | null): string | null {
   return i < 0 ? null : name.slice(i + 1).toLowerCase();
 }
 
-/** A newsletter or other bulk mail (List-Unsubscribe, or Precedence bulk/list): its images are marketing, not receipts. */
-export function isBulkMail(headers: readonly { key: string; value: string }[]): boolean {
-  return headers.some((h) => {
-    const key = h.key.toLowerCase();
-    return key === 'list-unsubscribe' || (key === 'precedence' && /\b(bulk|list)\b/i.test(h.value));
-  });
-}
-
 /** M01 §4.5.1 triage, first match wins; a candidate without a filename gets `attachment-<index>.<ext>`. */
-export function triageAttachments(
-  parts: readonly MailPart[],
-  html: string | null,
-  options: { readonly bulk?: boolean } = {},
-): Candidate[] {
+export function triageAttachments(parts: readonly MailPart[], html: string | null): Candidate[] {
   const cids = new Set<string>();
   if (html !== null) for (const m of html.matchAll(/cid:([^"'\s>)]+)/gi)) cids.add(m[1] ?? '');
 
@@ -83,7 +71,6 @@ export function triageAttachments(
     const cid = part.contentId?.replace(/^<|>$/g, '') ?? null;
     if (isImage && cid !== null && cids.has(cid)) return;
     if (isImage && part.content.length < MIN_IMAGE_BYTES) return;
-    if (isImage && options.bulk === true) return;
     if (part.content.length > MAX_BYTES) return;
 
     const filename = name ?? `attachment-${index + 1}.${TYPE_EXT.get(resolved) ?? 'bin'}`;

@@ -3,7 +3,7 @@ import type { finishInboundEmail, insertEmailAttachment, loadInboundEmail } from
 import { BlobStoreError, filePath } from '@shoebox/platform';
 import PostalMime from 'postal-mime';
 import type { TenantHandler } from '../registry';
-import { isBulkMail, spamVerdictOf, triageAttachments } from './triage';
+import { spamVerdictOf, triageAttachments } from './triage';
 
 export interface EmailReceivedDeps {
   readonly blobs: {
@@ -44,7 +44,7 @@ export function createEmailReceivedHandler(
         contentId: a.contentId ?? null,
         content: new Uint8Array(a.content as ArrayBuffer),
       }));
-    const candidates = triageAttachments(parts, email.html ?? null, { bulk: isBulkMail(headers) });
+    const candidates = triageAttachments(parts, email.html ?? null);
 
     const batchId = randomUUID();
     let anyNew = false;
