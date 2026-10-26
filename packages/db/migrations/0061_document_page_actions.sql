@@ -78,7 +78,7 @@ begin
   update documents set deleted_at = now() where id = v_other.id;
   update documents set status = 'received' where id = v_doc.id;
   update review_questions
-    set answer = '{"same": true}'::jsonb, answered_by = auth.uid(), answered_at = now()
+    set answer = '{"value": "yes"}'::jsonb, answered_by = auth.uid(), answered_at = now()
     where kind = 'same_invoice' and answered_at is null and document_id in (v_doc.id, v_other.id);
   return array[v_doc.id];
 end $$;
