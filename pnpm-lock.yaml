@@ -186,6 +186,9 @@ importers:
       '@shoebox/registries':
         specifier: workspace:*
         version: link:../../packages/registries
+      '@shoebox/tax-xml':
+        specifier: workspace:*
+        version: link:../../packages/tax-xml
       '@shoebox/validation':
         specifier: workspace:*
         version: link:../../packages/validation

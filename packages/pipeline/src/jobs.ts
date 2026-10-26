@@ -225,6 +225,14 @@ export const retentionTrashPurgeJob = defineSystemJob({
   cron: '30 3 * * *',
 });
 
+/** 06 §3: nightly EPO structure and XSD drift check (log alert; detection only). */
+export const opsDriftMonitorsJob = defineSystemJob({
+  name: 'ops.drift_monitors',
+  payload: z.strictObject({}),
+  cron: '15 4 * * *',
+  retry: { retryLimit: 0 },
+});
+
 /** A UUID (version-5 layout) derived from an idempotency key: same key, same pg-boss job id. */
 export function jobIdFromKey(key: string): string {
   const bytes = createHash('sha1').update(`shoebox.job:${key}`).digest().subarray(0, 16);
