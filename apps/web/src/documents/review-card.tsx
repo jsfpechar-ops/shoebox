@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type KeyboardEvent, useEffect, useId, useRef } from 'react';
 import { answerQuestionAction } from './review-actions';
-import { keyAction, type ReviewCard as ReviewCardData } from './review-deck';
+import { keyAction, optionText, type ReviewCard as ReviewCardData } from './review-deck';
 
 export interface ReviewCardDocument {
   title: string | null;
@@ -108,7 +108,7 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
                     variant={suggested ? 'primary' : 'secondary'}
                     className="w-full"
                   >
-                    {`[${index + 1}] ${t(option.label)}`}
+                    {`[${index + 1}] ${optionText(option)}`}
                   </Button>
                 </form>
               );
@@ -116,7 +116,7 @@ export function ReviewCard({ card, doc, position, total, skip }: ReviewCardProps
           </div>
           {suggestedOption !== undefined && (
             <p className="text-body">
-              {t('review.suggested', { label: t(suggestedOption.label) })}
+              {t('review.suggested', { label: optionText(suggestedOption) })}
             </p>
           )}
         </>
