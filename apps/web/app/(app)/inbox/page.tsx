@@ -1,9 +1,11 @@
+import type { LegalDate } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
 import {
   Button,
   Card,
   cn,
   focusRing,
+  formatLegalDate,
   Input,
   Label,
   LegalDateText,
@@ -22,6 +24,8 @@ import {
   parseRegisterFilter,
 } from '../../../src/documents/register-data';
 import { RegisterTable } from '../../../src/documents/register-table';
+import { restoreAction } from '../../../src/documents/trash-actions';
+import { loadTrash } from '../../../src/documents/trash-data';
 import { UploadDropzone } from '../../../src/documents/upload-dropzone';
 import { createSupabaseServerClient } from '../../../src/supabase/server';
 
@@ -48,6 +52,8 @@ export default async function InboxPage({
     tab === 'all' && auth.ok && supabase
       ? applyRegisterFilter(await loadRegister(supabase, auth.orgId), filter)
       : [];
+  const trashRows =
+    tab === 'trash' && auth.ok && supabase ? await loadTrash(supabase, auth.orgId) : [];
   const reviewRows = rows.filter((r) => r.processing || r.status === 'needs_review');
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -81,10 +87,56 @@ export default async function InboxPage({
               {t('inbox.tabs.all')}
             </Link>
           </li>
+          <li>
+            <Link
+              href={inboxHref('trash')}
+              aria-current={tab === 'trash' ? 'page' : undefined}
+              className={cn(tabLink, focusRing)}
+            >
+              {t('inbox.tabs.trash')}
+            </Link>
+          </li>
         </ul>
       </nav>
       <UploadDropzone />
-      {tab === 'all' ? (
+      {tab === 'trash' ? (
+        <>
+          <p className="text-body">{t('trash.note')}</p>
+          {trashRows.length === 0 ? (
+            <Card className="flex flex-col gap-2 p-6">
+              <p className="text-body">{t('trash.empty')}</p>
+            </Card>
+          ) : (
+            <ul
+              aria-label={t('trash.title')}
+              className="flex flex-col divide-y divide-border rounded-control border border-border bg-card"
+            >
+              {trashRows.map((row) => (
+                <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-body text-foreground">
+                      {row.title ?? t('inbox.row.unknown_supplier')}
+                    </span>
+                    <span className="text-body text-muted-foreground">
+                      {t('trash.deleted_on', {
+                        date: formatLegalDate(row.deletedAt.slice(0, 10) as LegalDate),
+                      })}
+                    </span>
+                  </div>
+                  {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (
+                    <form action={restoreAction}>
+                      <input type="hidden" name="id" value={row.id} />
+                      <Button type="submit" variant="secondary">
+                        {t('trash.restore')}
+                      </Button>
+                    </form>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : tab === 'all' ? (
         <>
           <form method="get" action="/inbox" className="flex flex-wrap items-end gap-3">
             <input type="hidden" name="tab" value="all" />
