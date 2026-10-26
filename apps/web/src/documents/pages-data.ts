@@ -55,7 +55,7 @@ export async function loadPagesView(
     .maybeSingle();
   if (pagesResult.error || questionResult.error) return EMPTY;
 
-  const rows = (pagesResult.data ?? []) as PageRow[];
+  const rows = (pagesResult.data ?? []) as unknown as PageRow[];
   const pages: PageLine[] = rows.map((row) => ({
     position: row.position,
     fileName: row.source_files?.original_filename ?? null,
