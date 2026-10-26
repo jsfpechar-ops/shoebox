@@ -26,7 +26,10 @@ const SEEDED_KEYS: readonly RuleKey[] = [
   'epo.dphdp3_row_map',
   'epo.forms',
   'epo.kh_routing',
+  'income_tax.credits',
+  'income_tax.rates',
   'insurance.min_advances',
+  'insurance.rates',
   'pausalni_dan.bands',
   'pausalni_dan.deadlines',
   'pausalni_dan.eligibility',
@@ -91,8 +94,8 @@ describe('seed files (06 §2)', () => {
   it('seeds exactly the P0-DOM-05 keys in both years', () => {
     expect([...new Set(RULES_CZ_2025.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
     expect([...new Set(RULES_CZ_2026.map((e) => e.key))].sort()).toEqual(SEEDED_KEYS);
-    expect(RULES_CZ_2025).toHaveLength(28);
-    expect(RULES_CZ_2026).toHaveLength(29);
+    expect(RULES_CZ_2025).toHaveLength(31);
+    expect(RULES_CZ_2026).toHaveLength(32);
   });
 
   it('2025 segments span the calendar year; 2026 segments start on 2026-01-01', () => {
@@ -101,7 +104,7 @@ describe('seed files (06 §2)', () => {
       expect(entry.valid_to).toBe('2025-12-31');
     }
     expect(RULES_CZ_2026.every((entry) => entry.valid_from >= '2026-01-01')).toBe(true);
-    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(28);
+    expect(RULES_CZ_2026.filter((entry) => entry.valid_from === '2026-01-01')).toHaveLength(31);
   });
 
   it('every seeded key resolves on every day of 2025 and 2026 and not before', () => {
@@ -370,5 +373,35 @@ describe('Phase 3 VAT seeds (0328)', () => {
     expect(rules.at(parseLegalDate('2025-06-01')).get('vat.return_rounding')).toBe(
       'sum_entries_then_round',
     );
+  });
+});
+
+describe('income tax and insurance rates (M06, 06 §2.1)', () => {
+  it('income_tax.rates: 15 % / 23 %, threshold 1 676 052 (2025) and 1 762 812 (2026)', () => {
+    expect(rules.at('2025-12-31').get('income_tax.rates')).toEqual({
+      r1: 15,
+      r2: 23,
+      threshold_annual: 1_676_052,
+    });
+    expect(rules.at('2026-01-01').get('income_tax.rates')).toEqual({
+      r1: 15,
+      r2: 23,
+      threshold_annual: 1_762_812,
+    });
+  });
+  it('income_tax.credits.taxpayer: 30 840 Kč in both years', () => {
+    for (const date of ['2025-06-30', '2026-06-30']) {
+      expect(rules.at(date).get('income_tax.credits')).toEqual({ taxpayer: 30_840 });
+    }
+  });
+  it('insurance.rates: social 29,2 % of 55 %, health 13,5 % of 50 %', () => {
+    for (const date of ['2025-01-01', '2026-12-31']) {
+      expect(rules.at(date).get('insurance.rates')).toEqual({
+        social_pct: 29.2,
+        social_base_pct: 55,
+        health_pct: 13.5,
+        health_base_pct: 50,
+      });
+    }
   });
 });
