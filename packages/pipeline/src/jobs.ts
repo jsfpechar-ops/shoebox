@@ -360,3 +360,57 @@ export const ledgerVerifyJob = defineSystemJob({
   cron: '45 3 * * *',
   retry: { retryLimit: 0 },
 });
+
+/** M05 §6: evaluate the VAT obligations of one period for one family (IO or PAYER). */
+export const vatPeriodEvaluatePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  family: z.enum(['IO', 'PAYER']),
+});
+export type VatPeriodEvaluatePayload = z.infer<typeof vatPeriodEvaluatePayload>;
+export const vatPeriodEvaluateJob = defineTenantJob({
+  name: 'vat.period.evaluate',
+  payload: vatPeriodEvaluatePayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M05 §6: generate one filing (radne, opravne, dodatecne, nasledne) for a period. */
+export const vatFilingGeneratePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  kind: z.enum(['radne', 'opravne', 'dodatecne', 'nasledne']),
+  amendsFilingId: z.uuid().optional(),
+  discoveredOn: z.iso.date().optional(),
+  requestedBy: z.uuid(),
+});
+export type VatFilingGeneratePayload = z.infer<typeof vatFilingGeneratePayload>;
+export const vatFilingGenerateJob = defineTenantJob({
+  name: 'vat.filing.generate',
+  payload: vatFilingGeneratePayload,
+  version: 1,
+  entityId: (p) => `${p.periodStart}:${p.kind}`,
+});
+
+/** M05 §6: build the period workbook (xlsx). */
+export const vatWorkbookGeneratePayload = tenantPayload({
+  periodStart: z.iso.date(),
+  requestedBy: z.uuid().optional(),
+});
+export type VatWorkbookGeneratePayload = z.infer<typeof vatWorkbookGeneratePayload>;
+export const vatWorkbookGenerateJob = defineTenantJob({
+  name: 'vat.workbook.generate',
+  payload: vatWorkbookGeneratePayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});
+
+/** M05 §6: detect whether a period needs an amendment (opravne) after a ledger change. */
+export const vatAmendmentDetectPayload = tenantPayload({
+  periodStart: z.iso.date(),
+});
+export type VatAmendmentDetectPayload = z.infer<typeof vatAmendmentDetectPayload>;
+export const vatAmendmentDetectJob = defineTenantJob({
+  name: 'vat.amendment.detect',
+  payload: vatAmendmentDetectPayload,
+  version: 1,
+  entityId: (p) => p.periodStart,
+});

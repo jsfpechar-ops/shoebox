@@ -20,6 +20,10 @@ import {
   ledgerVerifyJob,
   opsHeartbeatJob,
   tenantPayload,
+  vatAmendmentDetectJob,
+  vatFilingGenerateJob,
+  vatPeriodEvaluateJob,
+  vatWorkbookGenerateJob,
 } from '../src/jobs';
 
 const ORG = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -241,5 +245,27 @@ describe('M04 jobs', () => {
     expect(ledgerVerifyJob.scope).toBe('system');
     expect(ledgerVerifyJob.cron).toBe('45 3 * * *');
     expect(ledgerVerifyJob.payload.parse({})).toEqual({ samplePct: 1 });
+  });
+});
+
+describe('M05 VAT jobs', () => {
+  const ORG = '11111111-1111-4111-8111-111111111111';
+  const USER = '33333333-3333-4333-8333-333333333333';
+  it('vat.filing.generate validates the M05 payload and keys on period and kind', () => {
+    const payload = { orgId: ORG, periodStart: '2026-08-01', kind: 'radne', requestedBy: USER };
+    expect(vatFilingGenerateJob.payload.parse(payload)).toEqual(payload);
+    expect(() => vatFilingGenerateJob.payload.parse({ ...payload, kind: 'x' })).toThrow();
+    expect(vatFilingGenerateJob.name).toBe('vat.filing.generate');
+    expect(vatFilingGenerateJob.entityId(payload)).toBe('2026-08-01:radne');
+    expect(
+      vatPeriodEvaluateJob.entityId({ orgId: ORG, periodStart: '2026-08-01', family: 'IO' }),
+    ).toBe('2026-08-01');
+    expect(vatWorkbookGenerateJob.payload.parse({ orgId: ORG, periodStart: '2026-08-01' })).toEqual(
+      {
+        orgId: ORG,
+        periodStart: '2026-08-01',
+      },
+    );
+    expect(vatAmendmentDetectJob.version).toBe(1);
   });
 });
