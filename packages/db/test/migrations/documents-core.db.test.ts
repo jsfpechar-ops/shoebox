@@ -136,7 +136,7 @@ describe.skipIf(DATABASE_URL === undefined)('0005: ingestion and document core',
     await sql`delete from documents where id = ${first.id}`;
   });
 
-  it('entry_mode: only captured requires source_file_id; a source file page is unique', async () => {
+  it('entry_mode: only captured requires source_file_id; a file page may hold several documents (0062)', async () => {
     expect(await code(insertDoc(sql, { entry_mode: 'captured' }))).toBe('23514');
     expect(await code(insertDoc(sql, { entry_mode: 'manual' }))).toBeNull();
     expect(await code(insertDoc(sql, { entry_mode: 'imported' }))).toBeNull();
@@ -148,7 +148,7 @@ describe.skipIf(DATABASE_URL === undefined)('0005: ingestion and document core',
       values (${ORG}, ${'a'.repeat(64)}, 'x/y.pdf', 'application/pdf', 10, 'upload') returning id`,
     );
     expect(await code(insertDoc(sql, { source_file_id: sf?.id }))).toBeNull();
-    expect(await code(insertDoc(sql, { source_file_id: sf?.id, page_from: 1 }))).toBe('23505');
+    expect(await code(insertDoc(sql, { source_file_id: sf?.id, page_from: 1 }))).toBeNull();
     expect(await code(insertDoc(sql, { source_file_id: sf?.id, page_from: 2 }))).toBeNull();
     expect(
       await code(
