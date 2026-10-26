@@ -5,9 +5,14 @@ import type { RuleResolver } from '../resolver';
 import type { RuleEntryInput } from '../segment';
 import { RULES_CZ_2025 } from './2025';
 import { RULES_CZ_2026 } from './2026';
+import { RULES_CZ_PRODUCT } from './classification';
 
-/** All seeded Czech entries, oldest year first. */
-export const CZ_RULE_ENTRIES: readonly RuleEntryInput[] = [...RULES_CZ_2025, ...RULES_CZ_2026];
+/** All seeded Czech entries: law by year (oldest first), then the open-ended product keys. */
+export const CZ_RULE_ENTRIES: readonly RuleEntryInput[] = [
+  ...RULES_CZ_2025,
+  ...RULES_CZ_2026,
+  ...RULES_CZ_PRODUCT,
+];
 
 /** The Czech rules, optionally merged with amendments or `rules_overrides` rows; pure. */
 export function createCzRules(
@@ -16,4 +21,4 @@ export function createCzRules(
   return createRules([...CZ_RULE_ENTRIES, ...extra]);
 }
 
-export { RULES_CZ_2025, RULES_CZ_2026 };
+export { RULES_CZ_2025, RULES_CZ_2026, RULES_CZ_PRODUCT };

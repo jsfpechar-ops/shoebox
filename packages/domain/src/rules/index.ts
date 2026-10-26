@@ -14,7 +14,13 @@ export {
   Ratio,
   YearKey,
 } from './atoms';
-export { CZ_RULE_ENTRIES, createCzRules, RULES_CZ_2025, RULES_CZ_2026 } from './cz/index';
+export {
+  CZ_RULE_ENTRIES,
+  createCzRules,
+  RULES_CZ_2025,
+  RULES_CZ_2026,
+  RULES_CZ_PRODUCT,
+} from './cz/index';
 export {
   RuleError,
   RuleGapError,
