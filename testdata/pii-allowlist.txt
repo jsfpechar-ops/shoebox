@@ -19,3 +19,4 @@ CZ510101123;synthetic 9-digit DIČ shape test vector;packages/validation/test/id
 CZ8720100000002400123455;IBAN of the synthetic own account 2400123455/2010;packages/bank/test, apps/*/test
 1003-1234567899/0800;synthetic counterparty account (mod-11 valid, made up), bank statement parser tests;packages/bank/test
 CZ4608000010031234567899;IBAN of the synthetic counterparty 1003-1234567899/0800;packages/bank/test
+CZ0000000000000000000000;all-zero placeholder IBAN, not an account;packages/extraction/test/precheck.test.ts (brief 0515)
