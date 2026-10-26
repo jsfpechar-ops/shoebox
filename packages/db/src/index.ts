@@ -35,3 +35,4 @@ export {
   withTenant,
 } from './tenant';
 export { purgeTrash, type TrashPurge } from './trash-purge';
+export * from './vendor-memory';
