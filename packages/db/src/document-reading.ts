@@ -7,8 +7,8 @@ import {
 } from './schema/document-details';
 import { documents, sourceFiles } from './schema/documents';
 import { organizations } from './schema/tenancy';
-import type { TenantTx } from './tenant';
 import { markIfSemanticDuplicate } from './semantic-dedupe';
+import type { TenantTx } from './tenant';
 
 export interface DocumentForRead {
   readonly id: string;

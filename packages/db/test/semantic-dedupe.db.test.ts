@@ -31,7 +31,13 @@ function write(
       classSource: 'llm',
       direction: 'in',
       taxDocStatus: 'full_tax_document',
-      partnerSnapshot: { name: 'Dodavatel s.r.o.', ico: '27082440', dic: null, vat_id: null, country: 'CZ' },
+      partnerSnapshot: {
+        name: 'Dodavatel s.r.o.',
+        ico: '27082440',
+        dic: null,
+        vat_id: null,
+        country: 'CZ',
+      },
       buyerSnapshot: null,
       documentNumber: 'FV 2026-0001',
       variableSymbol: null,
@@ -106,7 +112,8 @@ describe.skipIf(DATABASE_URL === undefined)('semantic dedupe after a reading', (
     await save(write(ORG, second, { documentNumber: 'fv2026/0001' }));
     expect(await statusOf(first)).toBe('ready');
     expect(await statusOf(second)).toBe('duplicate');
-    const links = await sql`select to_document_id, kind from document_links where from_document_id = ${second}`;
+    const links =
+      await sql`select to_document_id, kind from document_links where from_document_id = ${second}`;
     expect(links).toEqual([{ to_document_id: first, kind: 'duplicate_of' }]);
   });
 
@@ -116,8 +123,22 @@ describe.skipIf(DATABASE_URL === undefined)('semantic dedupe after a reading', (
     const c = await newDoc(ORG, 5);
     await save(write(ORG, a, { totalGross: '1211' }));
     await save(write(ORG, b, { documentNumber: 'FV 2026-0002' }));
-    await save(write(ORG, c, { partnerSnapshot: { name: 'Jiný s.r.o.', ico: '12345679', dic: null, vat_id: null, country: 'CZ' } }));
-    expect([await statusOf(a), await statusOf(b), await statusOf(c)]).toEqual(['ready', 'ready', 'ready']);
+    await save(
+      write(ORG, c, {
+        partnerSnapshot: {
+          name: 'Jiný s.r.o.',
+          ico: '12345679',
+          dic: null,
+          vat_id: null,
+          country: 'CZ',
+        },
+      }),
+    );
+    expect([await statusOf(a), await statusOf(b), await statusOf(c)]).toEqual([
+      'ready',
+      'ready',
+      'ready',
+    ]);
   });
 
   it('without an IČO the supplier name decides, ignoring case and spaces', async () => {
@@ -125,7 +146,12 @@ describe.skipIf(DATABASE_URL === undefined)('semantic dedupe after a reading', (
     const a = await newDoc(ORG, 6);
     const b = await newDoc(ORG, 7);
     await save(write(ORG, a, { partnerSnapshot: noIco, documentNumber: 'U-77' }));
-    await save(write(ORG, b, { partnerSnapshot: { ...noIco, name: 'kavárna u lípy ' }, documentNumber: 'U-77' }));
+    await save(
+      write(ORG, b, {
+        partnerSnapshot: { ...noIco, name: 'kavárna u lípy ' },
+        documentNumber: 'U-77',
+      }),
+    );
     expect(await statusOf(b)).toBe('duplicate');
   });
 
@@ -149,6 +175,10 @@ describe.skipIf(DATABASE_URL === undefined)('semantic dedupe after a reading', (
     await save(write(ORG, c, { documentNumber: null }));
     await save(write(ORG, d, { documentNumber: null }));
     await save(write(ORG2, e, { documentNumber: 'S-1' }));
-    expect([await statusOf(b), await statusOf(d), await statusOf(e)]).toEqual(['supporting', 'ready', 'ready']);
+    expect([await statusOf(b), await statusOf(d), await statusOf(e)]).toEqual([
+      'supporting',
+      'ready',
+      'ready',
+    ]);
   });
 });
