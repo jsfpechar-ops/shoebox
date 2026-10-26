@@ -230,7 +230,10 @@ describe('rebuildDocument', () => {
     const second = await rebuildDocument(tx, ORG, DOC, { store, rules, logger: silent });
     expect(second).toEqual({ changed: false });
     expect(replaced).toHaveLength(1);
-    docs[DOC] = { ...docs[DOC]!, lines: [{ ...docs[DOC]!.lines[0]!, businessSharePct: '50' }] };
+    const base = docs[DOC];
+    const firstLine = base?.lines[0];
+    if (!base || !firstLine) throw new Error('fixture missing');
+    docs[DOC] = { ...base, lines: [{ ...firstLine, businessSharePct: '50' }] };
     const third = await rebuildDocument(tx, ORG, DOC, { store, rules, logger: silent });
     expect(third.changed).toBe(true);
     expect(replaced[1]?.tax[0]?.businessAmountCzk).toBe('599.00');
