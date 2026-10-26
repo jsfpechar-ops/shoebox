@@ -11,6 +11,7 @@ export * from './inbound-email';
 export * from './ledger-rebuild';
 export * from './match-store';
 export * from './podklady';
+export * from './radar-store';
 export { type RateLimitDb, rateLimitHit } from './rate-limit';
 export * from './rls-catalog';
 export * from './schema/document-details';

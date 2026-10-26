@@ -512,3 +512,22 @@ export const podkladyReserveNightlyJob = defineSystemJob({
   cron: '30 2 * * *',
   retry: { retryLimit: 0 },
 });
+
+/** M07 §4.8: materialise the missing-documents radar of one organization as review questions. Singleton per org. */
+export const bankRadarRefreshJob = defineTenantJob({
+  name: 'bank.radar.refresh',
+  payload: tenantPayload({}),
+  version: 1,
+  entityId: () => 'refresh',
+});
+export type BankRadarRefreshPayload = z.infer<typeof bankRadarRefreshJob.payload>;
+
+export const bankRadarNightlyPayload = z.strictObject({});
+export type BankRadarNightlyPayload = z.infer<typeof bankRadarNightlyPayload>;
+/** M07 §4.8: daily 03:20 Europe/Prague fan-out of bank.radar.refresh over the active organizations. */
+export const bankRadarNightlyJob = defineSystemJob({
+  name: 'bank.radar.nightly',
+  payload: bankRadarNightlyPayload,
+  cron: '20 3 * * *',
+  retry: { retryLimit: 0 },
+});

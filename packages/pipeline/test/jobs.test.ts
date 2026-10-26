@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
+  bankRadarNightlyJob,
+  bankRadarRefreshJob,
   CRON_TIME_ZONE,
   DEFAULT_RETRY,
   deadLetterName,
@@ -299,5 +301,19 @@ describe('M06 podklady jobs', () => {
   it('podklady.reserve.nightly is a system cron at 02:30', () => {
     expect(podkladyReserveNightlyJob.scope).toBe('system');
     expect(podkladyReserveNightlyJob.cron).toBe('30 2 * * *');
+  });
+});
+
+describe('bank radar jobs (M07 §4.8)', () => {
+  it('bank.radar.refresh is a singleton per org', () => {
+    const payload = { orgId: '11111111-1111-4111-8111-111111111111' };
+    expect(bankRadarRefreshJob.payload.parse(payload)).toEqual(payload);
+    expect(jobKey(bankRadarRefreshJob, payload)).toBe(
+      `${payload.orgId}:bank.radar.refresh:refresh:1`,
+    );
+  });
+  it('bank.radar.nightly is a system cron', () => {
+    expect(bankRadarNightlyJob.scope).toBe('system');
+    expect(bankRadarNightlyJob.cron).toBe('20 3 * * *');
   });
 });
