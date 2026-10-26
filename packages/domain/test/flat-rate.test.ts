@@ -86,7 +86,7 @@ describe('computeFlatRateComparison golden (M06 §9)', () => {
         layer: 'override',
         valid_from: '2026-01-01',
         valid_to: null,
-        source: 'test',
+        source: 'https://www.zakonyprolidi.cz/cs/1992-586#p7',
         verified_at: '2026-10-26',
         value: { '80': 1_900_000, '60': 1_200_000, '40': 800_000, '30': 600_000 },
       },

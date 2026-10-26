@@ -1,6 +1,6 @@
 # 0355 report
 
-Status: blocked
+Status: review (orchestrator: override fixture source set to a valid URL)
 Commit: c3ff2ad (branch wt-0355)
 
 ## Files changed
