@@ -202,33 +202,38 @@ export default async function InboxPage({
           <p className="text-body">{t('inbox.empty.body')}</p>
         </Card>
       ) : (
-        <ul
-          aria-label={t('inbox.list.label')}
-          className="flex flex-col divide-y divide-border rounded-control border border-border bg-card"
-        >
-          {reviewRows.map((row) => (
-            <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-body text-foreground">
-                  <Link href={`/inbox/${row.id}`} className="underline">
-                    {row.title ?? t('inbox.row.unknown_supplier')}
-                  </Link>
-                </span>
-                {row.issueDate ? <LegalDateText date={row.issueDate} /> : null}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {row.total ? (
-                  <MoneyText value={row.total.value} currency={row.total.currency} />
-                ) : null}
-                <StatusBadge
-                  status={row.status}
-                  cls={row.cls}
-                  {...(row.processing ? { processingSince: row.createdAt } : {})}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          <Link href="/inbox/review" className="text-body underline">
+            {t('review.cta')}
+          </Link>
+          <ul
+            aria-label={t('inbox.list.label')}
+            className="flex flex-col divide-y divide-border rounded-control border border-border bg-card"
+          >
+            {reviewRows.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-body text-foreground">
+                    <Link href={`/inbox/${row.id}`} className="underline">
+                      {row.title ?? t('inbox.row.unknown_supplier')}
+                    </Link>
+                  </span>
+                  {row.issueDate ? <LegalDateText date={row.issueDate} /> : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {row.total ? (
+                    <MoneyText value={row.total.value} currency={row.total.currency} />
+                  ) : null}
+                  <StatusBadge
+                    status={row.status}
+                    cls={row.cls}
+                    {...(row.processing ? { processingSince: row.createdAt } : {})}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       <AutoRefresh active={rows.some((row) => row.processing)} />
     </div>
