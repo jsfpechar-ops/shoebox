@@ -63,7 +63,7 @@ export async function readPodkladyRows(
   tx: TenantTx,
   orgId: string,
   year: number,
-  currentBuildVersion: bigint,
+  currentLedgerAlgo: bigint,
 ): Promise<PodkladyRows> {
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
@@ -129,10 +129,12 @@ export async function readPodkladyRows(
     business_amount_czk: string;
     build_version: string;
     revision: number | null;
+    ledger_algo: string | null;
   }>(
     tx,
     sql`select e.entry_date::text, e.tax_year::int, e.basis, e.document_id, e.line_id, e.category_code, e.tax_effect::text,
-               e.amount_czk::text, e.business_share_pct::text, e.business_amount_czk::text, e.build_version::text, d.revision
+               e.amount_czk::text, e.business_share_pct::text, e.business_amount_czk::text, e.build_version::text, d.revision,
+               d.stage_version->'ledger'->>'v' as ledger_algo
         from tax_ledger_entries e
         left join documents d on d.id = e.document_id and d.org_id = e.org_id
         where e.org_id = ${orgId} and e.tax_year = ${year}
@@ -162,8 +164,9 @@ export async function readPodkladyRows(
     });
   }
   const documents = [...docMap.values()].sort((a, b) => a.documentId.localeCompare(b.documentId));
+  // Stale = built by an older ledger algorithm (stage_version.ledger.v), not an older build_version sequence value.
   const staleEntries = entryRows.filter(
-    (e) => BigInt(e.build_version) < currentBuildVersion,
+    (e) => e.document_id !== null && BigInt(e.ledger_algo ?? '0') < currentLedgerAlgo,
   ).length;
 
   // Asset lines.
