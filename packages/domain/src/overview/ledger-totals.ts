@@ -3,15 +3,31 @@ import type { TaxEffect } from '../enums/index';
 import { CZK, Money } from '../money/index';
 import type { OverviewTotals, PeriodTotals } from './totals';
 export type LedgerBasis = 'payment' | 'document_evidence' | 'provisional';
-export interface LedgerTotalsEntry { readonly entryDate: LegalDate; readonly basis: LedgerBasis; readonly taxEffect: TaxEffect; readonly businessAmountCzk: string; }  // decimal literal as stored
-export interface LedgerTotals { readonly month: PeriodTotals; readonly ytd: PeriodTotals; readonly provisional: PeriodTotals; readonly entryCount: number; }
-export interface MergedOverviewTotals extends OverviewTotals { readonly source: 'ledger' | 'documents'; readonly provisional: PeriodTotals; }
+export interface LedgerTotalsEntry {
+  readonly entryDate: LegalDate;
+  readonly basis: LedgerBasis;
+  readonly taxEffect: TaxEffect;
+  readonly businessAmountCzk: string;
+} // decimal literal as stored
+export interface LedgerTotals {
+  readonly month: PeriodTotals;
+  readonly ytd: PeriodTotals;
+  readonly provisional: PeriodTotals;
+  readonly entryCount: number;
+}
+export interface MergedOverviewTotals extends OverviewTotals {
+  readonly source: 'ledger' | 'documents';
+  readonly provisional: PeriodTotals;
+}
 
 const LEDGER_INCOME_EFFECTS: ReadonlySet<string> = new Set(['taxable_income']);
 const LEDGER_EXPENSE_EFFECTS: ReadonlySet<string> = new Set(['deductible_expense']);
 
 /** Sums business_amount_czk per window (month = asOf's month up to asOf; ytd = asOf's year up to asOf) for income/expense effects; `provisional` rows go to `provisional` (ytd window) instead. Rows after asOf are ignored. */
-export function computeLedgerTotals(entries: readonly LedgerTotalsEntry[], asOf: LegalDate): LedgerTotals {
+export function computeLedgerTotals(
+  entries: readonly LedgerTotalsEntry[],
+  asOf: LegalDate,
+): LedgerTotals {
   const monthStart = `${asOf.slice(0, 7)}-01`;
   const ytdStart = `${asOf.slice(0, 4)}-01-01`;
   let monthIncome = Money.zero(CZK);
@@ -62,7 +78,10 @@ export function computeLedgerTotals(entries: readonly LedgerTotalsEntry[], asOf:
 }
 
 /** Ledger month/ytd replace the document ones when entryCount > 0; everything else is kept from `docTotals`. */
-export function mergeOverviewTotals(docTotals: OverviewTotals, ledger: LedgerTotals): MergedOverviewTotals {
+export function mergeOverviewTotals(
+  docTotals: OverviewTotals,
+  ledger: LedgerTotals,
+): MergedOverviewTotals {
   const useLedger = ledger.entryCount > 0;
   return {
     ...docTotals,
