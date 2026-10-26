@@ -14,37 +14,69 @@ import {
 } from '../src/taxonomy/categories';
 
 // 04 §3.1, pasted into brief 0301 §2. The order is the spec's order; `sort` follows it.
-const SPEC: Record<string, string[]> = {
+const SPEC = {
   taxable_income: [
-    'income_services', 'income_goods', 'income_accommodation', 'income_platform_payout',
+    'income_services',
+    'income_goods',
+    'income_accommodation',
+    'income_platform_payout',
     'income_other_taxable',
   ],
   non_taxable_income: [
-    'income_interest', 'income_subsidy', 'income_loan_received', 'income_owner_deposit',
+    'income_interest',
+    'income_subsidy',
+    'income_loan_received',
+    'income_owner_deposit',
     'income_vat_refund',
   ],
   deductible_expense: [
-    'exp_material', 'exp_goods_for_resale', 'exp_small_assets', 'exp_services_general',
-    'exp_software_saas', 'exp_hosting_domains', 'exp_telecom', 'exp_rent', 'exp_energy',
-    'exp_cleaning', 'exp_property_management', 'exp_platform_commission', 'exp_payment_fees',
-    'exp_bank_fees', 'exp_advertising', 'exp_accounting_legal', 'exp_postage_shipping',
-    'exp_travel_transport', 'exp_fuel', 'exp_car_operating', 'exp_car_lease', 'exp_repairs',
-    'exp_insurance_business', 'exp_training_education', 'exp_office_supplies', 'exp_salaries',
+    'exp_material',
+    'exp_goods_for_resale',
+    'exp_small_assets',
+    'exp_services_general',
+    'exp_software_saas',
+    'exp_hosting_domains',
+    'exp_telecom',
+    'exp_rent',
+    'exp_energy',
+    'exp_cleaning',
+    'exp_property_management',
+    'exp_platform_commission',
+    'exp_payment_fees',
+    'exp_bank_fees',
+    'exp_advertising',
+    'exp_accounting_legal',
+    'exp_postage_shipping',
+    'exp_travel_transport',
+    'exp_fuel',
+    'exp_car_operating',
+    'exp_car_lease',
+    'exp_repairs',
+    'exp_insurance_business',
+    'exp_training_education',
+    'exp_office_supplies',
+    'exp_salaries',
     'exp_other_deductible',
   ],
   non_deductible_expense: ['exp_representation', 'exp_fines_penalties', 'exp_other_non_deductible'],
   asset: ['asset_long_term'],
   pass_through: ['pt_tourist_fee', 'pt_deposit', 'pt_customs_vat'],
   tax_or_insurance_payment: [
-    'tax_vat_payment', 'tax_income_payment', 'tax_pausal_advance', 'ins_social_own',
-    'ins_health_own', 'tax_other_fees',
+    'tax_vat_payment',
+    'tax_income_payment',
+    'tax_pausal_advance',
+    'ins_social_own',
+    'ins_health_own',
+    'tax_other_fees',
   ],
   transfer: [
-    'transfer_own_accounts', 'transfer_cash_deposit', 'transfer_cash_withdrawal',
+    'transfer_own_accounts',
+    'transfer_cash_deposit',
+    'transfer_cash_withdrawal',
     'loan_repayment_principal',
   ],
   private: ['private_expense', 'private_withdrawal'],
-};
+} satisfies Record<string, string[]>;
 
 describe('CATEGORIES (04 §3.1)', () => {
   it('has the 56 codes of the spec, each exactly once, in spec order', () => {
@@ -84,8 +116,11 @@ describe('CATEGORIES (04 §3.1)', () => {
       expect(getCategory(code).direction, code).toBe('out');
     }
     for (const code of [
-      ...SPEC.deductible_expense, ...SPEC.non_deductible_expense, ...SPEC.asset,
-      ...SPEC.tax_or_insurance_payment, 'private_expense',
+      ...SPEC.deductible_expense,
+      ...SPEC.non_deductible_expense,
+      ...SPEC.asset,
+      ...SPEC.tax_or_insurance_payment,
+      'private_expense',
     ]) {
       expect(getCategory(code).direction, code).toBe('in');
     }
