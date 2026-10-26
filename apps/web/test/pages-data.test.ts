@@ -24,7 +24,12 @@ describe('loadPagesView', () => {
         document_pages: {
           data: [
             { position: 1, file_page: 1, region: '', source_files: { original_filename: 'a.jpg' } },
-            { position: 2, file_page: 3, region: 'top', source_files: { original_filename: 'scan.pdf' } },
+            {
+              position: 2,
+              file_page: 3,
+              region: 'top',
+              source_files: { original_filename: 'scan.pdf' },
+            },
           ],
           error: null,
         },
@@ -45,7 +50,10 @@ describe('loadPagesView', () => {
     const view = await loadPagesView(
       fakeSupabase({
         document_pages: { data: [], error: null },
-        review_questions: { data: { id: 'q-1', payload: { other_document_id: 'doc-0' } }, error: null },
+        review_questions: {
+          data: { id: 'q-1', payload: { other_document_id: 'doc-0' } },
+          error: null,
+        },
       }),
       'doc-1',
     );
