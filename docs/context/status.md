@@ -4,7 +4,7 @@ Updated: 2026-10-26.
 
 ## Now
 
-- Gap to Competitor A (0600–0603): Overview shows waiting for you, read automatically %, bills to pay + Mark as paid; value marks (exact / checked / please check, deterministic); one-tap matching total after a fix; PDF highlight where a value came from. Not yet seen in a browser.
+- Gap to Competitor A (0600–0603): Overview waiting / auto-read % / bills to pay + Mark as paid; value trust marks; one-tap total after a fix; PDF highlight. Not seen in a browser yet.
 - 0514–0516: free pre-check skips clear non-invoices (0 tokens); bad answers fail at once. Epic CLS still to build.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
 - Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
@@ -18,9 +18,7 @@ Updated: 2026-10-26.
 
 ## Next
 
-- Prototype v3 merged (0041a–c, 0042a). Owner: set SHOEBOX_PROTO_ORG_ICO/_DIC and ANTHROPIC_API_KEY on Render, send the Anthropic ZDR form.
 - Design (07 rules 11–14) and tokens merged (#90, #91). Storage merged (#71). Auth = passkey + e-mail link only: 0044a (#93), 0044b offer (#94), 0044c passkey sign-in in review. `[verify]` Supabase passkeys GA before Phase 1 launch.
-- Test env (0054): worker `start` script + `deploy/render-test.yaml`; owner follows the setup guide (Supabase + Render Frankfurt). First real-Supabase run; risks: storage policies, pooler login for `app_worker`.
 - e2e in the cloud container: Chromium projects only, `PLAYWRIGHT_BROWSERS_PATH` shim (see 0044b brief).
 
 ## Blocked (owner)
