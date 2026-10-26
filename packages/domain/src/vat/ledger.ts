@@ -117,7 +117,7 @@ export interface VatLedgerResult {
   readonly issues: VatLedgerIssue[];
 }
 
-export const SELF_ASSESSED_TREATMENTS: readonly VatTreatment[] = [
+const SELF_ASSESSED_TREATMENTS: readonly VatTreatment[] = [
   'rcv_eu_service_reverse_charge',
   'rcv_non_eu_service_reverse_charge',
   'rcv_eu_goods_acquisition',
