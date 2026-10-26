@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, ne } from 'drizzle-orm';
 import { extractionRuns, reviewQuestions } from './schema/document-details';
 import { documentPages } from './schema/document-pages';
 import { documents, sourceFiles } from './schema/documents';
@@ -91,7 +91,24 @@ export interface SortPlan {
   readonly deleteDocumentIds: readonly string[];
   /** Indexes into `documents`: [earlier, later]. */
   readonly questions: readonly (readonly [number, number])[];
+  /** A document of this plan (index) that may continue an open document of an earlier upload. */
+  readonly lateQuestions?: readonly {
+    readonly document: number;
+    readonly otherDocumentId: string;
+  }[];
   readonly runs: readonly SplitRun[];
+}
+
+function sameInvoicePayload(otherDocumentId: string) {
+  return {
+    question: 'doc.pages.same_question',
+    options: [
+      { value: 'yes', label: 'doc.pages.same_yes' },
+      { value: 'no', label: 'doc.pages.same_no' },
+    ],
+    suggested: 'no',
+    other_document_id: otherDocumentId,
+  };
 }
 
 /**
@@ -101,6 +118,7 @@ export interface SortPlan {
  * - Every document gets document_pages rows, positions 1..n in page order.
  * - deleteDocumentIds: deleted_at = now() (soft delete; the files stay).
  * - Each question: a review_questions row (kind 'same_invoice') on the later document, payload { question, options yes/no, suggested 'no', other_document_id: the earlier one } (review deck shape, 0407).
+ * - Each late question (0509): the same row and payload, on the plan document, pointing at an open document of an earlier upload.
  * - Each run: an extraction_runs row (stage 'split', method 'llm', ok true, attempt 1) on the first document of the plan.
  */
 export async function applySortPlan(tx: TenantTx, plan: SortPlan): Promise<string[]> {
@@ -162,15 +180,18 @@ export async function applySortPlan(tx: TenantTx, plan: SortPlan): Promise<strin
       orgId: plan.orgId,
       documentId: laterId,
       kind: 'same_invoice',
-      payload: {
-        question: 'doc.pages.same_question',
-        options: [
-          { value: 'yes', label: 'doc.pages.same_yes' },
-          { value: 'no', label: 'doc.pages.same_no' },
-        ],
-        suggested: 'no',
-        other_document_id: earlierId,
-      },
+      payload: sameInvoicePayload(earlierId),
+    });
+  }
+
+  for (const late of plan.lateQuestions ?? []) {
+    const laterId = ids[late.document];
+    if (!laterId) throw new Error('applySortPlan: late question index out of range');
+    await tx.insert(reviewQuestions).values({
+      orgId: plan.orgId,
+      documentId: laterId,
+      kind: 'same_invoice',
+      payload: sameInvoicePayload(late.otherDocumentId),
     });
   }
 
@@ -196,4 +217,66 @@ export async function applySortPlan(tx: TenantTx, plan: SortPlan): Promise<strin
   }
 
   return ids;
+}
+
+export interface OpenPageDocument {
+  readonly documentId: string;
+  readonly supplierKey: string; // first non-empty supplier_key of its pages, else ''
+  readonly docNumber: string; // first non-empty doc_number of its pages, else ''
+}
+
+/**
+ * Documents of the org that may still miss a page: created at or after `since`, not deleted, not
+ * finalized, not from `batchId`, with document_pages rows and none with has_totals. Newest first,
+ * at most 20.
+ */
+export async function findOpenPageDocuments(
+  tx: TenantTx,
+  since: Date,
+  batchId: string,
+): Promise<OpenPageDocument[]> {
+  const rows = await tx
+    .select({
+      documentId: documentPages.documentId,
+      position: documentPages.position,
+      supplierKey: documentPages.supplierKey,
+      docNumber: documentPages.docNumber,
+      hasTotals: documentPages.hasTotals,
+      createdAt: documents.createdAt,
+      uploadBatchId: documents.uploadBatchId,
+    })
+    .from(documentPages)
+    .innerJoin(documents, eq(documentPages.documentId, documents.id))
+    .where(
+      and(
+        isNull(documents.deletedAt),
+        ne(documents.status, 'finalized'),
+        gte(documents.createdAt, since),
+      ),
+    )
+    .orderBy(desc(documents.createdAt), asc(documentPages.position))
+    .limit(400);
+
+  const byId = new Map<
+    string,
+    { uploadBatchId: string | null; hasTotals: boolean; supplierKey: string; docNumber: string }
+  >();
+  for (const row of rows) {
+    let doc = byId.get(row.documentId);
+    if (!doc) {
+      doc = { uploadBatchId: row.uploadBatchId, hasTotals: false, supplierKey: '', docNumber: '' };
+      byId.set(row.documentId, doc);
+    }
+    if (row.hasTotals) doc.hasTotals = true;
+    if (!doc.supplierKey && row.supplierKey) doc.supplierKey = row.supplierKey;
+    if (!doc.docNumber && row.docNumber) doc.docNumber = row.docNumber;
+  }
+
+  const open: OpenPageDocument[] = [];
+  for (const [documentId, doc] of byId) {
+    if (open.length >= 20) break;
+    if (doc.uploadBatchId === batchId || doc.hasTotals) continue;
+    open.push({ documentId, supplierKey: doc.supplierKey, docNumber: doc.docNumber });
+  }
+  return open;
 }

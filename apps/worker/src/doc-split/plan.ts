@@ -9,6 +9,7 @@ import { type SortResult, supplierKeyOf } from '@shoebox/extraction';
  *   supplierKeyOf(item), docNumber, labelN, labelOf, hasTotals, startsDocument from the item.
  * - deleteDocumentIds: the files' documents not reused, in file order.
  * - questions: result.questions as they are; runs: as given.
+ * - lateQuestions (0509): each late match maps its group to that group's plan document index.
  */
 export function planSort(
   orgId: string,
@@ -16,11 +17,13 @@ export function planSort(
   files: readonly SplitBatchFile[],
   result: SortResult,
   runs: readonly SplitRun[],
+  late: readonly { readonly group: number; readonly otherDocumentId: string }[] = [],
 ): SortPlan {
   const usedDocumentIds = new Set<string>();
   const planDocuments: SortPlanDocument[] = [];
+  const docIndexOfGroup: number[] = [];
 
-  for (const group of result.groups) {
+  for (const [g, group] of result.groups.entries()) {
     const first = group[0];
     if (!first) continue;
     const firstFile = files[first.fileIndex];
@@ -29,6 +32,7 @@ export function planSort(
     const reuse = !usedDocumentIds.has(firstFile.documentId);
     if (reuse) usedDocumentIds.add(firstFile.documentId);
 
+    docIndexOfGroup[g] = planDocuments.length;
     planDocuments.push({
       documentId: reuse ? firstFile.documentId : null,
       sourceFileId: firstFile.sourceFileId,
@@ -59,6 +63,10 @@ export function planSort(
     documents: planDocuments,
     deleteDocumentIds,
     questions: result.questions.map(([a, b]) => [a, b] as const),
+    lateQuestions: late.flatMap((l) => {
+      const document = docIndexOfGroup[l.group];
+      return document === undefined ? [] : [{ document, otherDocumentId: l.otherDocumentId }];
+    }),
     runs,
   };
 }

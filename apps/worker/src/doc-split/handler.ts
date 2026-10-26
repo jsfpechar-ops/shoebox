@@ -1,5 +1,6 @@
 import {
   applySortPlan,
+  findOpenPageDocuments,
   loadSplitBatch,
   type SortPlan,
   type SplitBatchFile,
@@ -23,18 +24,24 @@ import {
 } from '@shoebox/extraction';
 import type { DocSplitPayload } from '@shoebox/pipeline';
 import type { TenantHandler } from '../registry';
+import { matchLatePages } from './late';
 import { planSort } from './plan';
+
+/** A document uploaded this many days ago may still miss its last page (0509). */
+const LATE_PAGE_DAYS = 7;
 
 export interface DocSplitStore {
   readonly loadBatch: typeof loadSplitBatch;
   readonly setStatus: typeof setDocumentsStatus;
   readonly apply: typeof applySortPlan;
+  readonly findOpen: typeof findOpenPageDocuments;
 }
 
 export const dbDocSplitStore: DocSplitStore = {
   loadBatch: loadSplitBatch,
   setStatus: setDocumentsStatus,
   apply: applySortPlan,
+  findOpen: findOpenPageDocuments,
 };
 
 export interface DocSplitDeps {
@@ -46,6 +53,7 @@ export interface DocSplitDeps {
   readonly store?: DocSplitStore;
   readonly countPages?: (bytes: Uint8Array) => Promise<number>;
   readonly pick?: (bytes: Uint8Array, pages: readonly number[]) => Promise<Uint8Array>;
+  readonly now?: () => Date; // default () => new Date()
 }
 
 interface Sortable {
@@ -63,7 +71,8 @@ interface PageRef {
 /**
  * Sorts the pages of one upload drop into documents (M01 page sorting), then queues one read per
  * document. Direct files (not a model type, ISDOC, unreadable page count) and drops of at most one
- * page skip the look-over. Any failure of the look-over reverts to reading every file on its own.
+ * page skip the look-over, unless an open document of an earlier upload may miss a page (0509).
+ * Any failure of the look-over reverts to reading every file on its own.
  */
 export function createDocSplitHandler(deps: DocSplitDeps): TenantHandler<DocSplitPayload> {
   const store = deps.store ?? dbDocSplitStore;
@@ -100,7 +109,11 @@ export function createDocSplitHandler(deps: DocSplitDeps): TenantHandler<DocSpli
     }
 
     const totalPages = sortable.reduce((sum, s) => sum + s.pageCount, 0);
-    if (totalPages <= 1) {
+    const since = new Date(
+      (deps.now ?? (() => new Date()))().getTime() - LATE_PAGE_DAYS * 86_400_000,
+    );
+    const open = totalPages >= 1 ? await store.findOpen(ctx.tx, since, payload.batchId) : [];
+    if (totalPages <= 1 && open.length === 0) {
       await readAll(payload.orgId, files);
       return;
     }
@@ -142,7 +155,15 @@ export function createDocSplitHandler(deps: DocSplitDeps): TenantHandler<DocSpli
           items: pm.items,
         };
       });
-      plan = planSort(payload.orgId, payload.batchId, sortableFiles, groupPages(pages), runs);
+      const result = groupPages(pages);
+      plan = planSort(
+        payload.orgId,
+        payload.batchId,
+        sortableFiles,
+        result,
+        runs,
+        matchLatePages(result, open),
+      );
     } catch {
       await store.setStatus(
         ctx.tx,

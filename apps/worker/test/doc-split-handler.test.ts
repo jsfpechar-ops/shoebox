@@ -1,4 +1,4 @@
-import type { SortPlan, SplitBatchFile, TenantTx } from '@shoebox/db';
+import type { OpenPageDocument, SortPlan, SplitBatchFile, TenantTx } from '@shoebox/db';
 import type { LlmClient, LlmRequest } from '@shoebox/extraction';
 import { describe, expect, it } from 'vitest';
 import { createDocSplitHandler, type DocSplitStore } from '../src/doc-split/handler';
@@ -19,7 +19,7 @@ function file(n: number, mimeType = 'image/jpeg'): SplitBatchFile {
   };
 }
 
-function fakeStore(files: SplitBatchFile[]) {
+function fakeStore(files: SplitBatchFile[], open: OpenPageDocument[] = []) {
   const statuses: string[] = [];
   const plans: SortPlan[] = [];
   const store: DocSplitStore = {
@@ -31,6 +31,7 @@ function fakeStore(files: SplitBatchFile[]) {
       plans.push(plan);
       return plan.documents.map((d, i) => d.documentId ?? `new-${i}`);
     },
+    findOpen: async () => open,
   };
   return { store, statuses, plans };
 }
@@ -61,8 +62,13 @@ function llmReturning(json: unknown | Error): LlmClient & { requests: LlmRequest
 
 const blobs = { get: async () => new Uint8Array([1, 2, 3]) };
 
-function setup(files: SplitBatchFile[], json: unknown | Error, pages = 1) {
-  const { store, statuses, plans } = fakeStore(files);
+function setup(
+  files: SplitBatchFile[],
+  json: unknown | Error,
+  pages = 1,
+  open: OpenPageDocument[] = [],
+) {
+  const { store, statuses, plans } = fakeStore(files, open);
   const llm = llmReturning(json);
   const reads: string[] = [];
   const handler = createDocSplitHandler({
@@ -149,5 +155,26 @@ describe('doc.split handler', () => {
     await handler({ orgId: ORG, batchId: BATCH }, ctx);
     expect(llm.requests).toHaveLength(0);
     expect(reads).toEqual(['doc-0', 'doc-1']);
+  });
+
+  it('asks whether a page uploaded days later belongs to an open invoice', async () => {
+    const { handler, llm, plans, reads } = setup(
+      [file(0)],
+      {
+        pages: [
+          {
+            page: 1,
+            blank: false,
+            items: [item({ doc_number: '', has_totals: true, starts_document: false })],
+          },
+        ],
+      },
+      1,
+      [{ documentId: 'old-1', supplierKey: '11111111', docNumber: 'N1' }],
+    );
+    await handler({ orgId: ORG, batchId: BATCH }, ctx);
+    expect(llm.requests).toHaveLength(1);
+    expect(plans[0]?.lateQuestions).toEqual([{ document: 0, otherDocumentId: 'old-1' }]);
+    expect(reads).toEqual(['doc-0']);
   });
 });
