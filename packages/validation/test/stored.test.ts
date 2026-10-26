@@ -26,7 +26,7 @@ describe('checkInputFromFields', () => {
       buyer: { ico: null, dic: null },
       dates: { issue_date: '2026-10-01', duzp: null, due_date: null },
       currency: 'CZK',
-      totals: { gross: '1210', vat: null },
+      totals: { gross: '1210', vat: null, net: null },
       vat_recap: [
         { rate_pct: '21', base: '1000', vat: '210' },
         { rate_pct: '12', base: '100', vat: '12' },

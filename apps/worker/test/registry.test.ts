@@ -111,6 +111,17 @@ describe('enqueue', () => {
     ]);
   });
 
+  it('can delay a tenant job', async () => {
+    const { registry, sent } = fakes();
+    const key = `${ORG}:doc.split:${DOC}:1`;
+    await registry.enqueue(split, { orgId: ORG, documentId: DOC }, { startAfterSeconds: 5 });
+    expect(sent[0]).toEqual([
+      'doc.split',
+      { orgId: ORG, documentId: DOC },
+      { id: jobIdFromKey(key), singletonKey: key, startAfter: 5 },
+    ]);
+  });
+
   it('the same key twice gives one job id and then null', async () => {
     const { registry, boss } = fakes();
     const first = await registry.enqueue(split, { orgId: ORG, documentId: DOC });

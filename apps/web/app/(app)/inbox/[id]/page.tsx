@@ -1,6 +1,6 @@
 import type { LegalDate } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
-import { Badge, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
+import { Badge, Button, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
 import Link from 'next/link';
 import { requireActiveRole } from '../../../../src/auth/org-context';
 import { AutoRefresh } from '../../../../src/documents/auto-refresh';
@@ -10,6 +10,10 @@ import { supabaseDuplicateStore } from '../../../../src/documents/duplicate';
 import { DuplicateNotice } from '../../../../src/documents/duplicate-notice';
 import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
+import { PagesCard } from '../../../../src/documents/pages-card';
+import { loadJoinCandidates, loadPagesView } from '../../../../src/documents/pages-data';
+import { readAgainAction } from '../../../../src/documents/read-again-actions';
+import { moveToTrashAction } from '../../../../src/documents/trash-actions';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,6 +21,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const auth = await requireActiveRole(['owner', 'member', 'accountant', 'viewer']);
   const supabase = await createSupabaseServerClient();
   const detail = auth.ok ? await loadDocumentDetail(supabase, auth.orgId, id) : null;
+  const pagesView = detail ? await loadPagesView(supabase, detail.id) : null;
+  const candidates =
+    detail && auth.ok ? await loadJoinCandidates(supabase, auth.orgId, detail.id) : [];
 
   if (detail === null) {
     return (
@@ -72,6 +79,16 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           <p className="text-body">{t('doc.detail.reading')}</p>
           <AutoRefresh active />
         </>
+      ) : detail.status === 'failed' ? (
+        <Card className="flex flex-col gap-4 p-6">
+          <p className="text-body">{t('doc.detail.failed')}</p>
+          {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (
+            <form action={readAgainAction}>
+              <input type="hidden" name="id" value={detail.id} />
+              <Button type="submit">{t('doc.read_again.button')}</Button>
+            </form>
+          ) : null}
+        </Card>
       ) : (
         <>
           <Card className="flex flex-col gap-4 p-6">
@@ -134,8 +151,25 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           ) : (
             <p className="text-body">{t('doc.detail.all_good')}</p>
           )}
+          {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (
+            <form action={moveToTrashAction}>
+              <input type="hidden" name="id" value={id} />
+              <Button type="submit" variant="secondary">
+                {t('trash.move')}
+              </Button>
+            </form>
+          ) : null}
         </>
       )}
+
+      {pagesView && !processing ? (
+        <PagesCard
+          documentId={detail.id}
+          view={pagesView}
+          canFix={auth.ok && (auth.role === 'owner' || auth.role === 'member')}
+          candidates={candidates}
+        />
+      ) : null}
 
       {detail.file && fileUrl ? (
         detail.file.mimeType.startsWith('image/') ? (

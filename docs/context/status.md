@@ -1,9 +1,10 @@
 # Status
 
-Updated: 2026-10-25.
+Updated: 2026-10-26.
 
 ## Now
 
+- Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
 - Lane A intake (2026-10-26): duplicate detection + page notice (0100–0101), browser photo prep incl. HEIC (0102); e-mail inbox briefs 0103–0106 (live once a domain exists).
 - ISDOC read without AI (0075–0077, shoebox #3): ISDOC in a PDF, `.isdoc` or `.isdocx` skips Haiku; same checks; page says "No AI was used".
 - Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.
