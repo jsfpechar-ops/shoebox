@@ -1,6 +1,6 @@
 # 0114: Bank accounts card in Settings
 
-Status: todo
+Status: done
 Ticket: P2-BANK-04 (screen half) | Depends on: 0113 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

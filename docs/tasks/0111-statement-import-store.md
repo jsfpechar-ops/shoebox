@@ -1,6 +1,6 @@
 # 0111: Statement import job definition, dedupe hash and database store
 
-Status: todo
+Status: done
 Ticket: P2-BANK-04 (store half) | Depends on: 0109, 0110 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

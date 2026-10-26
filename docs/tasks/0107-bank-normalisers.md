@@ -1,6 +1,6 @@
 # 0107: Bank normalisers (amounts, symbols, accounts, dates)
 
-Status: todo
+Status: done
 Ticket: P2-BANK-01 (normalisers) | Depends on: none | Base commit: 5f5b711 | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

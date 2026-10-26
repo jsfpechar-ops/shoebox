@@ -1,6 +1,6 @@
 # 0113: Bank statements dropped into the normal upload
 
-Status: todo
+Status: done
 Ticket: P2-BANK-04 (upload half) | Depends on: 0111 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

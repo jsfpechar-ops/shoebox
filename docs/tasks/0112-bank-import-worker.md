@@ -1,6 +1,6 @@
 # 0112: Worker job that imports a bank statement
 
-Status: todo
+Status: done
 Ticket: P2-BANK-04 (worker half) | Depends on: 0111 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

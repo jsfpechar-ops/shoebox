@@ -1,6 +1,6 @@
 # 0110: Money tables migration (accounts, statements, transactions, links)
 
-Status: todo
+Status: done
 Ticket: P0-DB-08 | Depends on: none | Base commit: 7c2f2f5 | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens | Risk: HIGH (migration, RLS)
 

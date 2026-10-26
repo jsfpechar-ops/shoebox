@@ -1,6 +1,6 @@
 # 0109: CAMT.053 and MT940 parsers, and parseStatement
 
-Status: todo
+Status: done
 Ticket: P2-BANK-03 | Depends on: 0108 | Base commit: see branch | Branch: claude/project-thread-236iho | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
