@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildDeck, cardAt, keyAction, parseQuestionPayload } from '../src/documents/review-deck';
+import {
+  buildDeck,
+  cardAt,
+  keyAction,
+  optionText,
+  parseQuestionPayload,
+} from '../src/documents/review-deck';
 
 const payload = {
   question: 'question.business_or_personal',
@@ -81,5 +87,24 @@ describe('keyAction', () => {
     expect(keyAction('o')).toBe('open');
     expect(keyAction('Escape')).toBe('exit');
     expect(keyAction('5')).toBeNull();
+  });
+});
+
+describe('option text', () => {
+  it('keeps a category name and shows it instead of the label', () => {
+    const parsed = parseQuestionPayload({
+      question: 'question.which_category',
+      options: [
+        { value: 'c1', label: 'categorize.option.category', text: ' Fuel ' },
+        { value: 'c2', label: 'categorize.option.category', text: '' },
+      ],
+    });
+    expect(parsed?.options[0]).toEqual({
+      value: 'c1',
+      label: 'categorize.option.category',
+      text: 'Fuel',
+    });
+    expect(parsed?.options[1]).toEqual({ value: 'c2', label: 'categorize.option.category' });
+    expect(optionText({ label: 'categorize.option.category' as never, text: 'Fuel' })).toBe('Fuel');
   });
 });
