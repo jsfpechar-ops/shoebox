@@ -276,7 +276,7 @@ create index on documents (org_id, issue_date);
 create unique index documents_semantic_dedupe on documents (org_id, partner_id, document_number, total_gross)
   where deleted_at is null and status not in ('duplicate','supporting') and document_number is not null
     and not semantic_dedupe_exempt;
-create unique index documents_source_page on documents (source_file_id, page_from) where deleted_at is null;
+-- documents_source_page (source_file_id, page_from) dropped in 0062: page sorting makes several documents per file page; see document_pages.
 create unique index documents_import_row on documents (import_id, import_row) where import_id is not null;
 create index documents_retention on documents (retention_until) where finalized_at is not null;
 create index documents_register on documents (org_id, coalesce(duzp, issue_date, received_date) desc, id)   -- = M09 doc_date; immutable expression

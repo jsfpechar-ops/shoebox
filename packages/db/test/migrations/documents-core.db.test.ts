@@ -208,7 +208,6 @@ describe.skipIf(DATABASE_URL === undefined)('0005: ingestion and document core',
     const names = idx.map((i) => i.name);
     for (const name of [
       'documents_semantic_dedupe',
-      'documents_source_page',
       'documents_import_row',
       'documents_retention',
       'documents_register',
@@ -216,6 +215,7 @@ describe.skipIf(DATABASE_URL === undefined)('0005: ingestion and document core',
     ]) {
       expect(names).toContain(name);
     }
+    expect(names).not.toContain('documents_source_page'); // dropped in 0062 (page sorting)
     expect(idx.find((i) => i.name === 'documents_search_trgm')?.def).toContain('USING gin');
     expect(idx.find((i) => i.name === 'documents_register')?.def).toContain(
       'COALESCE(duzp, issue_date, received_date) DESC',

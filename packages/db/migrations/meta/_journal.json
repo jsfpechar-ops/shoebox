@@ -85,6 +85,13 @@
       "when": 1792975810961,
       "tag": "0061_document_page_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792976786147,
+      "tag": "0062_documents_many_per_page",
+      "breakpoints": true
     }
   ]
 }
