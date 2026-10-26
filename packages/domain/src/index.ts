@@ -12,6 +12,7 @@ export * from './overview/meters';
 export * from './overview/totals';
 export { type ClassificationRules, parseClassificationRules } from './rules/cz/classification';
 export * from './rules/cz/epo';
+export * from './rules/cz/vat-phase3';
 export * from './rules/index';
 export * from './taxonomy/cascade';
 export * from './taxonomy/categories';
