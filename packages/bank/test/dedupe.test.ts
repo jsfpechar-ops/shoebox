@@ -14,9 +14,9 @@ const tx = (over: Partial<CanonicalTx> = {}): CanonicalTx => ({
 
 describe('dedupe', () => {
   it('builds the tuple with folded message and fixed amount', () => {
-    expect(dedupeTuple(tx({ vs: '12', counterparty: { account: '2400123455', bankCode: '2010' } }))).toBe(
-      '2026-09-16|-89.00|2400123455/2010|12|||kava praha',
-    );
+    expect(
+      dedupeTuple(tx({ vs: '12', counterparty: { account: '2400123455', bankCode: '2010' } })),
+    ).toBe('2026-09-16|-89.00|2400123455/2010|12|||kava praha');
   });
 
   it('counts identical transactions of the same day', () => {

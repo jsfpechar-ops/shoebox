@@ -9,7 +9,7 @@ export interface StatementSource {
 export interface AccountIdentity {
   readonly account?: string;
   readonly bankCode?: string;
-  readonly iban?: string;
+  readonly iban?: string | undefined;
   readonly currency?: string;
 }
 export interface MoneyAccountRef {
@@ -59,15 +59,24 @@ export interface StatementTxInsert {
 }
 
 /** The source file of an upload, or null. */
-export async function loadStatementSource(tx: TenantTx, sourceFileId: string): Promise<StatementSource | null> {
-  const [row] = await tx.execute<{ id: string; storage_path: string; original_filename: string | null }>(
-    sql`select id, storage_path, original_filename from source_files where id = ${sourceFileId}`,
-  );
+export async function loadStatementSource(
+  tx: TenantTx,
+  sourceFileId: string,
+): Promise<StatementSource | null> {
+  const [row] = await tx.execute<{
+    id: string;
+    storage_path: string;
+    original_filename: string | null;
+  }>(sql`select id, storage_path, original_filename from source_files where id = ${sourceFileId}`);
   if (!row) return null;
   return { id: row.id, storagePath: row.storage_path, originalFilename: row.original_filename };
 }
 /** Id of an earlier statement import of this file, or null. */
-export async function findStatementImport(tx: TenantTx, orgId: string, sourceFileId: string): Promise<string | null> {
+export async function findStatementImport(
+  tx: TenantTx,
+  orgId: string,
+  sourceFileId: string,
+): Promise<string | null> {
   const [row] = await tx.execute<{ id: string }>(
     sql`select id from statement_imports where org_id = ${orgId} and source_file_id = ${sourceFileId} limit 1`,
   );
@@ -117,7 +126,10 @@ export async function findOrCreateMoneyAccount(
   if (!created) throw new Error('money_accounts insert returned no row');
   return { id: created.id, bankCode: created.bank_code, currency: created.currency, created: true };
 }
-export async function insertStatementImport(tx: TenantTx, row: StatementImportInsert): Promise<string> {
+export async function insertStatementImport(
+  tx: TenantTx,
+  row: StatementImportInsert,
+): Promise<string> {
   const [created] = await tx.execute<{ id: string }>(
     sql`insert into statement_imports (
         org_id, money_account_id, source_file_id, channel, format, parser_version, period_from, period_to,
