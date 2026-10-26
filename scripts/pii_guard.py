@@ -12,7 +12,7 @@ Finds real-looking Czech personal identifiers in added lines of a git diff
   ``CZ`` + 8 digits is a company DIČ (IČO) and is never reported.
 
 Values listed in ``testdata/pii-allowlist.txt`` (``value;reason;source``) are
-accepted only under ``testdata/``, ``packages/*/test/``, ``packages/*/fixtures/``,
+accepted only under ``testdata/``, ``packages/*/test/``, ``apps/*/test/``, ``packages/*/fixtures/``,
 ``docs/`` and in ``.gitleaks.toml`` (whose allowlists quote them). Matches are printed redacted; the full value never reaches a log.
 Exit code 1 when at least one hit remains, 0 otherwise, 2 on usage errors.
 """
@@ -34,7 +34,7 @@ ALLOWLIST_PATH = ROOT / 'testdata' / 'pii-allowlist.txt'
 EXEMPT_FILES = {'scripts/test/test_pii_guard.py', 'testdata/pii-allowlist.txt'}
 EXEMPT_DIRS = ('.git/', 'node_modules/', 'docs/tasks/', 'scripts/test/')
 # Where an allowlisted value is accepted.
-ALLOW_SCOPES = ('testdata/*', 'packages/*/test/*', 'packages/*/fixtures/*', 'docs/*', 'research/*', '.gitleaks.toml')
+ALLOW_SCOPES = ('testdata/*', 'packages/*/test/*', 'apps/*/test/*', 'packages/*/fixtures/*', 'docs/*', 'research/*', '.gitleaks.toml')
 
 # Bank codes from the ČNB list of payment system codes (guard-only copy, includes
 # codes closed in recent years so history scans still match). [verify] against

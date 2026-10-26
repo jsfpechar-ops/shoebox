@@ -1,6 +1,6 @@
 # 0315: P1-CAT-03a LLM categorizer request, output schema and retry (`packages/extraction`)
 
-Status: todo
+Status: done
 Ticket: P1-CAT-03 | Depends on: 0303 (merged) | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 60k tokens
 

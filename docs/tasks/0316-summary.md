@@ -1,6 +1,6 @@
 # 0316: P1-CAT-03b `buildSummary` — the deterministic one-line document summary (`packages/domain`)
 
-Status: todo
+Status: done
 Ticket: P1-CAT-03 | Depends on: 0301 (merged) | Base commit: lane branch head | Branch: claude/project-thread-uzgfn4 | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens
 

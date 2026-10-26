@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { detectStatementFormat } from '@shoebox/bank';
 import { filePath } from '@shoebox/platform';
 
 export const UPLOAD_MEDIA_TYPES: readonly string[] = [
@@ -8,6 +9,7 @@ export const UPLOAD_MEDIA_TYPES: readonly string[] = [
   'image/webp',
   'application/xml', // .isdoc and .xml: the worker reads ISDOC data without AI
   'application/x-isdocx', // .isdocx (a ZIP holding the ISDOC)
+  'text/plain', // .gpc, .abo, .sta, .mt940 bank statements
 ];
 
 /**
@@ -18,7 +20,19 @@ export function uploadMediaTypeOf(name: string, type: string): string {
   const ext = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
   if (ext === 'isdoc' || ext === 'xml') return 'application/xml';
   if (ext === 'isdocx') return 'application/x-isdocx';
+  if (ext === 'gpc' || ext === 'abo' || ext === 'sta' || ext === 'mt940') return 'text/plain';
   return type;
+}
+
+/** True when the file is a bank statement we can import (GPC/ABO, CAMT.053, MT940). */
+export function isBankStatement(name: string, mimeType: string, bytes: Uint8Array): boolean {
+  if (mimeType !== 'text/plain' && mimeType !== 'application/xml') return false;
+  try {
+    const { format } = detectStatementFormat(bytes, name);
+    return format === 'gpc' || format === 'camt053' || format === 'mt940';
+  } catch {
+    return false;
+  }
 }
 export const UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
 export const UPLOAD_MAX_FILES = 50;
@@ -54,6 +68,8 @@ export interface UploadDeps {
   }): Promise<string>;
   /** Queues the sorting job for the drop (doc.split). */
   enqueueSort(orgId: string, batchId: string): Promise<void>;
+  /** Queues bank.import.statement for a stored statement file. */
+  enqueueStatement(orgId: string, sourceFileId: string): Promise<void>;
   newBatchId(): string;
   today(): string; // Prague date YYYY-MM-DD
 }
@@ -68,7 +84,8 @@ export type UploadItem =
       readonly fileName: string;
       readonly status: 'rejected';
       readonly reason: 'type' | 'size' | 'empty';
-    };
+    }
+  | { readonly fileName: string; readonly status: 'statement' };
 
 export function sha256Hex(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
@@ -109,6 +126,15 @@ export async function uploadDocuments(
       filenameNfc: file.name.normalize('NFC'),
       uploadedBy: ctx.userId,
     });
+    if (isBankStatement(file.name, mimeType, file.bytes)) {
+      await deps.enqueueStatement(ctx.orgId, source.id);
+      items.push({ fileName: file.name, status: 'statement' });
+      continue;
+    }
+    if (mimeType === 'text/plain') {
+      items.push({ fileName: file.name, status: 'rejected', reason: 'type' });
+      continue;
+    }
     if (!source.created) {
       const existing = await deps.findDocumentBySource(source.id);
       if (existing !== null) {

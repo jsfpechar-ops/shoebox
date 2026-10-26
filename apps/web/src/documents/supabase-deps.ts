@@ -1,5 +1,5 @@
 import type { createSupabaseServerClient } from '../supabase/server';
-import { enqueueDocSplit } from './enqueue';
+import { enqueueBankImport, enqueueDocSplit } from './enqueue';
 import { restartFailedRead, supabaseReadAgainDeps } from './read-again';
 import type { SourceFileInsert, UploadDeps } from './upload';
 
@@ -72,6 +72,7 @@ export function supabaseUploadDeps(supabase: SupabaseServerClient): UploadDeps {
     restartIfFailed: (orgId, documentId) =>
       restartFailedRead(supabaseReadAgainDeps(supabase), orgId, documentId),
     enqueueSort: enqueueDocSplit,
+    enqueueStatement: (orgId, sourceFileId) => enqueueBankImport(orgId, sourceFileId),
     newBatchId: () => crypto.randomUUID(),
     today: () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date()),
   };

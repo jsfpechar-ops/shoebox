@@ -75,3 +75,8 @@ regexes = ['''CZ65 0800 0000 1920 0014 5399''', '''CZ6508000000192000145398''', 
 description = "Synthetic or textbook vectors in specs and golden labels (owner-confirmed synthetic, decisions 2026-10-18 [privacy])"
 regexTarget = "match"
 regexes = ['''19-2000145399/0800''', '''123457/0100''', '''1234567890/0800''', '''2400123456/2010''', '''CZ7001000000000000123457''', '''CZ5855000000001265098001''', '''CZ8203142695''']
+
+[[allowlists]]
+description = "Synthetic bank accounts of the statement parser tests (lane A briefs 0107-0114)"
+regexTarget = "match"
+regexes = ['''2400123455/2010''', '''1003-1234567899/0800''', '''CZ8720100000002400123455''', '''CZ4608000010031234567899''', '''cz46 0800 0010 0312 3456 7899''', '''CZ8720100000002400123456''']

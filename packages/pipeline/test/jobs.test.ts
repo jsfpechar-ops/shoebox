@@ -6,6 +6,7 @@ import {
   deadLetterName,
   defineSystemJob,
   defineTenantJob,
+  docCategorizeJob,
   docExtractJob,
   documentStagePayload,
   idempotencyKey,
@@ -14,6 +15,9 @@ import {
   type JobName,
   jobIdFromKey,
   jobKey,
+  ledgerRebuildDocumentJob,
+  ledgerRebuildOrgJob,
+  ledgerVerifyJob,
   opsHeartbeatJob,
   tenantPayload,
 } from '../src/jobs';
@@ -23,7 +27,7 @@ const DOC = 'bbbbbbbb-0000-4000-8000-000000000002';
 
 describe('job names (03 §3.1)', () => {
   it('lists the 36 concrete job names, unique and `<domain>.<action>`', () => {
-    expect(JOB_NAMES).toHaveLength(36);
+    expect(JOB_NAMES).toHaveLength(38);
     expect(new Set(JOB_NAMES).size).toBe(JOB_NAMES.length);
     for (const name of JOB_NAMES) {
       expect(name).toMatch(/^[a-z]+(\.[a-z_]+)+$/);
@@ -177,5 +181,65 @@ describe('docExtractJob and jobIdFromKey', () => {
     const id = jobIdFromKey(`${ORG}:doc.extract:${DOC}:1`);
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(jobIdFromKey(`${ORG}:doc.extract:${DOC}:1`)).toBe(id);
+  });
+});
+
+describe('M04 jobs', () => {
+  const ORG = '11111111-1111-4111-8111-111111111111';
+  const DOC = '22222222-2222-4222-8222-222222222222';
+  it('doc.categorize keys on document, revision and trigger, plus the nonce when given', () => {
+    expect(
+      jobKey(docCategorizeJob, { orgId: ORG, documentId: DOC, revision: 2, trigger: 'pipeline' }),
+    ).toBe(`${ORG}:doc.categorize:${DOC}-2-pipeline:1`);
+    expect(
+      jobKey(docCategorizeJob, {
+        orgId: ORG,
+        documentId: DOC,
+        revision: 2,
+        trigger: 'question_answered',
+        nonce: 17,
+      }),
+    ).toBe(`${ORG}:doc.categorize:${DOC}-2-question_answered-17:1`);
+    expect(
+      docCategorizeJob.payload.safeParse({
+        orgId: ORG,
+        documentId: DOC,
+        revision: 1,
+        trigger: 'nope',
+      }).success,
+    ).toBe(false);
+    expect(
+      docCategorizeJob.payload.safeParse({
+        orgId: ORG,
+        documentId: DOC,
+        revision: 1,
+        trigger: 'pipeline',
+        text: 'x',
+      }).success,
+    ).toBe(false);
+  });
+  it('ledger.rebuild_document keys on document and reason', () => {
+    expect(
+      jobKey(ledgerRebuildDocumentJob, { orgId: ORG, documentId: DOC, reason: 'categorized' }),
+    ).toBe(`${ORG}:ledger.rebuild_document:${DOC}-categorized:1`);
+  });
+  it('ledger.rebuild_org accepts an optional from date and is retried once', () => {
+    expect(ledgerRebuildOrgJob.payload.parse({ orgId: ORG, reason: 'manual' })).toEqual({
+      orgId: ORG,
+      reason: 'manual',
+    });
+    expect(
+      jobKey(ledgerRebuildOrgJob, { orgId: ORG, reason: 'profile_changed', from: '2026-01-01' }),
+    ).toBe(`${ORG}:ledger.rebuild_org:org-profile_changed-2026-01-01:1`);
+    expect(
+      ledgerRebuildOrgJob.payload.safeParse({ orgId: ORG, reason: 'manual', from: '01.01.2026' })
+        .success,
+    ).toBe(false);
+    expect(ledgerRebuildOrgJob.retry.retryLimit).toBe(1);
+  });
+  it('ledger.verify is a nightly system cron with samplePct defaulting to 1', () => {
+    expect(ledgerVerifyJob.scope).toBe('system');
+    expect(ledgerVerifyJob.cron).toBe('45 3 * * *');
+    expect(ledgerVerifyJob.payload.parse({})).toEqual({ samplePct: 1 });
   });
 });
