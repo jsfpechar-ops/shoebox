@@ -351,6 +351,7 @@ export interface FilingInsert {
   readonly bundleId?: string | null;
   readonly formVersion?: string | null;
   readonly totals: unknown;
+  readonly inputs?: unknown;
   readonly simpleCheck: unknown;
   readonly xmlPath?: string | null;
   readonly pdfPath?: string | null;
@@ -428,6 +429,7 @@ export async function insertFiling(
       bundleId: filing.bundleId ?? null,
       formVersion: filing.formVersion ?? null,
       totals: filing.totals,
+      inputs: filing.inputs ?? {},
       simpleCheck: filing.simpleCheck,
       xmlPath: filing.xmlPath ?? null,
       pdfPath: filing.pdfPath ?? null,
