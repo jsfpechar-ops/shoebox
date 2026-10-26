@@ -469,3 +469,95 @@ export async function upsertReserveEstimate(
     .values({ orgId, ...values })
     .onConflictDoUpdate({ target: taxReserveEstimates.orgId, set: values });
 }
+
+/** The header columns of the taxpayer profile that covers one date (DPFDP7 partial XML header). */
+export interface TaxpayerHeaderRow {
+  readonly fuCode: string | null;
+  readonly ufoCode: string | null;
+  readonly firstName: string | null;
+  readonly lastName: string | null;
+  readonly title: string | null;
+  readonly filingEmail: string | null;
+  readonly filingPhone: string | null;
+  readonly mainActivityNace: string | null;
+  readonly address: unknown;
+}
+
+/** The profile covering `date` (YYYY-MM-DD), or null. */
+export async function readTaxpayerHeaderAt(
+  tx: TenantTx,
+  orgId: string,
+  date: string,
+): Promise<TaxpayerHeaderRow | null> {
+  const rows = await rowsOf<{
+    fu_code: string | null;
+    ufo_code: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    title: string | null;
+    filing_email: string | null;
+    filing_phone: string | null;
+    main_activity_nace: string | null;
+    address: unknown;
+  }>(
+    tx,
+    sql`select fu_code, ufo_code, first_name, last_name, title, filing_email, filing_phone, main_activity_nace, address
+        from taxpayer_profiles
+        where org_id = ${orgId} and valid_from <= ${date}::date and (valid_to is null or valid_to >= ${date}::date)
+        order by valid_from desc
+        limit 1`,
+  );
+  const r = rows[0];
+  if (r === undefined) return null;
+  return {
+    fuCode: r.fu_code,
+    ufoCode: r.ufo_code,
+    firstName: r.first_name,
+    lastName: r.last_name,
+    title: r.title,
+    filingEmail: r.filing_email,
+    filingPhone: r.filing_phone,
+    mainActivityNace: r.main_activity_nace,
+    address: r.address,
+  };
+}
+
+export interface PartialFilingInsert {
+  readonly year: number;
+  readonly totals: Record<string, unknown>;
+  readonly formVersion: string;
+  readonly xsdValid: boolean | null;
+  readonly generatedBy: string;
+  readonly at: Date;
+}
+
+/** Supersedes the open DPFDP7_PARTIAL of the year, then inserts the new one. Totals only: no XML, no rodné číslo. */
+export async function insertPartialFiling(
+  tx: TenantTx,
+  orgId: string,
+  input: PartialFilingInsert,
+): Promise<string> {
+  const periodStart = `${input.year}-01-01`;
+  await supersedeOpenFilings(tx, orgId, 'DPFDP7_PARTIAL', periodStart, 'radne');
+  return insertFiling(
+    tx,
+    {
+      orgId,
+      type: 'DPFDP7_PARTIAL',
+      kind: 'radne',
+      periodStart,
+      periodEnd: `${input.year}-12-31`,
+      state: 'downloaded',
+      formVersion: input.formVersion,
+      totals: input.totals,
+      inputs: {},
+      xmlPath: null,
+      xsdValid: input.xsdValid,
+      generatedAt: input.at,
+      generatedBy: input.generatedBy,
+      simpleCheck: {},
+    },
+    [],
+    [],
+  );
+}

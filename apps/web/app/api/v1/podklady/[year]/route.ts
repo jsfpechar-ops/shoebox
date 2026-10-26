@@ -4,6 +4,7 @@ import { enqueuePodkladyGenerate } from '../../../../../src/documents/enqueue';
 import { podkladyDb } from '../../../../../src/podklady/db';
 import { decideGenerate, storeAnswersDraft } from '../../../../../src/podklady/generate';
 import { PODKLADY_WRITE_ROLES, parseYearParam } from '../../../../../src/podklady/preview';
+import { appOrigin } from '../../../../../src/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +12,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ year: string }> },
 ): Promise<Response> {
+  if (request.headers.get('origin') !== appOrigin())
+    return Response.json({ error: 'origin' }, { status: 403 });
   const auth = await requireActiveRole(PODKLADY_WRITE_ROLES);
   if (!auth.ok)
     return Response.json(
