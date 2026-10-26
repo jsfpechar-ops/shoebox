@@ -87,7 +87,8 @@ describe.skipIf(DATABASE_URL === undefined)('inbound e-mail store', () => {
     await db.withTenant(ORG, (tx) =>
       finishInboundEmail(tx, first ?? '', { spamVerdict: 'pass', bodyText: 'x'.repeat(25_000) }),
     );
-    const [done] = await sql`select spam_verdict, length(body_text) as len, processed_at from inbound_emails where id = ${first ?? ''}`;
+    const [done] =
+      await sql`select spam_verdict, length(body_text) as len, processed_at from inbound_emails where id = ${first ?? ''}`;
     expect(done?.spam_verdict).toBe('pass');
     expect(done?.len).toBe(20_000);
     expect(done?.processed_at).not.toBeNull();
@@ -110,9 +111,11 @@ describe.skipIf(DATABASE_URL === undefined)('inbound e-mail store', () => {
     expect(first.documentId).toMatch(/^[0-9a-f-]{36}$/);
     const again = await db.withTenant(ORG, (tx) => insertEmailAttachment(tx, row));
     expect(again).toEqual({ sourceFileId: first.sourceFileId, documentId: null });
-    const [file] = await sql`select channel, inbound_email_id from source_files where id = ${first.sourceFileId}`;
+    const [file] =
+      await sql`select channel, inbound_email_id from source_files where id = ${first.sourceFileId}`;
     expect(file).toEqual({ channel: 'email', inbound_email_id: mail?.id });
-    const [doc] = await sql`select status, received_date, upload_batch_id from documents where id = ${first.documentId ?? ''}`;
+    const [doc] =
+      await sql`select status, received_date, upload_batch_id from documents where id = ${first.documentId ?? ''}`;
     expect(doc?.status).toBe('received');
     expect(doc?.received_date).not.toBeNull();
     expect(doc?.upload_batch_id).toBe('eeeeeeee-0000-4000-8000-0000000b0103');
