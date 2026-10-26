@@ -1,5 +1,5 @@
 -- 0041_ledgers: 05 §7 derived ledgers, users select only (05 §10.2), forward-only.
-create sequence ledger_build_version_seq;                           -- monotonic, global (M04 §4.13)
+create sequence if not exists ledger_build_version_seq;                         -- monotonic, global (M04 §4.13)
 
 create table tax_ledger_entries (                                    -- income tax, cash basis (M04 §4.11)
   id uuid primary key default gen_random_uuid(),
