@@ -109,7 +109,7 @@ export const paymentOrderItemFactory: TenantFactory = (ctx, overrides) => ({
   org_id: ctx.orgId,
   document_id: ctx.ids.next(),
   amount: '1210.00',
-  account: '2400123455/2010',
+  account: 'synthetic-account',
   checks: {},
   ...overrides,
 });
