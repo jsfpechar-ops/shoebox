@@ -99,6 +99,9 @@ export default async function InboxPage({
         </ul>
       </nav>
       <UploadDropzone />
+      <Link href="/inbox/new" className="text-body underline">
+        {t('manual.cta')}
+      </Link>
       {tab === 'trash' ? (
         <>
           <p className="text-body">{t('trash.note')}</p>
