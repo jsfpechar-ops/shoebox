@@ -30,6 +30,7 @@ export const JOB_NAMES = [
   'expected.sweep',
   'import.spreadsheet.parse',
   'import.spreadsheet.run',
+  'import.spreadsheet.undo',
   // Ledger jobs (M04)
   'ledger.rebuild_document',
   'ledger.rebuild_transaction',
@@ -274,6 +275,25 @@ export const docSplitJob = defineTenantJob({
   entityId: (payload) => payload.batchId,
 });
 export type DocSplitPayload = z.infer<typeof docSplitJob.payload>;
+
+/** M01 §4.13: import the valid rows of one uploaded spreadsheet, 200 rows per run. Enqueues itself for the next 200. */
+export const importSpreadsheetRunJob = defineTenantJob({
+  name: 'import.spreadsheet.run',
+  payload: tenantPayload({ importId: z.uuid(), fromRow: z.number().int().min(0) }),
+  version: 1,
+  entityId: (payload) => `${payload.importId}:${payload.fromRow}`,
+  retry: { retryLimit: 2 },
+});
+export type ImportSpreadsheetRunPayload = z.infer<typeof importSpreadsheetRunJob.payload>;
+
+/** M01 §6: undo one spreadsheet import. The worker runs it (it needs the tenant transaction); the route checks the 30 days. */
+export const importSpreadsheetUndoJob = defineTenantJob({
+  name: 'import.spreadsheet.undo',
+  payload: tenantPayload({ importId: z.uuid() }),
+  version: 1,
+  entityId: (payload) => payload.importId,
+});
+export type ImportSpreadsheetUndoPayload = z.infer<typeof importSpreadsheetUndoJob.payload>;
 
 export const CATEGORIZE_TRIGGERS = [
   'pipeline',

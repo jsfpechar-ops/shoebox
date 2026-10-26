@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Money } from '@shoebox/domain';
+import { esc } from '../xml';
 
 export interface IsdocParty {
   readonly ico: string | null;
@@ -44,15 +45,6 @@ const PAYMENT_CODE: Record<NonNullable<IsdocExportInput['payment']['method']>, s
   cod: '50',
   other: '97',
 };
-
-function esc(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
 
 /** RFC 4122 UUIDv5 (SHA-1, node:crypto) of `documentId` in the namespace `orgId` (a UUID), uppercase. */
 export function isdocUuid(orgId: string, documentId: string): string {

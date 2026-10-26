@@ -5,6 +5,8 @@ import {
   docExtractJob,
   docSplitJob,
   emailReceivedJob,
+  importSpreadsheetRunJob,
+  importSpreadsheetUndoJob,
   jobIdFromKey,
   jobKey,
   type VatFilingGeneratePayload,
@@ -73,6 +75,20 @@ export async function enqueueEmailReceived(orgId: string, inboundEmailId: string
   });
 }
 
+/** Queues `import.spreadsheet.run` for one parsed spreadsheet, 200 data rows per run from `fromRow`. */
+export async function enqueueImportRun(
+  orgId: string,
+  importId: string,
+  fromRow: number,
+): Promise<void> {
+  const payload = importSpreadsheetRunJob.payload.parse({ orgId, importId, fromRow });
+  const key = jobKey(importSpreadsheetRunJob, payload);
+  await (await boss()).send(importSpreadsheetRunJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
 /** Queues `doc.categorize` for a user action; `nonce` keeps two quick answers from collapsing into one job. */
 export async function enqueueDocCategorize(
   orgId: string,
@@ -84,6 +100,16 @@ export async function enqueueDocCategorize(
   const payload = docCategorizeJob.payload.parse({ orgId, documentId, revision, trigger, nonce });
   const key = jobKey(docCategorizeJob, payload);
   await (await boss()).send(docCategorizeJob.name, payload, {
+    id: jobIdFromKey(key),
+    singletonKey: key,
+  });
+}
+
+/** Queues `import.spreadsheet.undo` for one import (the worker soft-deletes its untouched documents). */
+export async function enqueueImportUndo(orgId: string, importId: string): Promise<void> {
+  const payload = importSpreadsheetUndoJob.payload.parse({ orgId, importId });
+  const key = jobKey(importSpreadsheetUndoJob, payload);
+  await (await boss()).send(importSpreadsheetUndoJob.name, payload, {
     id: jobIdFromKey(key),
     singletonKey: key,
   });
