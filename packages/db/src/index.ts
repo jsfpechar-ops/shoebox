@@ -10,6 +10,7 @@ export * from './schema/enums';
 export * from './schema/partners';
 export * from './schema/platform';
 export * from './schema/tenancy';
+export * from './suppliers';
 export {
   closeDb,
   configureDb,

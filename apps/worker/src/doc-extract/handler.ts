@@ -1,9 +1,12 @@
 import {
+  knownSupplierIcos,
   loadDocumentForRead,
   type ReadingWrite,
   recordFailedRead,
+  rememberSupplier,
   saveDocumentReading,
   setDocumentStatus,
+  type TenantTx,
 } from '@shoebox/db';
 import { type Clock, createCzRules, parseLegalDate, pragueToday } from '@shoebox/domain';
 import {
@@ -24,7 +27,7 @@ import {
   scanDocument,
 } from '@shoebox/extraction';
 import { DEFAULT_RETRY, type DocumentStagePayload } from '@shoebox/pipeline';
-import { runProtoChecks } from '@shoebox/validation';
+import { icoChecksumValid, icoRepairCandidates, runProtoChecks } from '@shoebox/validation';
 import type { TenantHandler } from '../registry';
 import {
   documentPatchOf,
@@ -40,6 +43,8 @@ export interface ReadingStore {
   readonly setStatus: typeof setDocumentStatus;
   readonly save: typeof saveDocumentReading;
   readonly fail: typeof recordFailedRead;
+  readonly knownSupplierIcos?: typeof knownSupplierIcos;
+  readonly rememberSupplier?: typeof rememberSupplier;
 }
 
 export const dbReadingStore: ReadingStore = {
@@ -47,6 +52,8 @@ export const dbReadingStore: ReadingStore = {
   setStatus: setDocumentStatus,
   save: saveDocumentReading,
   fail: recordFailedRead,
+  knownSupplierIcos,
+  rememberSupplier,
 };
 
 export interface DocExtractDeps {
@@ -65,6 +72,41 @@ function errorCode(error: unknown, fallback: 'error' | 'storage'): string {
   if (error instanceof AnthropicHttpError) return `http_${error.status}`;
   if (error instanceof ProtoParseError) return 'parse';
   return fallback;
+}
+
+/** A supplier IČO that fails its check digit, replaced by the one saved supplier one digit (or swap) away. */
+interface IcoRepair {
+  readonly extraction: ProtoExtraction;
+  readonly from: string;
+  readonly to: string;
+  readonly fieldKeys: readonly string[];
+}
+
+/** Repairs a misread supplier IČO only when exactly one saved supplier (never the org itself) is one digit or one swap away. */
+function repairSupplierIco(
+  x: ProtoExtraction,
+  known: readonly string[],
+  orgIco: string | null,
+): IcoRepair | null {
+  const ico = x.supplier.ico;
+  if (!ico || icoChecksumValid(ico)) {
+    return null;
+  }
+  const hits = icoRepairCandidates(ico).filter((c) => known.includes(c) && c !== orgIco);
+  const to = hits[0];
+  if (hits.length !== 1 || to === undefined) {
+    return null;
+  }
+  const dicDerived = x.supplier.dic === `CZ${ico}`;
+  return {
+    extraction: {
+      ...x,
+      supplier: { ...x.supplier, ico: to, ...(dicDerived ? { dic: `CZ${to}` } : {}) },
+    },
+    from: ico,
+    to,
+    fieldKeys: dicDerived ? ['supplier.ico', 'supplier.dic'] : ['supplier.ico'],
+  };
 }
 
 /** Media types stored for .isdoc/.xml and .isdocx uploads: only their ISDOC data can be read. */
@@ -137,6 +179,14 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       return onError(error, errorCode(error, 'storage'));
     }
 
+    // IČOs of suppliers already saved for this org: used to repair a misread IČO. Best effort.
+    let known: string[] = [];
+    try {
+      known = (await store.knownSupplierIcos?.(ctx.tx, doc.orgId)) ?? [];
+    } catch {
+      known = [];
+    }
+
     // Exact data in the file itself (QR codes, PDF text layer): read for PDFs and images only.
     let scan: DocumentScan = NO_SCAN;
     if (modelType !== null) {
@@ -147,6 +197,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       }
     }
 
+    const read: { extraction: ProtoExtraction | null } = { extraction: null };
     const toWrite = (
       reading: ProtoExtraction,
       source: 'llm' | 'isdoc',
@@ -158,7 +209,9 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
         { ico: doc.orgIco, dic: doc.orgDic },
         { keepIdentifiers: source === 'isdoc' },
       );
-      const extraction = exact.extraction;
+      const repair =
+        source === 'isdoc' ? null : repairSupplierIco(exact.extraction, known, doc.orgIco);
+      const extraction = repair?.extraction ?? exact.extraction;
       const rates = ratesFor(
         extraction.dates.duzp ?? extraction.dates.issue_date ?? null,
         deps.clock,
@@ -172,14 +225,34 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
         { ...extraction, qr: { amount: exact.qrAmount } },
         org === undefined ? { today } : { today, org },
       );
-      const rows = validationRowsOf(checks);
+      const rows = [
+        ...validationRowsOf(checks),
+        ...(repair === null
+          ? []
+          : [
+              {
+                ruleId: 'PROTO_ICO_REPAIRED',
+                ruleVersion: 1,
+                severity: 'warning' as const,
+                params: {
+                  from: repair.from,
+                  to: repair.to,
+                  messageKey: 'proto.check.ico_repaired.warn',
+                },
+              },
+            ]),
+      ];
       const fields = fieldsOf(extraction, source).map((row) => {
+        if (repair?.fieldKeys.includes(row.fieldKey)) {
+          return { ...row, source: 'vendor_memory' as const };
+        }
         const exactSource = exact.sources[row.fieldKey];
         return exactSource === undefined ? row : { ...row, source: exactSource };
       });
       if (exact.qrAmount !== null) {
         fields.push({ fieldKey: 'qr.amount', valueText: exact.qrAmount, source: 'qr' });
       }
+      read.extraction = extraction;
       return {
         orgId: doc.orgId,
         documentId: doc.id,
@@ -246,6 +319,34 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       await store.save(ctx.tx, write);
     } catch (error) {
       return onError(error, errorCode(error, 'error'));
+    }
+
+    // Remember the saved supplier for next time. Own savepoint, best effort: the reading is already saved.
+    const supplier = read.extraction?.supplier;
+    const savedIco = supplier?.ico ?? null;
+    const remember = store.rememberSupplier;
+    if (
+      remember !== undefined &&
+      supplier !== undefined &&
+      savedIco !== null &&
+      savedIco !== '' &&
+      icoChecksumValid(savedIco) &&
+      savedIco !== doc.orgIco
+    ) {
+      try {
+        await ctx.tx.transaction((sp) =>
+          remember(sp as TenantTx, {
+            orgId: doc.orgId,
+            documentId: doc.id,
+            ico: savedIco,
+            name: supplier.name === '' ? null : supplier.name,
+            dic: supplier.dic === '' ? null : supplier.dic,
+            country: supplier.country === '' ? null : supplier.country,
+          }),
+        );
+      } catch {
+        // A failed memory write never fails the reading.
+      }
     }
   };
 }

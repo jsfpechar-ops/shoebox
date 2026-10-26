@@ -195,6 +195,7 @@
   "proto.check.vat_rate_math.invalid": "The VAT line with rate {rate} is unreadable.",
   "proto.check.ico_checksum.pass": "IČO {ico} has a valid check digit.",
   "proto.check.ico_checksum.fail": "IČO {ico} fails the check digit (8 digits, modulo 11).",
+  "proto.check.ico_repaired.warn": "The supplier IČO was read as {from}, which fails its check digit. We used {to}, a supplier you already have. Check it is right.",
   "proto.check.dic_format.pass": "DIČ {dic} is well formed.",
   "proto.check.dic_format.warn": "{dic} is a foreign VAT ID; its format is not checked.",
   "proto.check.dic_format.fail": "DIČ {dic} is not CZ + 8 to 10 digits.",

@@ -239,4 +239,91 @@ describe('doc.extract handler', () => {
     })({ orgId: ORG, documentId: DOC }, ctx());
     expect(saved[0]?.status).toBe('ready');
   });
+
+  it('repairs a misread supplier IČO to the one saved supplier one digit away', async () => {
+    const { store, saved } = fakeStore();
+    const memory: ReadingStore = { ...store, knownSupplierIcos: async () => ['25596641'] };
+    await createDocExtractHandler({
+      llm: llmReturning(
+        wire({
+          supplier: {
+            name: 'Synthetic s.r.o.',
+            ico: '25596614',
+            dic: 'CZ25596614',
+            vat_id: '',
+            country: 'CZ',
+          },
+        }),
+      ),
+      blobs,
+      model: 'm',
+      clock,
+      store: memory,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(saved[0]?.fields).toContainEqual(
+      expect.objectContaining({
+        fieldKey: 'supplier.ico',
+        valueText: '25596641',
+        source: 'vendor_memory',
+      }),
+    );
+    expect(saved[0]?.validations).toContainEqual(
+      expect.objectContaining({ ruleId: 'PROTO_ICO_REPAIRED', severity: 'warning' }),
+    );
+    expect(saved[0]?.validations.some((v) => v.ruleId === 'PROTO_ICO_CHECKSUM')).toBe(false);
+  });
+
+  it('keeps a bad supplier IČO when no saved supplier is one digit away', async () => {
+    const { store, saved } = fakeStore();
+    const memory: ReadingStore = { ...store, knownSupplierIcos: async () => [] };
+    await createDocExtractHandler({
+      llm: llmReturning(
+        wire({
+          supplier: {
+            name: 'Synthetic s.r.o.',
+            ico: '25596614',
+            dic: 'CZ25596614',
+            vat_id: '',
+            country: 'CZ',
+          },
+        }),
+      ),
+      blobs,
+      model: 'm',
+      clock,
+      store: memory,
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(saved[0]?.fields).toContainEqual(
+      expect.objectContaining({ fieldKey: 'supplier.ico', valueText: '25596614' }),
+    );
+    expect(saved[0]?.validations).toContainEqual(
+      expect.objectContaining({ ruleId: 'PROTO_ICO_CHECKSUM', severity: 'blocking' }),
+    );
+  });
+
+  it('remembers a valid supplier IČO after saving the reading', async () => {
+    const { store, saved } = fakeStore();
+    const remembered: Array<{ ico: string; orgId: string }> = [];
+    const memory: ReadingStore = {
+      ...store,
+      rememberSupplier: async (_tx, s) => {
+        remembered.push(s);
+        return 'partner-1';
+      },
+    };
+    // Savepoint stub: runs the callback on the same fake transaction.
+    const savepointTx = {
+      transaction: async (fn: (sp: unknown) => unknown) => fn(savepointTx),
+    } as unknown as TenantTx;
+    await createDocExtractHandler({
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'm',
+      clock,
+      store: memory,
+    })({ orgId: ORG, documentId: DOC }, { ...ctx(), tx: savepointTx });
+    expect(saved).toHaveLength(1);
+    expect(remembered).toHaveLength(1);
+    expect(remembered[0]).toMatchObject({ ico: '27082440', orgId: ORG });
+  });
 });

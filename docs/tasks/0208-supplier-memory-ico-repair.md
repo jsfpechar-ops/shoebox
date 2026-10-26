@@ -1,6 +1,6 @@
 # 0208: Remember suppliers and repair a misread IČO
 
-Status: todo
+Status: review
 Ticket: P1-EXT-08 (vendor memory, proto subset) | Depends on: 0202, 0207 | Base commit: branch claude/project-thread-90sd7q | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0208-report.md
