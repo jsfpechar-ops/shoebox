@@ -4,6 +4,10 @@ name: Google Cloud logs
 
 on:
   workflow_dispatch:
+  # Not on main yet, so dispatch alone is not registered: editing this file on phase/0 also runs it.
+  push:
+    branches: [phase/0]
+    paths: ['.github/workflows/gcp-logs.yml']
 
 permissions:
   contents: read
