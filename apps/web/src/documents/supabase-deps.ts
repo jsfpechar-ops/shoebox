@@ -1,5 +1,6 @@
 import type { createSupabaseServerClient } from '../supabase/server';
 import { enqueueDocExtract } from './enqueue';
+import { restartFailedRead, supabaseReadAgainDeps } from './read-again';
 import type { SourceFileInsert, UploadDeps } from './upload';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -67,6 +68,8 @@ export function supabaseUploadDeps(supabase: SupabaseServerClient): UploadDeps {
       if (error) throw new Error('documents');
       return data.id;
     },
+    restartIfFailed: (orgId, documentId) =>
+      restartFailedRead(supabaseReadAgainDeps(supabase), orgId, documentId),
     enqueueRead: enqueueDocExtract,
     today: () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Prague' }).format(new Date()),
   };
