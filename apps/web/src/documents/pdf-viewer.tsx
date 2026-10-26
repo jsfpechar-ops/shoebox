@@ -23,7 +23,7 @@ export function PdfViewer({ url }: { url: string }) {
           'pdfjs-dist/build/pdf.worker.min.mjs',
           import.meta.url,
         ).toString();
-        const doc = await pdfjs.getDocument({ url, isEvalSupported: false }).promise;
+        const doc = await pdfjs.getDocument({ url }).promise;
         if (!cancelled) setPages(doc.numPages);
         const width = root.clientWidth || 600;
         for (let n = 1; n <= Math.min(doc.numPages, MAX_PAGES) && !cancelled; n++) {
@@ -70,7 +70,12 @@ export function PdfViewer({ url }: { url: string }) {
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
     const selected = window.getSelection()?.toString() ?? '';
     const target = event.target instanceof HTMLElement ? event.target : null;
-    const words = selected.trim() !== '' ? selected : target?.tagName === 'SPAN' ? (target.textContent ?? '') : '';
+    const words =
+      selected.trim() !== ''
+        ? selected
+        : target?.tagName === 'SPAN'
+          ? (target.textContent ?? '')
+          : '';
     if (words.trim() !== '') window.dispatchEvent(new CustomEvent(PICK_EVENT, { detail: words }));
   }
 
@@ -83,7 +88,9 @@ export function PdfViewer({ url }: { url: string }) {
         onPointerUp={onPointerUp}
         className="flex w-full flex-col gap-4 overflow-hidden rounded-control border border-border bg-card"
       />
-      {pages > MAX_PAGES ? <p className="text-body">{t('doc.pdf.more_pages', { n: MAX_PAGES })}</p> : null}
+      {pages > MAX_PAGES ? (
+        <p className="text-body">{t('doc.pdf.more_pages', { n: MAX_PAGES })}</p>
+      ) : null}
     </figure>
   );
 }
