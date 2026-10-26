@@ -53,7 +53,11 @@ export interface ProtoCheckInput {
     readonly due_date: string | null;
   };
   readonly currency: string | null;
-  readonly totals: { readonly gross: string | null; readonly vat?: string | null; readonly net?: string | null };
+  readonly totals: {
+    readonly gross: string | null;
+    readonly vat?: string | null;
+    readonly net?: string | null;
+  };
   readonly vat_recap: readonly {
     readonly rate_pct: string;
     readonly base: string;

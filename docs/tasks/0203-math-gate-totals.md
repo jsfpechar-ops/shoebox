@@ -1,6 +1,6 @@
 # 0203: Math gate: totals, recap against totals, QR amount
 
-Status: blocked
+Status: review
 Ticket: P1-VAL-02 (proto subset) | Depends on: none | Base commit: 496b1e9 | Branch: task/0203-math-gate | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Report: docs/tasks/0203-report.md
