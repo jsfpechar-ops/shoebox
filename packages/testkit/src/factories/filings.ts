@@ -59,9 +59,24 @@ export const filingEntryFactory: TenantFactory = (ctx, overrides) => ({
   ...overrides,
 });
 
+/** 05 §8 obligations (migration 0044): one VAT return deadline; the worker writes it, users update state only. */
+export const obligationFactory: TenantFactory = (ctx, overrides) => ({
+  id: ctx.ids.next(),
+  org_id: ctx.orgId,
+  kind: 'vat_return',
+  period_start: '2026-08-01',
+  period_end: '2026-08-31',
+  legal_due_date: '2026-09-25',
+  due_date: '2026-09-25',
+  state: 'open',
+  source_rule: 'm05.vat_obligations.v1',
+  ...overrides,
+});
+
 /** Table name → factory, in insert order; registered in `factories/index.ts`. */
 export const filingFactories: ReadonlyArray<readonly [string, TenantFactory<Row>]> = [
   ['filings', filingFactory],
   ['filing_documents', filingDocumentFactory],
   ['filing_entries', filingEntryFactory],
+  ['obligations', obligationFactory],
 ];
