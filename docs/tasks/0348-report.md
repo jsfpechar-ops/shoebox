@@ -1,33 +1,28 @@
 # 0348 report
 
-Status: blocked
+Status: review
 
-Done: step 1 (refactor of `apps/worker/src/vat/service.ts`: `computePeriod` factored out, used by `evaluatePeriod` and `generateBundle`).
-Left: steps 2 to 4 (`amendment-detect.ts`, `updateFilingTotals` in `packages/db/src/filings.ts`, the five-case test with the 0344 store helper, register and the detect enqueue in `evaluatePeriod`).
+Done: steps 1 to 4. `computePeriod` factored out (step 1); `amendment-detect.ts`, `updateFilingTotals`, register, detect enqueue in `evaluatePeriod`, five-case test.
 
-## Files changed (step 1)
+## Files changed
 
-- `apps/worker/src/vat/service.ts` (49 insertions, 22 deletions)
+`apps/worker/src/vat/service.ts`, `amendment-detect.ts` (new), `register.ts`, `packages/db/src/filings.ts`, `apps/worker/test/amendment-detect.test.ts` (new), `test/helpers/vat-store.ts` (new, 0344 store and fixtures moved), `test/filing-lifecycle.test.ts` (imports only).
 
 ## Checks
 
-- `pnpm --filter @shoebox/worker exec vitest run filing-lifecycle 2>&1 | tail -30`: 8 passed, 8 total.
-- `pnpm --filter @shoebox/worker typecheck 2>&1 | tail -30`: clean.
-- `pnpm exec biome check --write apps/worker/src/vat/service.ts 2>&1 | tail -30`: no fixes.
-- `pnpm depcruise 2>&1 | tail -3`: no dependency violations.
+- `vitest run amendment-detect filing-lifecycle registry`: all pass (5 new, 8 unchanged).
+- worker and db `typecheck`: clean. `biome check`: clean. `pnpm depcruise`: no violations.
+- DB tests not run (the new db helpers have no DB test).
 
 ## Deviations
 
-- `computePeriod` takes the internal `Ctx` instead of `VatDeps`, and returns `profile` too (via the `Loaded` spread), because `generateBundle` needs the profile for the header.
-- `evaluatePeriod` now also computes `kh` (via `computeKh`) when the verdict is simple and the status is `platce`. Before, only `dp3` and SHV were computed there. A throw in `computeKh` would now surface on the evaluate path too. Not observed in tests.
-- In `generateBundle`, the pure `dp3`/`kh`/SHV computation now runs before the header-missing check instead of after it.
+- `computePeriod`, `resolve`, `formInfo`, `stateChanged` and their types are now exported from `service.ts`; `computePeriod` takes the internal `Ctx`.
+- `evaluatePeriod` also computes `kh` for simple payer periods; `generateBundle` computes before the header check (step 1).
+- Extra db helpers in `filings.ts`: `readFilingDocuments` and `upsertAmendmentObligation` (the existing obligation upsert cannot write `filing_id` or the `vat_amendment` kinds). They live in a separate `AmendStore` (in `amendment-detect.ts`, injected via `deps.amendStore`) so `VatStore` and the 0344 test stay unchanged.
+- Filed KH/SHV snapshots are rebuilt from `filing_entries` using the live ledger's document lookup (country, duzp). Not covered by tests; the five cases are DPHDP3 only.
+- No SHV obligation is created (the brief names only `vat_amendment` and `kh_nasledne`). Obligation `legal_due_date` = proposal due date.
+- Re-detect on a `generated` or `downloaded` amendment returns it as proposed but does not modify it.
 
 ## Questions
 
-- None for step 1. The remaining steps need the filed-snapshot reconstruction (`filing_documents`, `filing_entries`) and the 0344 in-memory store helper. Both were out of this session's budget.
-
-## Owner steps left
-
-- None.
-
-Not pushed. No PR opened (the instructions say not to push).
+None. Not pushed.

@@ -45,7 +45,11 @@ import {
   type VatPeriodSummary,
   vatObligationsFor,
 } from '@shoebox/domain';
-import { type TenantJobDefinition, vatWorkbookGenerateJob } from '@shoebox/pipeline';
+import {
+  type TenantJobDefinition,
+  vatAmendmentDetectJob,
+  vatWorkbookGenerateJob,
+} from '@shoebox/pipeline';
 import type { BlobStore, Logger } from '@shoebox/platform';
 import { serializeDphdp3, serializeKh, serializeShv, validateXml } from '@shoebox/tax-xml';
 import { z } from 'zod';
@@ -132,7 +136,7 @@ export interface GenerateRequest {
 const OBLIGATION_GENERATOR_VERSION = 1;
 const OPEN_BLOCKING_STATES: readonly string[] = ['generated', 'downloaded', 'marked_filed'];
 
-interface Ctx {
+export interface Ctx {
   readonly store: VatStore;
   readonly blobs: Pick<BlobStore, 'put'>;
   readonly rules: ReturnType<typeof createCzRules>;
@@ -143,7 +147,7 @@ interface Ctx {
   readonly enqueue: VatDeps['enqueue'];
 }
 
-function resolve(deps: VatDeps): Ctx {
+export function resolve(deps: VatDeps): Ctx {
   return {
     store: deps.store ?? dbVatStore,
     blobs: deps.blobs,
@@ -156,8 +160,8 @@ function resolve(deps: VatDeps): Ctx {
   };
 }
 
-type Skipped = { readonly skipped: 'no_profile' | 'not_vat_registered' };
-interface Loaded {
+export type Skipped = { readonly skipped: 'no_profile' | 'not_vat_registered' };
+export interface Loaded {
   readonly ledger: PeriodLedger;
   readonly profile: ProfileVersionRow;
   readonly status: 'platce' | 'identifikovana_osoba';
@@ -208,7 +212,7 @@ function wholeKc(m: Money): number {
 }
 
 const FormInfoSchema = z.object({ version: z.string().min(1), verze_pis: z.string().min(1) });
-function formInfo(
+export function formInfo(
   rules: ReturnType<typeof createCzRules>,
   form: EpoForm,
   date: LegalDate,
@@ -219,7 +223,7 @@ function formInfo(
   return { version: parsed.data.version, verzePis: parsed.data.verze_pis };
 }
 
-function stateChanged(c: Ctx, filingId: string, from: string | null, to: string): void {
+export function stateChanged(c: Ctx, filingId: string, from: string | null, to: string): void {
   c.logger.info({ event: 'filing.state_changed', filingId, from, to }, 'filing state changed');
 }
 
@@ -333,7 +337,7 @@ async function refreshObligations(
   return c.store.upsertVatObligations(tx, orgId, drafts, OBLIGATION_GENERATOR_VERSION);
 }
 
-type Computed = Loaded & {
+export type Computed = Loaded & {
   readonly classifier: SimpleCheckResult;
   readonly dp3: Dphdp3Computation | null;
   readonly kh: KhComputation | null;
@@ -342,7 +346,7 @@ type Computed = Loaded & {
 };
 
 /** Load, classify and, for a simple verdict, compute the period. Shared by evaluatePeriod and generateBundle. */
-async function computePeriod(
+export async function computePeriod(
   tx: TenantTx,
   orgId: string,
   periodStart: LegalDate,
@@ -380,6 +384,12 @@ export async function evaluatePeriod(
   if ('skipped' in loaded) return loaded;
   const { ledger, status, period, classifier: check, dp3, shvByMonth: shMonths } = loaded;
   if (check.verdict === 'needs_accountant') await enqueueWorkbook(orgId, period.start, c);
+  const filed = await c.store.listFilings(tx, orgId, {
+    periodStart: period.start,
+    states: ['marked_filed'],
+  });
+  if (filed.length > 0)
+    await c.enqueue(vatAmendmentDetectJob, { orgId, periodStart: period.start });
   const draftFilingId =
     check.verdict === 'nothing_to_file'
       ? null

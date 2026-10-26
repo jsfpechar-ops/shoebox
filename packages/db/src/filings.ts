@@ -666,3 +666,85 @@ export async function completeObligation(
     .returning({ id: obligations.id });
   return rows.length > 0;
 }
+
+/** Refreshes the totals and the classifier result of an open amendment draft. */
+export async function updateFilingTotals(
+  tx: TenantTx,
+  orgId: string,
+  filingId: string,
+  totals: unknown,
+  simpleCheck: unknown,
+): Promise<boolean> {
+  const rows = await tx
+    .update(filings)
+    .set({ totals, simpleCheck })
+    .where(and(eq(filings.orgId, orgId), eq(filings.id, filingId)))
+    .returning({ id: filings.id });
+  return rows.length > 0;
+}
+
+/** The (document, revision) pairs a filing was built from. */
+export async function readFilingDocuments(
+  tx: TenantTx,
+  orgId: string,
+  filingId: string,
+): Promise<Array<{ documentId: string; revision: number }>> {
+  const rows = await tx
+    .select({
+      documentId: filingDocuments.documentId,
+      revision: filingDocuments.documentRevision,
+    })
+    .from(filingDocuments)
+    .where(and(eq(filingDocuments.orgId, orgId), eq(filingDocuments.filingId, filingId)))
+    .orderBy(asc(filingDocuments.documentId));
+  return rows;
+}
+
+export interface AmendmentObligationInput {
+  readonly kind: 'vat_amendment' | 'kh_nasledne';
+  readonly periodStart: string;
+  readonly periodEnd: string;
+  readonly dueDate: string;
+  /** Decimal string with 2 places, may be negative; null for KH. */
+  readonly amountEstimate: string | null;
+  readonly filingId: string;
+  readonly sourceRule: string;
+}
+
+/** Opens (or refreshes) the amendment obligation. A user-done row keeps its state. */
+export async function upsertAmendmentObligation(
+  tx: TenantTx,
+  orgId: string,
+  input: AmendmentObligationInput,
+  generatorVersion: number,
+): Promise<void> {
+  await tx
+    .insert(obligations)
+    .values({
+      orgId,
+      kind: input.kind,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      legalDueDate: input.dueDate,
+      dueDate: input.dueDate,
+      amountEstimate: input.amountEstimate,
+      state: 'open',
+      sourceRule: input.sourceRule,
+      generatorVersion,
+      filingId: input.filingId,
+    })
+    .onConflictDoUpdate({
+      target: [obligations.orgId, obligations.kind, obligations.periodStart],
+      set: {
+        periodEnd: sql`excluded.period_end`,
+        legalDueDate: sql`excluded.legal_due_date`,
+        dueDate: sql`excluded.due_date`,
+        amountEstimate: sql`excluded.amount_estimate`,
+        state: sql`case when ${obligations.doneSource} = 'user' then ${obligations.state} else 'open' end`,
+        filingId: sql`excluded.filing_id`,
+        sourceRule: sql`excluded.source_rule`,
+        generatorVersion: sql`excluded.generator_version`,
+        updatedAt: sql`now()`,
+      },
+    });
+}
