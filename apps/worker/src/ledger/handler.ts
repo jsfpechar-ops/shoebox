@@ -17,6 +17,7 @@ import {
   type LedgerVerifyPayload,
   ledgerRebuildDocumentJob,
   type TenantJobDefinition,
+  vatPeriodEvaluateJob,
 } from '@shoebox/pipeline';
 import type { Logger } from '@shoebox/platform';
 import type { SystemHandler, TenantHandler } from '../registry';
@@ -46,6 +47,12 @@ export interface LedgerDeps {
   readonly rules?: RuleResolver<typeof RULE_SCHEMAS>;
   readonly store?: LedgerStore;
   readonly enqueue: Enqueue;
+  /** VAT family of the profile at a period start; the default is 'PAYER' (0344). */
+  readonly familyFor?: (
+    tx: TenantTx,
+    orgId: string,
+    periodStart: string,
+  ) => Promise<'IO' | 'PAYER'>;
 }
 
 export const ORG_REBUILD_BATCH = 200;
@@ -71,7 +78,12 @@ export async function rebuildDocument(
   orgId: string,
   documentId: string,
   deps: Required<Pick<LedgerDeps, 'store' | 'rules' | 'logger'>>,
-): Promise<{ changed: boolean; buildVersion?: string; skipped?: 'missing' }> {
+): Promise<{
+  changed: boolean;
+  buildVersion?: string;
+  skipped?: 'missing';
+  periodsAffected?: string[];
+}> {
   const inputs = await deps.store.load(tx, documentId);
   if (!inputs) return { changed: false, skipped: 'missing' };
 
@@ -105,7 +117,7 @@ export async function rebuildDocument(
     },
     'ledger document rebuilt',
   );
-  return { changed: true, buildVersion };
+  return { changed: true, buildVersion, periodsAffected: drafts.periods };
 }
 
 export function createLedgerRebuildDocumentHandler(
@@ -113,7 +125,15 @@ export function createLedgerRebuildDocumentHandler(
 ): TenantHandler<LedgerRebuildDocumentPayload> {
   const resolved = resolveDeps(deps);
   return async (payload, ctx) => {
-    await rebuildDocument(ctx.tx, payload.orgId, payload.documentId, resolved);
+    const result = await rebuildDocument(ctx.tx, payload.orgId, payload.documentId, resolved);
+    for (const periodStart of result.changed ? (result.periodsAffected ?? []) : []) {
+      const family = await (deps.familyFor ?? (async () => 'PAYER' as const))(
+        ctx.tx,
+        payload.orgId,
+        periodStart,
+      );
+      await deps.enqueue(vatPeriodEvaluateJob, { orgId: payload.orgId, periodStart, family });
+    }
   };
 }
 
