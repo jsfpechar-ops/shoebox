@@ -23,6 +23,7 @@ const D_OLD = id(3);
 const D_PENDING = id(4);
 const D_ISSUED = id(5);
 const D_B = id(6);
+const D_EUR = id(7);
 const L_ASSET = id(11);
 const L_SMALL = id(12);
 const L_OLD = id(13);
@@ -42,7 +43,7 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
   let sql: Sql;
   let db: TenantDb;
   const read = (org: string, year = 2026) =>
-    db.withTenant(org, (tx) => readPodkladyRows(tx, org, year, LEDGER_ALGO));
+    db.withTenant(org, (tx) => readPodkladyRows(tx, org, year, LEDGER_ALGO, 7));
 
   beforeAll(async () => {
     sql = postgres(serviceUrl, { max: 1, onnotice: () => undefined });
@@ -58,7 +59,9 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
       (${D_OLD}, ${A}, 'manual', 'finalized', 'received_invoice', 'in', 'CZK', '2025-05-01', '2025-05-02', '9000.00', 'business', 1),
       (${D_PENDING}, ${A}, 'manual', 'needs_review', 'received_invoice', 'in', 'CZK', '2026-06-01', null, '100.00', 'business', 1),
       (${D_ISSUED}, ${A}, 'manual', 'finalized', 'issued_invoice', 'out', 'CZK', '2026-02-01', null, '500.00', 'business', 1),
-      (${D_B}, ${B}, 'manual', 'finalized', 'received_invoice', 'in', 'CZK', '2026-03-01', '2026-03-05', '777.00', 'business', 1)`;
+      (${D_B}, ${B}, 'manual', 'finalized', 'received_invoice', 'in', 'CZK', '2026-03-01', '2026-03-05', '777.00', 'business', 1),
+      (${D_EUR}, ${A}, 'manual', 'finalized', 'received_receipt', 'in', 'EUR', '2026-05-03', '2026-05-03', '100.00', 'personal', 1)`;
+    await sql`update documents set fx_rate = '25.000000', fx_rate_date = '2026-05-03' where id = ${D_EUR}`;
     await sql`insert into document_lines (id, org_id, document_id, position, description, gross, category_code, business_share_pct) values
       (${L_ASSET}, ${A}, ${D_ASSET}, 1, 'Laptop', '12100.00', 'asset_long_term', '100'),
       (${L_SMALL}, ${A}, ${D_SMALL}, 1, 'Mouse', '3000.00', 'exp_small_assets', '60'),
@@ -118,7 +121,7 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
     });
 
     it('readiness counts: one pending document, one unpaid issued invoice, one unmatched outgoing transaction with its sum', async () => {
-      const { readiness, privateUse } = await read(A);
+      const { readiness, privateUse, privateUseFxMissing } = await read(A);
       expect(readiness.pendingDocuments).toBe(1);
       expect(readiness.unpaidIssued).toBe(1);
       expect(readiness.unexplainedTransactions.count).toBe(1);
@@ -126,6 +129,11 @@ describe.skipIf(DATABASE_URL === undefined)('podklady I/O', () => {
       expect(readiness.businessFlagUnknown.count).toBe(1);
       expect(readiness.businessFlagUnknown.sum.toFixed2()).toBe('3000.00');
       expect(privateUse.partialShareLines.map((l) => l.lineId)).toEqual([L_SMALL]);
+      expect(privateUse.partialShareLines[0]?.totalCzk.toFixed2()).toBe('3000.00');
+      expect(privateUse.personalDocuments.find((p) => p.documentId === D_EUR)?.amountCzk.toFixed2()).toBe(
+        '2500.00',
+      );
+      expect(privateUseFxMissing).toEqual([]);
     });
 
     it('transactions: only the six tax/insurance categories of the year, signed as stored', async () => {
