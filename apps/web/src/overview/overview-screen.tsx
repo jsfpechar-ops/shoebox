@@ -165,7 +165,15 @@ function Deadlines({ view, upcoming }: { view: OverviewView; upcoming: readonly 
 }
 
 /** Přehled (M11 §5.2): next payment, limit meters, totals, deadlines and one way to the accountant. */
-export function OverviewScreen({ view, vat }: { view: OverviewView; vat?: ReactNode }) {
+export function OverviewScreen({
+  view,
+  vat,
+  tax,
+}: {
+  view: OverviewView;
+  vat?: ReactNode;
+  tax?: ReactNode;
+}) {
   const horizon = addDays(view.asOf, WINDOW_DAYS);
   const upcoming = view.deadlines.filter(
     (deadline) => compareLegalDates(deadline.due, horizon) <= 0,
@@ -176,6 +184,7 @@ export function OverviewScreen({ view, vat }: { view: OverviewView; vat?: ReactN
       <h1 className="text-title">{t('overview.title')}</h1>
       <NextPayment view={view} upcoming={upcoming} />
       {vat}
+      {tax}
       {empty ? (
         <section aria-labelledby="empty-title" className={card}>
           <h2 id="empty-title" className="text-card-title">

@@ -1,6 +1,6 @@
 # 0419: Income-tax summary card, its page, and the tax-reserve tile
 
-Status: todo
+Status: review
 Ticket: P4-POD-07 (card + page, no partial-XML dialog), M11 §5.2 reserve tile | Depends on: 0365 (lane C, merged), 0418 | Branch: claude/project-thread-yn56ih | PR base: phase/0
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
