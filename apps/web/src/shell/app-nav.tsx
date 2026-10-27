@@ -1,10 +1,12 @@
 'use client';
 
 import { type MessageKey, t } from '@shoebox/i18n';
-import { cn, focusRing, motion } from '@shoebox/ui';
+import { cn, focusRing, motion, Sheet, SheetContent, SheetTitle, SheetTrigger } from '@shoebox/ui';
 import { Briefcase, Inbox, LayoutDashboard, type LucideIcon, Plus, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { AddMenu } from '../documents/add-menu';
 
 type NavItem = { href: string; label: MessageKey; icon: LucideIcon };
 
@@ -51,6 +53,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
  */
 export function AppNav() {
   const pathname = usePathname();
+  const [addOpen, setAddOpen] = useState(false);
   const [first, second, third, fourth] = navItems;
   const link = (item: NavItem | undefined) =>
     item ? <NavLink key={item.href} item={item} active={isActive(pathname, item.href)} /> : null;
@@ -67,18 +70,26 @@ export function AppNav() {
         {link(first)}
         {link(second)}
         <li className="flex flex-1 items-center justify-center md:hidden">
-          {/* TODO(P1-UI-02): the "+" opens the menu Nahrát · Vyfotit · Přidat ručně. */}
-          <Link
-            href="/inbox"
-            aria-label={t('shell.nav.add')}
-            className={cn(
-              'flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90',
-              motion,
-              focusRing,
-            )}
-          >
-            <Plus size={24} strokeWidth={1.5} aria-hidden="true" />
-          </Link>
+          <Sheet open={addOpen} onOpenChange={setAddOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label={t('shell.nav.add')}
+                aria-expanded={addOpen}
+                className={cn(
+                  'flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground hover:opacity-90',
+                  motion,
+                  focusRing,
+                )}
+              >
+                <Plus size={24} strokeWidth={1.5} aria-hidden="true" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" closeLabel={t('shell.close')} data-testid="add-menu-sheet">
+              <SheetTitle>{t('shell.nav.add_menu')}</SheetTitle>
+              <AddMenu onOpenChange={setAddOpen} />
+            </SheetContent>
+          </Sheet>
         </li>
         {link(third)}
         {link(fourth)}

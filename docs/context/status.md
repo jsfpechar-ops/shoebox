@@ -4,6 +4,7 @@ Updated: 2026-10-27.
 
 ## Now
 
+- 0623: mobile "+" opens the add menu (Upload · Snap · Add by hand), shared upload-send hook; 07 §5 TODO done.
 - 0620–0622: lines from the VAT recap at read time, `doc.categorize` after every read, backfill 0065, catch-up job every 15 min. Before this no upload reached the ledgers.
 - 0610–0614 (real-data test): rounding ≤1 Kč = info note; IČO fix from ARES; one-tap review + confirm; ZIP never empty, Status column, README; paid without chores.
 - 0600, 0604–0606: Overview waiting / auto-read % / bills to pay; trust marks; one-tap total; PDF highlight.
