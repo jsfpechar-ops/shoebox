@@ -104,12 +104,21 @@ describe('registerSheet', () => {
   it('has a header and one row per document, money as numbers', () => {
     const sheet = registerSheet([row, manual]);
     expect(sheet).toHaveLength(3);
-    expect(sheet[0]?.[0]).toBe('Date');
-    expect(sheet[0]).toHaveLength(14);
-    expect(sheet[1]?.[6]).toEqual({ num: '8150.00' });
-    expect(sheet[1]?.[12]).toBe('Not paid');
-    expect(sheet[2]?.[7]).toBeNull();
-    expect(sheet[2]?.[13]).toBe('Typed in');
+    expect(sheet[0]?.[0]).toBe('Status');
+    expect(sheet[0]?.[1]).toBe('Date');
+    expect(sheet[0]).toHaveLength(15);
+    expect(sheet[1]?.[0]).toBe('Ready');
+    expect(sheet[1]?.[7]).toEqual({ num: '8150.00' });
+    expect(sheet[1]?.[13]).toBe('Not paid');
+    expect(sheet[2]?.[8]).toBeNull();
+    expect(sheet[2]?.[14]).toBe('Typed in');
+  });
+  it('labels needs-review and not-read documents', () => {
+    const review = { ...row, status: 'needs_review' } as RegisterRow;
+    const reading = { ...row, status: 'extracting' } as RegisterRow;
+    const sheet = registerSheet([review, reading]);
+    expect(sheet[1]?.[0]).toBe('Needs review');
+    expect(sheet[2]?.[0]).toBe('Not read yet');
   });
 });
 

@@ -127,6 +127,26 @@ export function applyRegisterFilter(
   });
 }
 
+export type ReviewState = 'ready' | 'needs_review' | 'not_read';
+
+/** Ready = checked; not read = still being read; everything else needs a person to look. */
+export function reviewStateOf(status: DocumentStatus): ReviewState {
+  if (status === 'ready' || status === 'finalized' || status === 'supporting') return 'ready';
+  if (status === 'needs_review' || status === 'failed' || status === 'duplicate') {
+    return 'needs_review';
+  }
+  return 'not_read';
+}
+
+function statusLabel(status: DocumentStatus): string {
+  const state = reviewStateOf(status);
+  return state === 'ready'
+    ? t('register.status.ready')
+    : state === 'needs_review'
+      ? t('register.status.needs_review')
+      : t('register.status.not_read');
+}
+
 function moneyCell(value: string | null): XlsxCell {
   return value === null ? null : { num: value };
 }
@@ -134,6 +154,7 @@ function moneyCell(value: string | null): XlsxCell {
 /** The Excel sheet: a header row, then one row per document. */
 export function registerSheet(rows: readonly RegisterRow[]): XlsxCell[][] {
   const header: XlsxCell[] = [
+    t('register.col.status'),
     t('register.col.date'),
     t('register.col.partner'),
     t('register.col.ico'),
@@ -150,6 +171,7 @@ export function registerSheet(rows: readonly RegisterRow[]): XlsxCell[][] {
     t('register.col.file'),
   ];
   const body = rows.map((row): XlsxCell[] => [
+    statusLabel(row.status),
     row.date,
     row.partner,
     row.ico,

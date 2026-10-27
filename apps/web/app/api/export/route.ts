@@ -9,7 +9,11 @@ import {
 } from '@shoebox/exports';
 import { t } from '@shoebox/i18n';
 import { requireActiveRole } from '../../../src/auth/org-context';
-import { loadExportDocs } from '../../../src/documents/export-data';
+import {
+  countTrashedInPeriod,
+  loadDocumentOverview,
+  loadExportDocs,
+} from '../../../src/documents/export-data';
 import {
   isdocInputOf,
   loadFormatData,
@@ -21,7 +25,8 @@ import {
   exportEntryName,
   parsePeriod,
 } from '../../../src/documents/export-period';
-import { registerSheet } from '../../../src/documents/register-data';
+import { buildReadme, type LeftOutItem } from '../../../src/documents/export-readme';
+import { registerSheet, reviewStateOf } from '../../../src/documents/register-data';
 import { createSupabaseServerClient } from '../../../src/supabase/server';
 
 export const runtime = 'nodejs';
@@ -37,43 +42,79 @@ export async function GET(request: Request): Promise<Response> {
   const period = parsePeriod(new URL(request.url).searchParams.get('period'), today);
   const supabase = await createSupabaseServerClient();
   const docs = await loadExportDocs(supabase, auth.orgId, period);
-  const total = docs.reduce((sum, doc) => sum + (doc.file?.size ?? 0), 0);
-  if (total > EXPORT_MAX_BYTES) return Response.json({ error: 'too_big' }, { status: 413 });
+  const overview = await loadDocumentOverview(supabase, auth.orgId);
+  if (docs.length === 0) {
+    const sorted = [...overview.dates].sort();
+    return Response.json(
+      {
+        error: 'empty',
+        hint: {
+          first: sorted.length > 0 ? sorted[0]?.slice(0, 7) : null,
+          last: sorted.length > 0 ? sorted[sorted.length - 1]?.slice(0, 7) : null,
+          period: period.key,
+        },
+      },
+      { status: 409, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
 
   const used = new Set<string>();
   const isdocUsed = new Set<string>();
   const entries: ZipEntry[] = [];
   const entryNames = new Map<string, string>();
+  const leftOut: LeftOutItem[] = [];
   let skipped = 0;
+  let budget = EXPORT_MAX_BYTES;
+  const counts = { ready: 0, needs_review: 0, not_read: 0 };
   for (const doc of docs) {
+    const state = reviewStateOf(doc.row.status);
+    counts[state] += 1;
     if (doc.file === null) continue;
+    const label = [doc.row.date, doc.row.partner, doc.row.number]
+      .filter((part) => part !== null && part !== '')
+      .join(' ');
+    if (doc.file.size > budget) {
+      leftOut.push({ label: label || doc.row.id, reason: 'too_big' });
+      continue;
+    }
     const { data, error } = await supabase.storage.from('org-files').download(doc.file.path);
     if (error || data === null) {
       skipped += 1;
+      leftOut.push({ label: label || doc.row.id, reason: 'missing' });
       continue;
     }
-    const entryName = exportEntryName(doc.row, doc.file.name, doc.file.mime, used);
+    budget -= doc.file.size;
+    const entryName = exportEntryName(
+      doc.row,
+      doc.file.name,
+      doc.file.mime,
+      used,
+      state === 'needs_review',
+    );
     entryNames.set(doc.row.id, entryName);
     entries.push({
       name: entryName,
       data: new Uint8Array(await data.arrayBuffer()),
     });
   }
+  const registerName = `documents-${period.key}.xlsx`;
   const sheet = createXlsx(
     t('register.sheet_name'),
     registerSheet(docs.map((doc) => doc.row)),
     new Date(),
   );
-  entries.push({ name: `documents-${period.key}.xlsx`, data: new Uint8Array(sheet) });
+  entries.push({ name: registerName, data: new Uint8Array(sheet) });
 
   let warnings = 0;
+  let isdocCount = 0;
+  let pohodaName: string | null = null;
+  const encoder = new TextEncoder();
   const formats = await loadFormatData(
     supabase,
     auth.orgId,
     docs.map((d) => d.row.id),
   );
   if (formats !== null) {
-    const encoder = new TextEncoder();
     const pohodaDocs: PohodaDocument[] = [];
     for (const doc of formats.docs) {
       try {
@@ -97,6 +138,7 @@ export async function GET(request: Request): Promise<Response> {
           }
           isdocUsed.add(name);
           entries.push({ name, data: encoder.encode(xml) });
+          isdocCount += 1;
         }
         const pohodaDoc = pohodaDocumentOf(doc);
         if (pohodaDoc !== null) pohodaDocs.push(pohodaDoc);
@@ -111,15 +153,32 @@ export async function GET(request: Request): Promise<Response> {
           pohodaProfileOf(formats.org, formats.labels),
         );
         warnings = result.warnings.length;
-        entries.push({
-          name: `pohoda_${formats.org.ico}_${period.key}_v1.xml`,
-          data: encoder.encode(result.xml),
-        });
+        pohodaName = `pohoda_${formats.org.ico}_${period.key}_v1.xml`;
+        entries.push({ name: pohodaName, data: encoder.encode(result.xml) });
       } catch {
         skipped += 1;
       }
     }
   }
+
+  const trashed = await countTrashedInPeriod(supabase, auth.orgId, period);
+  entries.push({
+    name: 'README.txt',
+    data: encoder.encode(
+      buildReadme({
+        period: period.key,
+        ready: counts.ready,
+        needsReview: counts.needs_review,
+        notRead: counts.not_read,
+        registerName,
+        isdocCount,
+        pohodaName,
+        leftOut,
+        trashed,
+        undated: overview.undated,
+      }),
+    ),
+  });
 
   return new Response(new Uint8Array(createZip(entries, new Date())), {
     headers: {
