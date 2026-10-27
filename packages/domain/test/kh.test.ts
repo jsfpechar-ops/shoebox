@@ -103,9 +103,9 @@ const SEP: VatLedgerEntryDraft[] = [
   }),
 ];
 const DOCS: Record<string, KhDocumentInfo> = {
-  manager: { duzp: d('2026-09-02'), partnerCountry: 'CZ' },
-  credit: { duzp: d('2026-09-15'), partnerCountry: 'CZ' },
-  'booking-aug': { duzp: null, partnerCountry: 'NL' },
+  manager: { duzp: d('2026-09-02'), partnerCountry: 'CZ', rcCommodityCodes: [] },
+  credit: { duzp: d('2026-09-15'), partnerCountry: 'CZ', rcCommodityCodes: [] },
+  'booking-aug': { duzp: null, partnerCountry: 'NL', rcCommodityCodes: [] },
 };
 const lookup = (id: string) => DOCS[id];
 const dp3 = computeDphdp3(SEP, 'platce', rules, d('2026-09-01'));
@@ -187,6 +187,9 @@ describe('computeKh (M05 §4.5, §9 #8)', () => {
       obrat5: '0.00',
       pln23: '1784.00',
       pln5: '0.00',
+      plnRezPren: '0.00',
+      rezPren23: '0.00',
+      rezPren5: '0.00',
       celkZdA2: '11550.00',
     });
   });

@@ -36,7 +36,13 @@ export type Enqueue = <P extends { orgId: string }>(
 ) => Promise<string | null>;
 
 export interface PodkladyStore {
-  readRows(tx: TenantTx, orgId: string, year: number, buildVersion: bigint): Promise<PodkladyRows>;
+  readRows(
+    tx: TenantTx,
+    orgId: string,
+    year: number,
+    buildVersion: bigint,
+    fxMaxLookbackDays: number,
+  ): Promise<PodkladyRows>;
   latestFiling(tx: TenantTx, orgId: string, year: number): Promise<FilingRow | null>;
   listDrafts(tx: TenantTx, orgId: string, year: number): Promise<FilingRow[]>;
   insertFiling(
@@ -111,7 +117,13 @@ export async function generatePodklady(
   const now = deps.now();
   const today = pragueDateOf(now.getTime());
 
-  const rows = await store.readRows(tx, orgId, year, BigInt(LEDGER_ALGO_VERSION));
+  const rows = await store.readRows(
+    tx,
+    orgId,
+    year,
+    BigInt(LEDGER_ALGO_VERSION),
+    deps.rules.at(`${year}-12-31`).get('fx.max_lookback_days'),
+  );
   const latest = await store.latestFiling(tx, orgId, year);
   if (
     latest !== null &&

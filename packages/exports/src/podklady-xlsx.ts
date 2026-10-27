@@ -78,10 +78,13 @@ function summaryRows(s: PodkladySummary, o: PodkladyXlsxOptions): Row[] {
     ['Interim', yn(s.watermark)],
     [],
     ['Income', num(headline.income)],
-    // Actual expenses in haléře (Σ business amounts); the domain headline rounds to whole CZK.
+    // Whole-Kč summary lines (DPFO form: "v celých Kč", K-C05); the haléře total follows on its own line.
     headline.label === 'flat'
       ? ['Flat-rate expenses', num(headline.expenses)]
-      : ['Expenses', num(totals.deductibleTotal)],
+      : ['Expenses', num(headline.expenses)],
+    ...(headline.label === 'flat'
+      ? []
+      : [['Expenses before rounding', num(totals.deductibleTotal)] as Row]),
     ['Base before adjustments', num(headline.base)],
     ['Advances paid', num(s.advancesPaid)],
     ['Private part', num(totals.privatePart)],

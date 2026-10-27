@@ -125,6 +125,11 @@ describe('received side (M04 §4.2)', () => {
       'rcv_domestic_reverse_charge',
     ],
     [
+      '§92a commodity code but the supplier has no CZ DIČ → ordinary domestic, no VAT',
+      { supplier: CZ_NONPAYER, line: { ...noVat, rcCommodityCode: '12' } },
+      'rcv_domestic_no_vat',
+    ],
+    [
       '§92a flag with CZ DIČ',
       {
         flags: { reverseCharge92a: true, customsDeclaration: false, placeOfSupplyAbroad: false },
@@ -301,6 +306,14 @@ describe('issued side', () => {
       'iss_domestic_reverse_charge',
     ],
     ['payer, B2C (no customer)', { vatStatus: 'platce' }, 'iss_domestic_vat'],
+    [
+      'payer, B2C with a §92a code → ordinary output VAT (no payer customer)',
+      {
+        vatStatus: 'platce',
+        line: { ...noVat, categoryCode: 'income_services', rcCommodityCode: '4' },
+      },
+      'iss_domestic_vat',
+    ],
     ['IO, CZ customer', { customer: CZ_PAYER }, 'iss_no_vat'],
     ['neplatce, B2C', { vatStatus: 'neplatce' }, 'iss_no_vat'],
     [

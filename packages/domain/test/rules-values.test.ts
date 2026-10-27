@@ -353,7 +353,7 @@ describe('Phase 3 VAT seeds (0328)', () => {
   const at = rules.at(parseLegalDate('2026-09-15'));
   it('simple-period policy 2026.1 forbids EU goods for an IO and allows them for a payer', () => {
     const p = at.get('vat.simple_period_policy') as typeof CZ_SIMPLE_PERIOD_POLICY;
-    expect(p.version).toBe('2026.1');
+    expect(p.version).toBe('2026.3');
     expect(p.allowed_treatments.identifikovana_osoba).not.toContain('rcv_eu_goods_acquisition');
     expect(p.allowed_treatments.platce).toContain('rcv_eu_goods_acquisition');
     expect(p.max_docs).toBe(150);

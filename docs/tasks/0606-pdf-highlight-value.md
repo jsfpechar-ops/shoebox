@@ -1,4 +1,4 @@
-# 0603: Show on the PDF where a value came from
+# 0606: Show on the PDF where a value came from
 
 Status: review
 Ticket: GAP-04 (owner go 2026-10-26 23:02) | Depends on: none | Base commit: 886fc60 | Branch: claude/project-thread-7b9jcx | PR base: phase/0
@@ -53,4 +53,4 @@ As in TEMPLATE.md §8.
 
 ## 9. Report
 
-Write `docs/tasks/0603-report.md` (600 tokens at most), set `Status: review`, commit with message `0603: highlight on the PDF where a value came from`. Do not push.
+Write `docs/tasks/0606-report.md` (600 tokens at most), set `Status: review`, commit with message `0606: highlight on the PDF where a value came from`. Do not push.

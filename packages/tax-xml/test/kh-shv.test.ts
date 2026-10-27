@@ -154,8 +154,8 @@ const SEP: VatLedgerEntryDraft[] = [
 ];
 const lookup = (id: string) =>
   ({
-    manager: { duzp: d('2026-09-02'), partnerCountry: 'CZ' },
-    credit: { duzp: d('2026-09-15'), partnerCountry: 'CZ' },
+    manager: { duzp: d('2026-09-02'), partnerCountry: 'CZ', rcCommodityCodes: [] },
+    credit: { duzp: d('2026-09-15'), partnerCountry: 'CZ', rcCommodityCodes: [] },
   })[id];
 
 describe('serializeKh / serializeShv golden', () => {

@@ -1,4 +1,4 @@
-# 0602: After a fix, offer the matching total in one tap
+# 0605: After a fix, offer the matching total in one tap
 
 Status: review
 Ticket: GAP-03 (owner go 2026-10-26 23:02) | Depends on: none | Base commit: 886fc60 | Branch: claude/project-thread-7b9jcx | PR base: phase/0
@@ -54,4 +54,4 @@ As in TEMPLATE.md §8.
 
 ## 9. Report
 
-Write `docs/tasks/0602-report.md` (600 tokens at most), set `Status: review`, commit with message `0602: offer the matching total after a fix`. Do not push.
+Write `docs/tasks/0605-report.md` (600 tokens at most), set `Status: review`, commit with message `0605: offer the matching total after a fix`. Do not push.

@@ -110,7 +110,7 @@ describe('classifyPeriod: verdicts', () => {
     expect(new Set(r.checks.map((c) => c.code)).size).toBe(r.checks.length);
     expect(r.checks.length).toBe(24);
     expect(r).toMatchObject({
-      policyVersion: '2026.1',
+      policyVersion: '2026.3',
       rulesDate: '2026-08-01',
       evaluatedAt: '2026-09-20T10:00:00Z',
     });
@@ -221,6 +221,37 @@ describe('needs_accountant checks (M05 §9 #7, #9)', () => {
       'pass',
     );
   });
+  it('S_RC_COMMODITY (policy 2026.3): payer § 92a document with one code passes; without a code or with two codes it needs the accountant', () => {
+    const rc = (lines: ReturnType<typeof line>[]) =>
+      payer({ documents: [doc({ documentId: 'r', lines })] });
+    expect(
+      check(
+        classifyPeriod(
+          rc([line({ vatTreatment: 'rcv_domestic_reverse_charge', rcCommodityCode: '4' })]),
+          rules,
+        ),
+        'S_RC_COMMODITY',
+      ).outcome,
+    ).toBe('pass');
+    expect(
+      check(
+        classifyPeriod(rc([line({ vatTreatment: 'rcv_domestic_reverse_charge' })]), rules),
+        'S_RC_COMMODITY',
+      ).outcome,
+    ).toBe('needs_accountant');
+    expect(
+      check(
+        classifyPeriod(
+          rc([
+            line({ vatTreatment: 'rcv_domestic_reverse_charge', rcCommodityCode: '4' }),
+            line({ vatTreatment: 'rcv_domestic_reverse_charge', rcCommodityCode: '5' }),
+          ]),
+          rules,
+        ),
+        'S_RC_COMMODITY',
+      ).outcome,
+    ).toBe('needs_accountant');
+  });
   it('S_RC_COMMODITY and S_FORBIDDEN_CLASS (class and line type)', () => {
     expect(
       check(
@@ -304,7 +335,7 @@ describe('needs_accountant checks (M05 §9 #7, #9)', () => {
       check(classifyPeriod(cn('2026-08-02'), rules), 'S_PRIOR_PERIOD_CREDIT_NOTE').outcome,
     ).toBe('pass');
   });
-  it('S_PARTIAL_SHARE_DEDUCTION: payer 60 % share on a domestic purchase; IO ignores it', () => {
+  it('S_PARTIAL_SHARE_DEDUCTION: allowed by policy 2026.2 (§ 75 computed); payer and IO pass', () => {
     const docs = [
       doc({
         documentId: 'b',
@@ -313,7 +344,7 @@ describe('needs_accountant checks (M05 §9 #7, #9)', () => {
     ];
     expect(
       check(classifyPeriod(payer({ documents: docs }), rules), 'S_PARTIAL_SHARE_DEDUCTION').outcome,
-    ).toBe('needs_accountant');
+    ).toBe('pass');
     expect(
       check(classifyPeriod(io({ documents: docs }), rules), 'S_PARTIAL_SHARE_DEDUCTION').outcome,
     ).toBe('pass');

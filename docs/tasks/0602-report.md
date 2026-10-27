@@ -1,33 +1,23 @@
-# 0602 report: offer the matching total after a fix
+# 0602 report
 
-Status: review
+Status: review. Branch exec-0602 (base claude/project-thread-owbjjp bdd3ded). Not pushed, no PR.
 
-## Files changed
-- apps/web/src/documents/recalc.ts (new): recalcSuggestion, Money-based, no floats
-- apps/web/test/recalc.test.ts (new): 10 cases
-- apps/web/src/documents/correction-store.ts: ok result now carries `fields` (approved by orchestrator, option 1)
-- apps/web/src/documents/correction-actions.ts: FixState gets `suggestion`; idle and error states get null; saved state fills it from the planned fields
-- apps/web/src/documents/fix-field.tsx: after "Saved", a secondary button "Set {field} to {amount}?" submits the same fixFieldAction for the suggested key and value
-- packages/i18n/messages/en.json: doc.fix.suggest, doc.fix.suggest_help
-- docs/tasks/0602-smart-recalc.md: header Status set to review
-- docs/tasks/0602-report.md (this file)
+Files changed: dphdp3.ts, kh.ts, vat-phase3.ts, checks-accountant.ts; new dphdp3-deduction.test.ts, kh-deduction.test.ts; classify-period.test.ts (brief step 7 plus policyVersion pin), rules-values.test.ts (version pin).
 
-## Commands
-- `pnpm --filter @shoebox/web test -- recalc correction 2>&1 | tail -30`: pass, 350/350 (the filter does not narrow the run; vitest ran the whole web suite)
-- `pnpm --filter @shoebox/web typecheck 2>&1 | tail -30`: clean, 0 errors
+Commands (all green):
+- `pnpm --filter @shoebox/domain test` (whole domain package: `--` filter is ignored by the script, so every run was the full package): 46 files, 709 tests passed.
+- `pnpm --filter @shoebox/domain typecheck`: tsc clean.
+- `pnpm --filter @shoebox/tax-xml test -- kh-shv`: 9 files, 66 tests passed (golden XML unchanged).
 
-## Steps
-1. recalc.ts + tests: done
-2. Wired into the action, idle state suggestion: null: done
-3. Button in fix-field.tsx, en.json keys: done
-4. Commands 6: done, both pass
+Acceptance: [x] new tests pass unchanged [x] existing goldens unchanged [x] policy 2026.2, flag true, S_PARTIAL_SHARE_DEDUCTION passes for payer.
 
-## Deviations
-- Amount format: the brief asks for "the same formatter the page already uses for money". The only exported money formatter (formatCzkWhole) has no cents, so it would show 121.12 as 121 Kč. The button uses a local cs-CZ currency formatter with 2 decimals, copied from the unexported one in vat/preview-view.tsx. No new dependency.
-- Credit notes: a negative suggestion is allowed only when the document's gross (in the fields after the save) is negative.
+Deviations:
+- Two existing tests pinned policy version '2026.1': classify-period.test.ts line 113 (policyVersion) and rules-values.test.ts line 356 (title and version). Updated to '2026.2' as step 5 allows. Not otherwise edited.
+- Did not run the red-before-green check for steps 1 and 3.
+- Ran `biome format` on dphdp3.ts and kh.ts.
+- The worktree was removed mid-task; work was done in /home/user/shoebox on a new branch exec-0602.
 
-## Questions
-None open.
+Questions: none.
 
-## Owner steps left
-None. Branch task/0602 is not pushed.
+[verify] KH B.2: B.2/B.3 amounts are the proportional amounts with pomer=A. This is the accountant-review reading (GFR instructions for KH, B.2), not yet confirmed by the licensed accountant.
+Spec: M05 4.5 B2 `pomer="N"` should become `pomer = A when 75 applies` (orchestrator edits).

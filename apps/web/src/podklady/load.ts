@@ -40,7 +40,13 @@ function partialAvailable(year: number, rules: ReturnType<typeof createCzRules>)
 async function loadCore(orgId: string, year: number) {
   const rules = createCzRules();
   const { rows, latest, profileAtYearEnd } = await podkladyDb().withTenant(orgId, async (tx) => ({
-    rows: await readPodkladyRows(tx, orgId, year, BigInt(LEDGER_ALGO_VERSION)),
+    rows: await readPodkladyRows(
+      tx,
+      orgId,
+      year,
+      BigInt(LEDGER_ALGO_VERSION),
+      rules.at(`${year}-12-31`).get('fx.max_lookback_days'),
+    ),
     latest: await latestPodkladyFiling(tx, orgId, year),
     profileAtYearEnd: await readTaxpayerHeaderAt(tx, orgId, `${year}-12-31`),
   }));

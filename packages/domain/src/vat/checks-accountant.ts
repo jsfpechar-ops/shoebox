@@ -111,8 +111,27 @@ const treatmentNotAllowed: SimpleCheckFn = (ctx) => {
   );
 };
 
+// § 92a is in scope since 0603 (policy 2026.3): a reverse-charge document needs exactly one commodity
+// code (one KH row per code), and a code never sits on a line with another treatment.
+const RC_TREATMENTS: ReadonlySet<string> = new Set([
+  'rcv_domestic_reverse_charge',
+  'iss_domestic_reverse_charge',
+]);
 const rcCommodity: SimpleCheckFn = (ctx) => {
-  const docs = ctx.input.documents.filter((d) => d.lines.some((l) => l.rcCommodityCode !== null));
+  const docs = ctx.input.documents.filter((d) => {
+    const rcLines = d.lines.filter(
+      (l) => l.vatTreatment !== null && RC_TREATMENTS.has(l.vatTreatment),
+    );
+    const codes = new Set(d.lines.map((l) => l.rcCommodityCode).filter((c) => c !== null));
+    const codeOnOtherLine = d.lines.some(
+      (l) =>
+        l.rcCommodityCode !== null &&
+        !(l.vatTreatment !== null && RC_TREATMENTS.has(l.vatTreatment)),
+    );
+    if (!ctx.isPayer) return codes.size > 0;
+    if (rcLines.length === 0) return codes.size > 0;
+    return codes.size !== 1 || codeOnOtherLine;
+  });
   return docs.length > 0 ? fail(docIds(docs)) : null;
 };
 
@@ -148,7 +167,8 @@ const priorPeriodCreditNote: SimpleCheckFn = (ctx) => {
 };
 
 const partialShareDeduction: SimpleCheckFn = (ctx) => {
-  if (!ctx.isPayer) return null;
+  // § 75 proportional deduction is computed by computeDphdp3/computeKh since 0602 (policy 2026.2).
+  if (!ctx.isPayer || ctx.policy.allow_partial_business_share_on_deduction) return null;
   const docs = ctx.input.documents.filter((d) => d.lines.some(isPartialShare));
   return docs.length > 0 ? fail(docIds(docs)) : null;
 };

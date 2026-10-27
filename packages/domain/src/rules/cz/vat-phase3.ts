@@ -10,7 +10,7 @@ import type { VatTreatment } from '../../enums/index';
  * (versions dated 11. 8. 2026), 22 D-11 default.
  */
 export const CZ_SIMPLE_PERIOD_POLICY = {
-  version: '2026.1',
+  version: '2026.3',
   allowed_treatments: {
     identifikovana_osoba: [
       'rcv_eu_service_reverse_charge',
@@ -34,13 +34,15 @@ export const CZ_SIMPLE_PERIOD_POLICY = {
       'rcv_eu_goods_acquisition',
       'rcv_foreign_vat_charged',
       'rcv_out_of_scope',
+      'rcv_domestic_reverse_charge',
+      'iss_domestic_reverse_charge',
     ],
   },
   forbid_document_classes: ['received_advance_tax_doc'],
   forbid_line_types: ['advance_deduction'],
   max_docs: 150,
   max_rates_per_eu_goods_document: 1,
-  allow_partial_business_share_on_deduction: false,
+  allow_partial_business_share_on_deduction: true,
   allow_prior_period_credit_notes: false,
 } as const satisfies {
   readonly allowed_treatments: Record<string, readonly VatTreatment[]>;

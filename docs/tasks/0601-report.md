@@ -1,36 +1,29 @@
 # 0601 report
-
 Status: review
 
-## Files changed
-
-- `apps/web/src/documents/trust.ts` (new): `Trust`, `CHECK_FIELDS`, `fieldsFlagged`, `trustOf`.
-- `apps/web/test/field-trust.test.ts` (new): one case per rule branch, unknown and missing source, check-to-field map.
-- `apps/web/src/documents/detail-data.ts`: `DetailField.trust`; `detailOf` takes an optional 5th argument (current `document_fields` rows) and computes trust per field; loader adds an org-scoped `document_fields(field_key, source)` select with `is_current = true` (a failed select only drops the hint).
-- `apps/web/test/detail-data.test.ts`: fixture expectation gets `trust: 'checked'`; one new trust case.
-- `apps/web/app/(app)/inbox/[id]/page.tsx`: a `TrustMark` (word + icon) after each value; a `HelpTip` beside "What we read".
-- `packages/i18n/messages/en.json`: `doc.trust.exact`, `doc.trust.checked`, `doc.trust.check`, `doc.trust.help`.
+## Files changed (diff vs base bdd3ded; diff vs claude/project-thread-owbjjp also shows unrelated divergence)
+ apps/web/src/podklady/load.ts               |  8 ++-
+ packages/db/src/podklady.ts                 | 81 +++++++++++++++++++++++++----
+ packages/db/test/podklady.db.test.ts        | 14 +++--
+ packages/exports/src/podklady-xlsx.ts       |  7 ++-
+ packages/exports/test/podklady-xlsx.test.ts |  8 ++-
+ 5 files changed, 101 insertions(+), 17 deletions(-)
 
 ## Commands
+- exports typecheck: clean. exports test podklady-xlsx / podklady-pdf: Test Files 8 passed, Tests 51 passed (both).
+- db typecheck: clean. web typecheck: clean.
+- db test podklady: 3 files passed, 32 skipped, 29 passed, 171 skipped (no DATABASE_URL). DB test not run here, CI runs it.
 
-- `pnpm --filter @shoebox/web test -- field-trust detail-data 2>&1 | tail -30`: pass. The filter was not applied (vitest ran all 54 files): `Test Files 54 passed (54)`, `Tests 351 passed (351)`.
-- `pnpm --filter @shoebox/web typecheck 2>&1 | tail -30`: clean, 0 errors.
-
-## Acceptance (brief §7)
-
-- [x] Tests pass, typecheck clean, copy only in `en.json`, query org-scoped.
+## Acceptance
+- [x] XLSX Summary: Expenses 98460.00, Expenses before rounding 98459.81 (xlsx test green)
+- [ ] EUR 100 at 25 -> 2500.00 and ledger-based totalCzk: assertions written, DB test not run here, CI runs it
+- [x] Typechecks green; exports tests green
 
 ## Deviations
-
-- Brief named `AlertTriangle`; used `TriangleAlert` (same icon, the name the repo already uses).
-- `CHECK_FIELDS` keys are the check ids derived from `rule_id` (`PROTO_` prefix stripped, lower case). Field keys follow the M02 grammar (`totals.gross`, `supplier.ico`, `dates.due_date`, `payment.account_number`, ...).
-- `HelpTip` is imported from `src/overview/help-tip.tsx` (not edited) and reused, instead of a new component.
-- Commit trailer: the harness attribution (Co-Authored-By Haiku 5.5) was used, not the Opus 5.5 line from the spawn message.
+- Steps 1 and 2 share one commit (0601 step 1). Step 4 commit has no other callers to fix.
+- Step 5d: used destructured privateUseFxMissing from read(A) instead of rows.privateUseFxMissing.
+- Seed D_EUR uses status finalized (no existing personal row to copy).
+- Money.fromDecimal and domain exports (resolveFxRate, convertToCzk, round2, Currency) worked as given.
 
 ## Questions
-
-- A value with no `document_fields` row (e.g. from the registry or vendor memory) is shown as `checked` when not flagged. The brief's rules give no separate outcome for it; say if it should be `check`.
-
-## Owner steps left
-
-- None for this brief. Merge to `phase/0` follows the normal process; no push or PR was made here.
+- None.

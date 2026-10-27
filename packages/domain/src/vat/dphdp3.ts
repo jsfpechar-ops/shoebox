@@ -1,5 +1,5 @@
 import type { LegalDate } from '../dates/index';
-import { CZK, Money, round0 } from '../money/index';
+import { CZK, Money, round0, round2 } from '../money/index';
 import { type Dphdp3RowMap, parseDphdp3RowMap } from '../rules/cz/epo';
 import type { createCzRules } from '../rules/index';
 import type { VatLedgerEntryDraft } from './ledger';
@@ -17,7 +17,10 @@ export interface Dphdp3Computation {
   readonly status: Dphdp3Status;
   readonly rounding: Dphdp3Rounding;
   readonly periodStart: LegalDate;
-  /** Source rows with >= 1 entry + derived rows 43/44/46 (payer, when non-zero); never 62–65. */
+  /**
+   * Source rows with >= 1 entry + derived rows 43/44/46 (payer, when non-zero); input rows and
+   * 43/44 carry the deductible share (§ 75); never 62–65.
+   */
   readonly rows: Readonly<Record<string, Dphdp3RowValue>>;
   /** Unrounded sums of the source rows present in `rows`. */
   readonly raw: Readonly<Record<string, Dphdp3RowValue>>;
@@ -31,13 +34,23 @@ export interface Dphdp3Computation {
   readonly entryCount: number;
 }
 
-export const IO_RETURN_ROWS: readonly string[] = ['3', '4', '5', '6', '12', '13'];
-export const PAYER_RETURN_ROWS: readonly string[] = ['1', '2', '3', '4', '5', '6', '12', '13'];
+/** Output rows 1–13 of the return (ř. 62 sources), by status; see the row map. */
+export const IO_RETURN_ROWS: readonly string[] = ['5', '6', '12', '13'];
+export const PAYER_RETURN_ROWS: readonly string[] = [
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '10',
+  '11',
+  '12',
+  '13',
+];
 
 /** Deduction rows listed on entries; derived from rounded values instead (step 4). */
 const DEDUCTION_ROWS: readonly string[] = ['43', '44'];
-const ROW_43_SOURCES: readonly string[] = ['3', '5', '12'];
-const ROW_44_SOURCES: readonly string[] = ['4', '6', '13'];
 const TRANS_ROWS: readonly string[] = ['20', '21', '26'];
 
 type CzRules = ReturnType<typeof createCzRules>;
@@ -63,6 +76,8 @@ export function computeDphdp3(
   const rounding: Dphdp3Rounding = roundingOverride ?? at.get('vat.return_rounding');
   const knownRows = new Set(map.map((m) => m.row));
   const counted = entries.filter((e) => e.dphdp3Rows.length > 0);
+  const deductible = (m: Money, pct: string): Money => round2(m.multiply(pct).divide('100'));
+  const isInputRow = (row: string): boolean => map.some((m) => m.row === row && m.side === 'input');
 
   // 1–2. Source sums per row (deduction rows 43/44 on entries are ignored).
   const sums = new Map<string, Dphdp3RowValue>();
@@ -71,9 +86,10 @@ export function computeDphdp3(
       if (DEDUCTION_ROWS.includes(row)) continue;
       if (!knownRows.has(row)) throw new Error(`dphdp3: unknown row ${row}`);
       const prev = sums.get(row) ?? zeroValue();
+      const input = isInputRow(row);
       sums.set(row, {
-        base: prev.base.add(entry.baseCzk),
-        tax: prev.tax.add(entry.vatCzk),
+        base: prev.base.add(input ? deductible(entry.baseCzk, entry.deductionPct) : entry.baseCzk),
+        tax: prev.tax.add(input ? deductible(entry.vatCzk, entry.deductionPct) : entry.vatCzk),
       });
     }
   }
@@ -104,29 +120,60 @@ export function computeDphdp3(
   }
 
   const get = (row: string): Dphdp3RowValue => rounded.get(row) ?? zeroValue();
-  const sumOf = (list: readonly string[], pick: 'base' | 'tax'): Money =>
-    list.reduce((acc, row) => acc.add(get(row)[pick]), Money.zero(CZK));
 
   const rows: Record<string, Dphdp3RowValue> = Object.fromEntries(rounded);
 
-  // 4. Derived rows (payers only).
+  // 4. Derived rows (payers only): 43/44 from the proportional share of their source rows.
+  const derive = (target: '43' | '44'): Dphdp3RowValue => {
+    const sources = [...new Set(map.filter((m) => m.deduction_row === target).map((m) => m.row))];
+    let base = Money.zero(CZK);
+    let tax = Money.zero(CZK);
+    for (const row of sources) {
+      let dBase = Money.zero(CZK);
+      let dVat = Money.zero(CZK);
+      for (const entry of counted) {
+        if (!entry.dphdp3Rows.includes(row)) continue;
+        dBase = dBase.add(deductible(entry.baseCzk, entry.deductionPct));
+        dVat = dVat.add(deductible(entry.vatCzk, entry.deductionPct));
+      }
+      const rBase = round0(dBase);
+      const rate = rowRate(row);
+      const rTax =
+        rounding === 'sum_entries_then_round'
+          ? round0(dVat)
+          : rate === null
+            ? Money.zero(CZK)
+            : round0(rBase.multiply(String(rates[rate])).divide('100'));
+      base = base.add(rBase);
+      tax = tax.add(rTax);
+    }
+    return { base, tax };
+  };
   let tax46 = Money.zero(CZK);
   if (status === 'platce') {
-    const r43: Dphdp3RowValue = {
-      base: sumOf(ROW_43_SOURCES, 'base'),
-      tax: sumOf(ROW_43_SOURCES, 'tax'),
-    };
-    const r44: Dphdp3RowValue = {
-      base: sumOf(ROW_44_SOURCES, 'base'),
-      tax: sumOf(ROW_44_SOURCES, 'tax'),
-    };
+    const r43 = derive('43');
+    const r44 = derive('44');
     if (!isZeroValue(r43)) rows['43'] = r43;
     if (!isZeroValue(r44)) rows['44'] = r44;
-    tax46 = sumOf(['40', '41'], 'tax').add(r43.tax).add(r44.tax);
+    const inputRows = [...new Set(map.filter((m) => m.side === 'input').map((m) => m.row))];
+    tax46 = inputRows
+      .filter((row) => Number.parseInt(row, 10) >= 40 && Number.parseInt(row, 10) <= 42)
+      .reduce((acc, row) => acc.add(get(row).tax), Money.zero(CZK))
+      .add(r43.tax)
+      .add(r44.tax);
     if (!tax46.isZero()) rows['46'] = { base: Money.zero(CZK), tax: tax46 };
   }
 
-  const returnRows = status === 'platce' ? PAYER_RETURN_ROWS : IO_RETURN_ROWS;
+  const returnRows = [
+    ...new Set(
+      map
+        .filter(
+          (m) =>
+            m.side === 'output' && Number.parseInt(m.row, 10) <= 13 && m.statuses.includes(status),
+        )
+        .map((m) => m.row),
+    ),
+  ];
   const row62 = returnRows.reduce((acc, row) => acc.add(get(row).tax), Money.zero(CZK));
   const row63 = status === 'platce' ? tax46 : Money.zero(CZK);
   const diff64 = row62.subtract(row63);
