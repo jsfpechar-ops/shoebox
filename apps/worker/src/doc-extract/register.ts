@@ -1,5 +1,5 @@
 import { createAnthropicClient } from '@shoebox/extraction';
-import { bankMatchDocumentJob, docExtractJob } from '@shoebox/pipeline';
+import { bankMatchDocumentJob, docCategorizeJob, docExtractJob } from '@shoebox/pipeline';
 import { createSupabaseBlobStore, type Logger } from '@shoebox/platform';
 import type { JobRegistry } from '../registry';
 import { createDocExtractHandler } from './handler';
@@ -28,6 +28,14 @@ export function registerDocExtract(
       clock: { now: () => Date.now() },
       enqueueMatch: (orgId, documentId, trigger) =>
         registry.enqueue(bankMatchDocumentJob, { orgId, documentId, trigger }),
+      enqueueCategorize: (orgId, documentId, revision) =>
+        registry.enqueue(docCategorizeJob, {
+          orgId,
+          documentId,
+          revision,
+          trigger: 'pipeline',
+          nonce: Date.now(),
+        }),
     }),
   );
   logger.info({ model }, 'doc.extract registered');
