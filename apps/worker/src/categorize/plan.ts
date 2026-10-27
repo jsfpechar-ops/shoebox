@@ -581,7 +581,8 @@ export function planCategorization(input: PlanInput): PlanResult {
     planned.deferred.length > 0 ||
     openKinds(doc.questions).size > 0 ||
     lineWrites.some((w) => w.categoryCode === null) ||
-    postChecks.some((c) => c.severity === 'blocking');
+    postChecks.some((c) => c.severity === 'blocking') ||
+    doc.openBlocking > 0;
 
   // LLM request
   let llmRequest: CategorizeRequestInput | null = null;
