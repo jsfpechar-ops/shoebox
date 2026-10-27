@@ -321,8 +321,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
               {
                 ruleId: 'PROTO_ICO_REPAIRED',
                 ruleVersion: 1,
-                // TODO(0610): use severity 'info' once 0610 is merged.
-                severity: 'warning' as const,
+                severity: aresRepair === null ? ('warning' as const) : ('info' as const),
                 params: {
                   from: repair.from,
                   to: repair.to,

@@ -69,6 +69,28 @@ describe('planCorrection', () => {
     expect(fixed.status).toBe('ready');
     expect(fixed.fields['totals.gross']).toBe('1210.00');
   });
+  it('a rounding difference within 1 Kč is ready, an info row and stored in rounding', () => {
+    const plan = planCorrection({
+      fields,
+      documentClass: 'received_invoice',
+      editKey: 'totals.gross',
+      value: '1209.60',
+      org: null,
+      today,
+    });
+    expect(plan.status).toBe('ready');
+    expect(plan.rounding).toBe('-0.40');
+    expect(plan.rows.map((r) => r.severity)).toEqual(['info']);
+    const exact = planCorrection({
+      fields,
+      documentClass: 'received_invoice',
+      editKey: 'totals.gross',
+      value: '1300.00',
+      org: null,
+      today,
+    });
+    expect(exact.rounding).toBe('0.00');
+  });
   it('an unknown class stays in review', () => {
     expect(
       planCorrection({

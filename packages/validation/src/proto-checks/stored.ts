@@ -1,10 +1,10 @@
 import type { ProtoCheckInput, ProtoCheckResult } from './checks';
 
-/** A check result as a `validation_results` row (pass results are dropped). */
+/** A check result as a `validation_results` row (pass results are dropped; `info` rows are quiet notes). */
 export interface ValidationRow {
   readonly ruleId: string;
   readonly ruleVersion: number;
-  readonly severity: 'blocking' | 'warning';
+  readonly severity: 'blocking' | 'warning' | 'info';
   readonly params: Record<string, unknown>;
 }
 
@@ -17,7 +17,7 @@ export function validationRowsOf(results: readonly ProtoCheckResult[]): Validati
     rows.push({
       ruleId: `PROTO_${String(r.id).toUpperCase()}`,
       ruleVersion: 1,
-      severity: r.severity === 'fail' ? 'blocking' : 'warning',
+      severity: r.severity === 'fail' ? 'blocking' : r.severity === 'info' ? 'info' : 'warning',
       params: { ...(r.params as Record<string, unknown>), messageKey: r.key },
     });
   }

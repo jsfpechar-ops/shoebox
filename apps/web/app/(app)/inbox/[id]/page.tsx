@@ -83,7 +83,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
   const canAct = auth.ok && (auth.role === 'owner' || auth.role === 'member');
   const asking = canAct && detail.status === 'needs_review';
   const { questions, notes } = splitChecks(detail.checks);
-  const shownChecks = asking ? notes : detail.checks;
+  const shownChecks = (asking ? notes : detail.checks).filter((check) => check.severity !== 'info');
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
@@ -172,6 +172,20 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
           </Card>
 
           {asking ? <IssuesCard documentId={detail.id} questions={questions} /> : null}
+          {detail.checks.some((check) => check.severity === 'info') ? (
+            <ul className="flex flex-col gap-1">
+              {detail.checks
+                .filter((check) => check.severity === 'info')
+                .map((check) => (
+                  <li
+                    key={`${check.key}-${JSON.stringify(check.params)}`}
+                    className="text-meta text-muted-foreground"
+                  >
+                    {t(check.key, check.params)}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
           {shownChecks.length > 0 ? (
             <Card className="flex flex-col gap-4 p-6">
               <h2 className="text-card-title">
