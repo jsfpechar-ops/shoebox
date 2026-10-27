@@ -18,6 +18,7 @@ export interface DocumentForRead {
   readonly id: string;
   readonly orgId: string;
   readonly status: string;
+  readonly revision: number;
   readonly storagePath: string;
   readonly mimeType: string;
   readonly orgIco: string | null;
@@ -93,6 +94,7 @@ export async function loadDocumentForRead(
       id: documents.id,
       orgId: documents.orgId,
       status: documents.status,
+      revision: documents.revision,
       storagePath: sourceFiles.storagePath,
       mimeType: sourceFiles.mimeType,
       orgIco: organizations.ico,

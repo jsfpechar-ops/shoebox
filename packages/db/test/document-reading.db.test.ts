@@ -111,6 +111,7 @@ describe.skipIf(DATABASE_URL === undefined)('document reading store', () => {
       id: DOC,
       orgId: ORG_R,
       status: 'received',
+      revision: 1,
       storagePath: `org/${ORG_R}/files/${SHA}`,
       mimeType: 'application/pdf',
       orgIco: '12345678',

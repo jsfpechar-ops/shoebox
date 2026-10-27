@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { requireActiveRole } from '../auth/org-context';
 import { createSupabaseServerClient } from '../supabase/server';
 import { planCorrection } from './correction';
+import { enqueueDocCategorize } from './enqueue';
 import { manualDocumentColumns, manualFields, parseManualEntry } from './manual-entry';
 
 export type ManualState = {
@@ -123,6 +124,11 @@ export async function saveManualEntryAction(
     savedId = id;
   } catch {
     return { errors: { form: 'manual.error.save' } };
+  }
+  try {
+    await enqueueDocCategorize(auth.orgId, savedId, 1, 'pipeline');
+  } catch {
+    // The document is saved; the 15-minute catch-up job (0622) categorizes it.
   }
   revalidatePath('/inbox');
   redirect(`/inbox/${savedId}`);

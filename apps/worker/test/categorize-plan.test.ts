@@ -65,6 +65,7 @@ function doc(over: Partial<DocumentForCategorize> = {}): DocumentForCategorize {
     orgIco: '12345678',
     orgDic: 'CZ12345678',
     orgSettings: { activity_keywords: ['short-term apartment rental'] },
+    openBlocking: 0,
     lines: [line()],
     fields: [],
     questions: [],
@@ -507,6 +508,12 @@ describe('planCategorization', () => {
         doc: base,
         llm: llm({ businessLikelihood: 'business' }, { confidence: 0.9 }),
         postChecks: [{ ruleId: 'X', severity: 'blocking' }],
+      }).write.status,
+    ).toBe('needs_review');
+    expect(
+      plan({
+        doc: doc({ ...base, openBlocking: 1 }),
+        llm: llm({ businessLikelihood: 'business' }, { confidence: 0.9 }),
       }).write.status,
     ).toBe('needs_review');
     expect(() => plan({ doc: doc({ direction: null }) })).toThrow('CategorizeInputError');

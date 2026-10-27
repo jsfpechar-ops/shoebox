@@ -5,6 +5,7 @@ import {
   documentLines,
   extractionRuns,
   reviewQuestions,
+  validationResults,
 } from './schema/document-details';
 import { documents } from './schema/documents';
 import { fxRates, partners, vendorProfiles } from './schema/partners';
@@ -115,6 +116,8 @@ export interface DocumentForCategorize {
   readonly profiles: readonly CategorizeProfileRow[];
   /** fx_rates rows of the document's currency within 120 days before issue_date (empty for CZK). */
   readonly fxRates: readonly CategorizeFxRow[];
+  /** Open `blocking` rows in validation_results: while > 0 the document stays needs_review (hard rule 2). */
+  readonly openBlocking: number;
 }
 /** Not-deleted document with lines (position order), current fields, all questions of the document, partner, vendor profile of that partner, the org's taxpayer profiles (valid_from order) and fx rows. Null when absent. */
 export async function loadDocumentForCategorize(
@@ -278,6 +281,18 @@ export async function loadDocumentForCategorize(
             ),
           );
 
+  const [blocking] = await tx
+    .select({ n: sql<number>`count(*)::int` })
+    .from(validationResults)
+    .where(
+      and(
+        eq(validationResults.orgId, doc.orgId),
+        eq(validationResults.documentId, documentId),
+        eq(validationResults.severity, 'blocking'),
+        eq(validationResults.state, 'open'),
+      ),
+    );
+
   return {
     ...doc,
     lines,
@@ -287,6 +302,7 @@ export async function loadDocumentForCategorize(
     vendor: vendor ?? null,
     profiles,
     fxRates: fxRows,
+    openBlocking: blocking?.n ?? 0,
   };
 }
 
