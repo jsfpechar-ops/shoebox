@@ -13,3 +13,39 @@ Commands (all pass):
 
 Deviations: the 1.00 limit stays a literal (`TODO(rules)`); no cz rule key carries it. `imports.ts` needed no change (info is non-blocking); it does not write `rounding`. vat_rate_math 0.01 warn left as is (not in the brief).
 Questions: none. Owner steps: none.
+
+## 1. Objective
+
+None
+
+## 2. Context
+
+-
+
+## 3. Files
+
+As named in §2 and §4.
+
+## 4. Steps
+
+As in §1 and §3.
+
+## 5. Do not touch
+
+None
+
+## 6. Commands
+
+None
+
+## 7. Acceptance
+
+- [ ] Tests pass, typecheck clean, no float on money, copy only in `en.json`.
+
+## 8. Stop and ask
+
+As in TEMPLATE.md §8.
+
+## 9. Report
+
+None

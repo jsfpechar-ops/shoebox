@@ -30,14 +30,26 @@ Warnings stay as small notes; they never need an answer. When nothing open is bl
 
 New `apps/web/src/documents/confirm-actions.ts` (`confirmDocumentAction`, `answerIssueAction`), `apps/web/src/documents/issue-questions.ts` (pure: issue row → question + answers; unit tested), `apps/web/src/documents/issues-card.tsx`; edits to the page, detail-data, the queries above, en.json; tests in `apps/web/test`.
 
-## 4. Do not touch
+## 4. Steps
+
+As in §1 and §3.
+
+## 5. Do not touch
 
 Check logic in `packages/validation`, the worker. Hard rules 2, 3, 6.
 
-## 5. Commands
+## 6. Commands
 
 `pnpm --filter @shoebox/web test -- issue-questions confirm correction detail 2>&1 | tail -30`, `pnpm --filter @shoebox/web typecheck 2>&1 | tail -30`, db test/typecheck if touched.
 
-## 6. Report
+## 7. Acceptance
+
+- [ ] Tests pass, typecheck clean, no float on money, copy only in `en.json`.
+
+## 8. Stop and ask
+
+As in TEMPLATE.md §8.
+
+## 9. Report
 
 `docs/tasks/0612-report.md` (600 tokens max), `Status: review`, commit `0612: one confirm button and one-tap questions on the review page`. Do not push.

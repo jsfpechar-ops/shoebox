@@ -22,14 +22,30 @@ Owner philosophy (2026-10-27): the user is lazy; they upload everything and late
 - The register on the Inbox page also uses `registerSheet`: the new Status column is fine there too.
 - A document with no `issue_date` falls out of every period: count those and list them in README as "no date, fix in Sysel". Use `duzp` when `issue_date` is null.
 
-## 3. Do not touch
+## 3. Files
+
+As named in §2 and §4.
+
+## 4. Steps
+
+As in §1 and §3.
+
+## 5. Do not touch
 
 Pohoda and ISDOC builders, money values. Hard rules 1, 3, 4, 6.
 
-## 4. Commands
+## 6. Commands
 
 `pnpm --filter @shoebox/web test -- export register 2>&1 | tail -30`, `pnpm --filter @shoebox/web typecheck 2>&1 | tail -30`. Add tests: empty → 409; needs-review prefix; README counts; period options include a month with documents from 16 months ago.
 
-## 5. Report
+## 7. Acceptance
+
+- [ ] Tests pass, typecheck clean, no float on money, copy only in `en.json`.
+
+## 8. Stop and ask
+
+As in TEMPLATE.md §8.
+
+## 9. Report
 
 `docs/tasks/0613-report.md` (600 tokens max), `Status: review`, commit `0613: accountant ZIP with everything, status column, README, never empty`. Do not push.

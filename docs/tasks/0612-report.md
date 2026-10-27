@@ -19,3 +19,39 @@ Every blocker count (`review-data`, `duplicate`, `detail-data`) already filters 
 
 ## Owner steps left
 None.
+
+## 1. Objective
+
+None
+
+## 2. Context
+
+-
+
+## 3. Files
+
+As named in §2 and §4.
+
+## 4. Steps
+
+As in §1 and §3.
+
+## 5. Do not touch
+
+None
+
+## 6. Commands
+
+None
+
+## 7. Acceptance
+
+- [ ] Tests pass, typecheck clean, no float on money, copy only in `en.json`.
+
+## 8. Stop and ask
+
+As in TEMPLATE.md §8.
+
+## 9. Report
+
+None

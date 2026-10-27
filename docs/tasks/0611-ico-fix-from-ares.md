@@ -15,7 +15,11 @@ Real case: a Makro receipt was read as IČO 26465681 / DIČ CZ26465681. The mod-
 - `packages/registries/src/ares.ts`: `createAresClient().subject(ico)`. ARES name search: `POST https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/vyhledat` with JSON `{"obchodniJmeno": "<name>", "pocet": 10}` → `{ pocetCelkem, ekonomickeSubjekty: [{ ico, obchodniJmeno, dic? }] }`. Searching "Makro Cash & Carry ČR s.r.o." returns 3 subjects; only one has that exact name (case-insensitive).
 - Registry calls must never block or throw out of the handler (follow `registry-checks.ts`: timeouts, `RegistryResult` unavailable).
 
-## 3. Work
+## 3. Files
+
+As named in §2 and §4.
+
+## 4. Steps
 
 1. Tests in `packages/validation/test`: 26450691 valid, 26465681 invalid, 62904965 valid, 24771902 valid.
 2. `ares.ts`: add `searchByName(name): Promise<RegistryResult<readonly { ico; name; dic: string | null }[]>>` using the same fetch/timeout pattern; fixture test with a mocked fetch.
@@ -23,14 +27,22 @@ Real case: a Makro receipt was read as IČO 26465681 / DIČ CZ26465681. The mod-
 4. `checkBuyer`: return nothing when the buyer is missing (delete the `missing` branch and its key usage; keep the key in en.json only if other code uses it).
 5. Inject the ARES search through the existing deps so tests never call the network.
 
-## 4. Do not touch
+## 5. Do not touch
 
 Totals/VAT checks, UI files. Hard rules 1, 2, 4 (no document content in logs).
 
-## 5. Commands
+## 6. Commands
 
 `pnpm --filter @shoebox/validation test 2>&1 | tail -30`, `pnpm --filter @shoebox/registries test 2>&1 | tail -30`, `pnpm --filter @shoebox/worker test -- doc-extract 2>&1 | tail -30`, typecheck of those three.
 
-## 6. Report
+## 7. Acceptance
+
+- [ ] Tests pass, typecheck clean, no float on money, copy only in `en.json`.
+
+## 8. Stop and ask
+
+As in TEMPLATE.md §8.
+
+## 9. Report
 
 `docs/tasks/0611-report.md` (600 tokens max), `Status: review`, commit `0611: fix misread supplier IČO from ARES; missing buyer is fine`. Do not push.

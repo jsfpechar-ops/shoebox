@@ -1,9 +1,10 @@
 # Status
 
-Updated: 2026-10-26.
+Updated: 2026-10-27.
 
 ## Now
 
+- 0610–0614 (owner real-data test): rounding ≤1 Kč is an info note + `documents.rounding`; misread IČO fixed from ARES by name; no-buyer not flagged; review page = questions + "Looks right, confirm"; accountant ZIP never empty, Status column, NEEDS-REVIEW_ prefix, README; paid without chores.
 - 0600, 0604–0606: Overview waiting / auto-read % / bills to pay; trust marks; one-tap total; PDF highlight.
 - Accountant review (0601–0603): podklady whole Kč + FX, §75 share, §92a in DPHDP3/KH; [verify] list in known-issues K-C07/K-C08.
 - 0520–0522 failure analytics: `pipeline_events` log, `analytics` views + CSV export, AI cost per call.

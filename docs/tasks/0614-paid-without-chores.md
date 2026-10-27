@@ -16,14 +16,30 @@ Owner (2026-10-27): "imagine marking 100 docs as paid, that's horrible design". 
 
 `apps/web/src/overview/rows.ts`, `overview-screen.tsx` (bills section ~line 200), `mark-paid-button.tsx`, `mark-paid-action.ts` (leave the action file; remove only its use in the bills list), `apps/web/src/documents/register-data.ts` (`paid` field), worker `rows.ts` `mapPaymentMethod`. Copy only in `en.json`.
 
-## 3. Do not touch
+## 3. Files
+
+As named in §2 and §4.
+
+## 4. Steps
+
+As in §1 and §3.
+
+## 5. Do not touch
 
 Bank matcher, ledgers. Hard rules 1, 6.
 
-## 4. Commands
+## 6. Commands
 
 `pnpm --filter @shoebox/worker test -- doc-extract 2>&1 | tail -30`, `pnpm --filter @shoebox/web test -- overview register 2>&1 | tail -30`, typecheck of worker and web.
 
-## 5. Report
+## 7. Acceptance
+
+- [ ] Tests pass, typecheck clean, no float on money, copy only in `en.json`.
+
+## 8. Stop and ask
+
+As in TEMPLATE.md §8.
+
+## 9. Report
 
 `docs/tasks/0614-report.md` (600 tokens max), `Status: review`, commit `0614: paid status without per-document chores`. Do not push.
