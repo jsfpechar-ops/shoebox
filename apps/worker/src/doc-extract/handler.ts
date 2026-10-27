@@ -74,6 +74,7 @@ export interface DocExtractDeps {
   readonly clock: Clock;
   readonly store?: ReadingStore; // default dbReadingStore
   readonly enqueueMatch?: (orgId: string, documentId: string, trigger: string) => Promise<unknown>; // bank.match.document on ready (M07 §4.6.1)
+  readonly enqueueCategorize?: (orgId: string, documentId: string, revision: number) => Promise<unknown>; // doc.categorize after every saved reading (M04 §4.6)
   readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
   readonly countPages?: (bytes: Uint8Array) => Promise<number>; // default pdfPageCount
   readonly registries?: RegistryDeps; // default defaultRegistryDeps()
@@ -397,6 +398,9 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
     try {
       const runId = await store.save(ctx.tx, write);
       if (write.status === 'ready') await deps.enqueueMatch?.(write.orgId, write.documentId, runId);
+      if (write.status !== 'supporting') {
+        await deps.enqueueCategorize?.(write.orgId, write.documentId, doc.revision);
+      }
     } catch (error) {
       return onError(error, errorCode(error, 'error'), retryable(error));
     }
