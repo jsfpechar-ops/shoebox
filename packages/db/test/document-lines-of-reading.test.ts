@@ -16,8 +16,24 @@ describe('linesOfReading', () => {
         rounding: '0',
       }),
     ).toEqual([
-      { position: 1, lineType: 'item', net: '1000', vat: '210', gross: '1210', vatRateType: 'standard', vatRatePct: '21' },
-      { position: 2, lineType: 'item', net: '50.5', vat: '6.06', gross: '56.56', vatRateType: 'reduced', vatRatePct: '12' },
+      {
+        position: 1,
+        lineType: 'item',
+        net: '1000',
+        vat: '210',
+        gross: '1210',
+        vatRateType: 'standard',
+        vatRatePct: '21',
+      },
+      {
+        position: 2,
+        lineType: 'item',
+        net: '50.5',
+        vat: '6.06',
+        gross: '56.56',
+        vatRateType: 'reduced',
+        vatRatePct: '12',
+      },
     ]);
   });
 
@@ -32,7 +48,15 @@ describe('linesOfReading', () => {
         rounding: '0',
       }),
     ).toEqual([
-      { position: 1, lineType: 'item', net: null, vat: null, gross: '249', vatRateType: 'none', vatRatePct: null },
+      {
+        position: 1,
+        lineType: 'item',
+        net: null,
+        vat: null,
+        gross: '249',
+        vatRateType: 'none',
+        vatRatePct: null,
+      },
     ]);
   });
 
