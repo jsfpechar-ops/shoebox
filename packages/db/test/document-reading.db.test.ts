@@ -187,6 +187,8 @@ describe.skipIf(DATABASE_URL === undefined)('document reading store', () => {
       saveDocumentReading(
         tx,
         write({
+          // needs_review: the next test expects the document to still be in review.
+          status: 'needs_review',
           vatSummary: [
             { vatRateType: 'standard', vatRatePct: '21', base: '1000', vat: '210' },
             { vatRateType: 'reduced', vatRatePct: '12', base: '100', vat: '12' },
