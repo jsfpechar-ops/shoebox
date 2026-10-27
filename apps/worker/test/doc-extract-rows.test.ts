@@ -82,6 +82,25 @@ describe('documentPatchOf', () => {
     });
   });
 
+  it('marks card, cash and receipts as paid per document, transfers not', () => {
+    const pay = (method: 'card' | 'cash' | 'bank_transfer') => ({
+      account_number: null,
+      bank_code: null,
+      iban: null,
+      method,
+    });
+    expect(documentPatchOf(reading({ payment: pay('card') })).isPaidPerDocument).toBe(true);
+    expect(documentPatchOf(reading({ payment: pay('cash') })).isPaidPerDocument).toBe(true);
+    expect(
+      documentPatchOf(reading({ payment: pay('bank_transfer') })).isPaidPerDocument,
+    ).toBeNull();
+    expect(
+      documentPatchOf(
+        reading({ document_class: 'received_receipt', payment: pay('bank_transfer') }),
+      ).isPaidPerDocument,
+    ).toBe(true);
+  });
+
   it('maps unreadable to unknown, cash on delivery to cod, defaults the currency', () => {
     const patch = documentPatchOf(
       reading({

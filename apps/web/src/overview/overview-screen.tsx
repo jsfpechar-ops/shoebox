@@ -6,7 +6,6 @@ import type { ReactNode } from 'react';
 import { formatCzkWhole, formatDue, formatMoneyText, periodLabel } from './format';
 import { HelpTip } from './help-tip';
 import { LimitMeterBar } from './limit-meter';
-import { MarkPaidButton } from './mark-paid-button';
 import type { OverviewView } from './view';
 
 const WINDOW_DAYS = 60;
@@ -213,7 +212,6 @@ function BillsCard({ view }: { view: OverviewView }) {
       ) : (
         <ul className="grid gap-3">
           {bills.items.map((bill) => {
-            const name = bill.partnerName ?? bill.number ?? '';
             return (
               <li
                 key={bill.id}
@@ -230,10 +228,6 @@ function BillsCard({ view }: { view: OverviewView }) {
                     <p className="font-semibold text-warning">{t('overview.bills.overdue')}</p>
                   ) : null}
                 </div>
-                <MarkPaidButton
-                  documentId={bill.id}
-                  label={`${t('overview.bills.mark_paid')}: ${name}`}
-                />
               </li>
             );
           })}
@@ -248,6 +242,13 @@ function BillsCard({ view }: { view: OverviewView }) {
         <p>
           <Link href="/inbox?tab=all&paid=unpaid" className={textLink}>
             {t('overview.bills.more', { n: more })}
+          </Link>
+        </p>
+      ) : null}
+      {bills.olderCount > 0 ? (
+        <p className="text-body">
+          <Link href="/inbox" className={textLink}>
+            {t('overview.bills.older', { n: bills.olderCount })}
           </Link>
         </p>
       ) : null}
