@@ -6,7 +6,7 @@ import {
   type ProtoExtraction,
   type ProtoPaymentMethod,
 } from '@shoebox/extraction';
-import type { ValidationRow } from '@shoebox/validation';
+import { roundingOf, type ValidationRow } from '@shoebox/validation';
 
 export { type ValidationRow, validationRowsOf } from '@shoebox/validation';
 
@@ -49,6 +49,8 @@ export interface DocumentPatch {
   readonly totalNet: string | null;
   readonly totalVat: string | null;
   readonly totalGross: string | null;
+  /** `gross − (net + vat)` within the 1 Kč rounding limit, else '0.00' (`documents.rounding`). */
+  readonly rounding: string;
   readonly paymentMethod: 'bank_transfer' | 'card' | 'cash' | 'cod' | 'other' | null;
   readonly payToAccount: {
     account: string | null;
@@ -136,6 +138,7 @@ export function documentPatchOf(x: ProtoExtraction): DocumentPatch {
     totalNet: x.totals.net,
     totalVat: x.totals.vat,
     totalGross: x.totals.gross,
+    rounding: roundingOf(x.totals, x.currency),
     paymentMethod: mapPaymentMethod(p.method),
     payToAccount,
     isPaidPerDocument: x.flags.paid_text ? true : null,
@@ -265,6 +268,7 @@ export function precheckWriteOf(
       totalNet: null,
       totalVat: null,
       totalGross: null,
+      rounding: '0.00',
       paymentMethod: null,
       payToAccount: null,
       isPaidPerDocument: null,

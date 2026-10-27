@@ -166,21 +166,37 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             </dl>
           </Card>
 
-          {detail.checks.length > 0 ? (
+          {detail.checks.some((check) => check.severity === 'info') ? (
+            <ul className="flex flex-col gap-1">
+              {detail.checks
+                .filter((check) => check.severity === 'info')
+                .map((check) => (
+                  <li
+                    key={`${check.key}-${JSON.stringify(check.params)}`}
+                    className="text-meta text-muted-foreground"
+                  >
+                    {t(check.key, check.params)}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+          {detail.checks.some((check) => check.severity !== 'info') ? (
             <Card className="flex flex-col gap-4 p-6">
               <h2 className="text-card-title">{t('doc.detail.attention_title')}</h2>
               <ul className="flex flex-col gap-3">
-                {detail.checks.map((check) => (
-                  <li
-                    key={`${check.key}-${JSON.stringify(check.params)}`}
-                    className="flex flex-wrap items-center gap-2 text-body"
-                  >
-                    {check.severity === 'blocking' ? (
-                      <Badge tone="warning">{t('status.badge.needs_review')}</Badge>
-                    ) : null}
-                    <span>{t(check.key, check.params)}</span>
-                  </li>
-                ))}
+                {detail.checks
+                  .filter((check) => check.severity !== 'info')
+                  .map((check) => (
+                    <li
+                      key={`${check.key}-${JSON.stringify(check.params)}`}
+                      className="flex flex-wrap items-center gap-2 text-body"
+                    >
+                      {check.severity === 'blocking' ? (
+                        <Badge tone="warning">{t('status.badge.needs_review')}</Badge>
+                      ) : null}
+                      <span>{t(check.key, check.params)}</span>
+                    </li>
+                  ))}
               </ul>
             </Card>
           ) : (

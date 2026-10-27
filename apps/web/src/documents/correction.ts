@@ -3,6 +3,7 @@ import { isLegalDate } from '@shoebox/domain';
 import type { MessageKey } from '@shoebox/i18n';
 import {
   checkInputFromFields,
+  roundingOf,
   runProtoChecks,
   type ValidationRow,
   validationRowsOf,
@@ -77,6 +78,8 @@ export interface CorrectionPlan {
   readonly fields: Readonly<Record<string, string>>;
   readonly rows: readonly ValidationRow[];
   readonly status: 'ready' | 'needs_review';
+  /** `documents.rounding` after the fix: gross − (net + vat) when within 1 Kč, else '0.00'. */
+  readonly rounding: string;
 }
 
 /** The corrected fields, the checks run again on them, and the status that follows (hard rule 2). */
@@ -96,5 +99,13 @@ export function planCorrection(input: {
   const rows = validationRowsOf(checks);
   const unsure = input.documentClass === 'unknown' || input.documentClass === 'unreadable';
   const status = unsure || rows.some((r) => r.severity === 'blocking') ? 'needs_review' : 'ready';
-  return { fields, rows, status };
+  const rounding = roundingOf(
+    {
+      gross: fields['totals.gross'] ?? null,
+      vat: fields['totals.vat'] ?? null,
+      net: fields['totals.net'] ?? null,
+    },
+    fields.currency ?? null,
+  );
+  return { fields, rows, status, rounding };
 }

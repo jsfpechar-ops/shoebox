@@ -12,7 +12,7 @@ export interface DetailField {
   readonly trust: Trust;
 }
 export interface DetailCheck {
-  readonly severity: 'blocking' | 'warning';
+  readonly severity: 'blocking' | 'warning' | 'info';
   readonly key: MessageKey;
   readonly params: Record<string, string | number>;
 }
@@ -25,7 +25,7 @@ export interface DocumentDetail {
   readonly createdAt: string;
   readonly fields: readonly DetailField[];
   readonly vatLines: readonly { rate: string; base: string; vat: string }[];
-  readonly checks: readonly DetailCheck[]; // blocking first, then warning
+  readonly checks: readonly DetailCheck[]; // blocking first, then warning, then quiet info notes
   /** How the values were read: 'isdoc' = exactly from the file's ISDOC data, no AI. */
   readonly readBy: 'isdoc' | 'model' | null;
   readonly file: {
@@ -86,9 +86,12 @@ export function detailOf(
     const source = text(row.source);
     if (fieldKey !== null && source !== null) sources.set(fieldKey, source);
   }
+  // `info` rows are quiet notes (rounding): they never flag a field.
   const flagged = fieldsFlagged(
     (Array.isArray(checks) ? checks : []).flatMap((row) =>
-      isRow(row) && text(row.rule_id) !== null ? [{ rule_id: row.rule_id as string }] : [],
+      isRow(row) && text(row.rule_id) !== null && row.severity !== 'info'
+        ? [{ rule_id: row.rule_id as string }]
+        : [],
     ),
   );
 
@@ -155,12 +158,14 @@ export function detailOf(
       params.field = t(`proto.field.${field}` as MessageKey);
     }
     detailChecks.push({
-      severity: row.severity === 'blocking' ? 'blocking' : 'warning',
+      severity:
+        row.severity === 'blocking' ? 'blocking' : row.severity === 'info' ? 'info' : 'warning',
       key: messageKey,
       params,
     });
   }
-  detailChecks.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === 'blocking' ? -1 : 1));
+  const rank = { blocking: 0, warning: 1, info: 2 } as const;
+  detailChecks.sort((a, b) => rank[a.severity] - rank[b.severity]);
 
   const sourceFile = (Array.isArray(doc.source_files) ? doc.source_files : []).find(
     (row): row is Row => isRow(row) && text(row.storage_path) !== null,

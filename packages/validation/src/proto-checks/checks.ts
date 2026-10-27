@@ -35,7 +35,34 @@ export const PROTO_CHECK_IDS = [
 ] as const;
 export type ProtoCheckId = (typeof PROTO_CHECK_IDS)[number];
 
-export type ProtoCheckSeverity = 'pass' | 'warn' | 'fail';
+/** `info` is a quiet note (haléřové vyrovnání): never a warning, never blocking. */
+export type ProtoCheckSeverity = 'pass' | 'info' | 'warn' | 'fail';
+
+/** TODO(rules): the 1.00 total-rounding limit should come from `validation.rounding.max_czk` once cz rules carry it. */
+const TOTAL_ROUNDING_LIMIT = '1.00';
+
+/**
+ * `gross − (net + vat)` as two decimals when it is a non-zero difference within the rounding
+ * limit, else `'0.00'` (stored in `documents.rounding`). Any unreadable number gives `'0.00'`.
+ */
+export function roundingOf(
+  totals: {
+    readonly gross: string | null;
+    readonly vat?: string | null;
+    readonly net?: string | null;
+  },
+  currencyCode: string | null,
+): string {
+  const currency = currencyCode !== null && isCurrency(currencyCode) ? currencyCode : CZK;
+  const net = totals.net == null ? null : parseMoney(totals.net, currency);
+  const vat = totals.vat == null ? null : parseMoney(totals.vat, currency);
+  const gross = totals.gross == null ? null : parseMoney(totals.gross, currency);
+  if (net === null || vat === null || gross === null) return '0.00';
+  const diff = gross.subtract(net.add(vat));
+  return roundingLineAllowed(diff, Money.parse(TOTAL_ROUNDING_LIMIT, currency))
+    ? diff.toFixed2()
+    : '0.00';
+}
 
 /** The fields the checks read; `ProtoExtraction` from @shoebox/extraction is assignable to it. */
 export interface ProtoCheckInput {
@@ -217,8 +244,8 @@ function checkVat(input: ProtoCheckInput, currency: string, today: LegalDate): P
     const params: Params = { total: gross.toFixed2(), sum: sum.toFixed2(), diff: diff.toFixed2() };
     if (diff.isZero()) {
       results.push({ id: 'vat_sum', severity: 'pass', key: 'proto.check.vat_sum.pass', params });
-    } else if (roundingLineAllowed(diff, Money.parse('1.00', currency))) {
-      results.push({ id: 'vat_sum', severity: 'warn', key: 'proto.check.vat_sum.warn', params });
+    } else if (roundingLineAllowed(diff, Money.parse(TOTAL_ROUNDING_LIMIT, currency))) {
+      results.push({ id: 'vat_sum', severity: 'info', key: 'proto.check.vat_sum.rounded', params });
     } else {
       results.push({ id: 'vat_sum', severity: 'fail', key: 'proto.check.vat_sum.fail', params });
     }
@@ -230,11 +257,13 @@ const RECAP_KEYS = {
   recap_net: {
     pass: 'proto.check.recap_net.pass',
     warn: 'proto.check.recap_net.warn',
+    info: 'proto.check.recap_net.rounded',
     fail: 'proto.check.recap_net.fail',
   },
   recap_vat: {
     pass: 'proto.check.recap_vat.pass',
     warn: 'proto.check.recap_vat.warn',
+    info: 'proto.check.recap_vat.rounded',
     fail: 'proto.check.recap_vat.fail',
   },
 } as const;
@@ -257,12 +286,12 @@ function checkTotalsMath(input: ProtoCheckInput, currency: string): ProtoCheckRe
   if (diff.isZero()) {
     return [{ id: 'totals_math', severity: 'pass', key: 'proto.check.totals_math.pass', params }];
   }
-  const within = roundingLineAllowed(diff, Money.parse('1.00', currency));
+  const within = roundingLineAllowed(diff, Money.parse(TOTAL_ROUNDING_LIMIT, currency));
   return [
     {
       id: 'totals_math',
-      severity: within ? 'warn' : 'fail',
-      key: within ? 'proto.check.totals_math.warn' : 'proto.check.totals_math.fail',
+      severity: within ? 'info' : 'fail',
+      key: within ? 'proto.check.totals_math.rounded' : 'proto.check.totals_math.fail',
       params,
     },
   ];
@@ -292,10 +321,10 @@ function checkRecapVsTotals(input: ProtoCheckInput, currency: string): ProtoChec
     total: Money,
   ): ProtoCheckResult => {
     const diff = total.subtract(recap);
-    const severity: ProtoCheckSeverity = diff.isZero()
+    const severity: 'pass' | 'info' | 'fail' = diff.isZero()
       ? 'pass'
       : roundingLineAllowed(diff, tolerance)
-        ? 'warn'
+        ? 'info'
         : 'fail';
     return {
       id: 'recap_vs_totals',
@@ -557,10 +586,17 @@ export function runProtoChecks(
   options: ProtoCheckOptions,
 ): ProtoCheckResult[] {
   const currency = input.currency !== null && isCurrency(input.currency) ? input.currency : CZK;
+  const totalsMath = checkTotalsMath(input, currency);
+  const totalsRounded = totalsMath.some((r) => r.severity === 'info');
+  // One quiet rounding line is enough: the total's note covers the VAT sum and recap notes.
+  const dropDuplicateNote = (r: ProtoCheckResult): boolean =>
+    !(totalsRounded && r.severity === 'info');
   return [
-    ...checkVat(input, currency, options.today),
-    ...checkTotalsMath(input, currency),
-    ...checkRecapVsTotals(input, currency),
+    ...checkVat(input, currency, options.today).filter(
+      (r) => r.id !== 'vat_sum' || dropDuplicateNote(r),
+    ),
+    ...totalsMath,
+    ...checkRecapVsTotals(input, currency).filter(dropDuplicateNote),
     ...checkQrAmount(input, currency),
     ...checkIdentifiers(input),
     ...checkDates(input, options.today),

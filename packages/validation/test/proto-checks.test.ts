@@ -65,9 +65,9 @@ describe('runProtoChecks', () => {
     });
   });
 
-  it('warns within the 1.00 rounding tolerance and fails beyond it', () => {
+  it('notes rounding within the 1.00 tolerance and fails beyond it', () => {
     const warn = runProtoChecks(input({ totals: { gross: '12961.00' } }), { today: TODAY });
-    expect(byId(warn, 'vat_sum')[0]).toMatchObject({ severity: 'warn', params: { diff: '0.16' } });
+    expect(byId(warn, 'vat_sum')[0]).toMatchObject({ severity: 'info', params: { diff: '0.16' } });
     const fail = runProtoChecks(input({ totals: { gross: '13000.00' } }), { today: TODAY });
     expect(byId(fail, 'vat_sum')[0]).toMatchObject({ severity: 'fail', params: { diff: '39.16' } });
   });
