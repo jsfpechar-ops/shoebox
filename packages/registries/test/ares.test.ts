@@ -109,3 +109,47 @@ describe('createAresClient', () => {
     expect(r.data.dphAktivni).toBe(false);
   });
 });
+
+describe('createAresClient.searchByName', () => {
+  it('posts the name and maps the hits', async () => {
+    const bodies: string[] = [];
+    const fn = (async (_url: string | URL, init?: RequestInit) => {
+      bodies.push(String(init?.body));
+      return new Response(
+        JSON.stringify({
+          pocetCelkem: 2,
+          ekonomickeSubjekty: [
+            { ico: '26450691', obchodniJmeno: 'Makro Cash & Carry ČR s.r.o.', dic: 'CZ26450691' },
+            { ico: '11111111', obchodniJmeno: 'Other' },
+          ],
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch;
+    const r = await createAresClient({ fetch: fn, now: NOW }).searchByName('Makro');
+    expect(bodies).toEqual([JSON.stringify({ obchodniJmeno: 'Makro', pocet: 10 })]);
+    expect(r).toEqual({
+      status: 'ok',
+      fetchedAt: '2026-10-25T10:00:00.000Z',
+      data: [
+        { ico: '26450691', name: 'Makro Cash & Carry ČR s.r.o.', dic: 'CZ26450691' },
+        { ico: '11111111', name: 'Other', dic: null },
+      ],
+    });
+  });
+
+  it('is unavailable on an HTTP error or a thrown fetch', async () => {
+    const bad = fakeFetch(() => new Response('x', { status: 500 }));
+    expect(await createAresClient({ fetch: bad.fn }).searchByName('a')).toEqual({
+      status: 'unavailable',
+      reason: 'http_error',
+    });
+    const thrown = (async () => {
+      throw new Error('x');
+    }) as unknown as typeof fetch;
+    expect(await createAresClient({ fetch: thrown }).searchByName('a')).toEqual({
+      status: 'unavailable',
+      reason: 'http_error',
+    });
+  });
+});

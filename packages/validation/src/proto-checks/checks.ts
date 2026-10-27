@@ -398,12 +398,6 @@ function checkDates(input: ProtoCheckInput, today: LegalDate): ProtoCheckResult[
 }
 
 const SKIPPED_CLASSES = new Set(['non_document', 'unreadable']);
-const BUYER_REQUIRED_CLASSES = new Set([
-  'received_invoice',
-  'received_credit_note',
-  'received_proforma',
-  'received_advance_tax_doc',
-]);
 const RECAP_ROW_RE = /^vat_recap\[(\d+)\]$/;
 
 function skipped(input: ProtoCheckInput): boolean {
@@ -530,9 +524,6 @@ function checkBuyer(input: ProtoCheckInput, org: ProtoOrg | undefined): ProtoChe
       : [buyerResult('fail', 'proto.check.buyer.other_firm', buyer.dic)];
   }
   if (buyer.ico !== null || buyer.dic !== null) return [];
-  if (input.document_class !== undefined && BUYER_REQUIRED_CLASSES.has(input.document_class)) {
-    return [buyerResult('warn', 'proto.check.buyer.missing')];
-  }
   return [];
 }
 

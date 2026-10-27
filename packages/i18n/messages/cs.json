@@ -181,7 +181,6 @@
   "proto.check.buyer.pass": "Odběratel {id} je vaše firma.",
   "proto.check.buyer.other_firm": "Doklad je vystaven na jinou firmu ({id}), ne na vaši.",
   "proto.check.buyer.supplier_is_me": "Dodavatelem je vaše firma ({id}). Nejde o doklad, který jste vystavili vy?",
-  "proto.check.buyer.missing": "Na faktuře chybí odběratel, takže nejde ověřit, že patří vaší firmě.",
   "proto.field.class": "Druh dokladu",
   "proto.field.supplier_name": "Dodavatel",
   "proto.field.supplier_ico": "IČO dodavatele",

@@ -188,11 +188,9 @@ describe('buyer', () => {
     ]);
   });
 
-  it('warns on an invoice without a buyer, but not on a receipt or spam', () => {
+  it('says nothing about a missing buyer (receipts and simplified documents need none)', () => {
     const none = { ico: null, dic: null };
-    expect(only(run({ buyer: none }), 'buyer')).toEqual([
-      { severity: 'warn', key: 'proto.check.buyer.missing', params: {} },
-    ]);
+    expect(only(run({ buyer: none }), 'buyer')).toEqual([]);
     expect(only(run({ buyer: none, document_class: 'received_receipt' }), 'buyer')).toEqual([]);
     expect(only(run({ buyer: none, document_class: 'non_document' }), 'buyer')).toEqual([]);
   });

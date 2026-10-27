@@ -31,6 +31,15 @@ function byId(
   return results.filter((result) => result.id === id);
 }
 
+describe('icoChecksumValid (real cases)', () => {
+  it('accepts Makro and rejects its misread', () => {
+    expect(icoChecksumValid('26450691')).toBe(true);
+    expect(icoChecksumValid('26465681')).toBe(false);
+    expect(icoChecksumValid('62904965')).toBe(true);
+    expect(icoChecksumValid('24771902')).toBe(true);
+  });
+});
+
 describe('icoChecksumValid', () => {
   it('accepts valid check digits, including the remainder 0 and 1 cases', () => {
     expect(icoChecksumValid('25596641')).toBe(true);
