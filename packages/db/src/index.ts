@@ -1,5 +1,6 @@
 export const packageName = '@shoebox/db' as const;
 export * from './doc-split';
+export * from './document-lines-of-reading';
 export * from './document-categorize';
 export * from './document-pages';
 export * from './document-reading';
