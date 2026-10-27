@@ -1,9 +1,11 @@
 import {
   type EpoHeader,
   formaCode,
+  type KhA1Row,
   type KhA2Row,
   type KhA4Row,
   type KhAggregate,
+  type KhB1Row,
   type KhB2Row,
   type KhComputation,
   type KhVetaC,
@@ -56,6 +58,34 @@ export function vetaPOf(h: EpoHeader): VetaNode {
       ['stat', 'ČESKÁ REPUBLIKA'],
       ['email', textAttr(t.email)],
       ['c_telef', textAttr(t.phone)],
+    ],
+  };
+}
+
+function vetaA1(r: KhA1Row): VetaNode {
+  return {
+    name: 'VetaA1',
+    attrs: [
+      ['c_radku', String(r.cRadku)],
+      ['dic_odb', r.dicOdb],
+      ['c_evid_dd', r.cEvidDd],
+      ['duzp', dateAttr(r.duzp)],
+      ['zakl_dane1', dec2Attr(r.zaklDane1)],
+      ['kod_pred_pl', r.kodPredPl],
+    ],
+  };
+}
+
+function vetaB1(r: KhB1Row): VetaNode {
+  return {
+    name: 'VetaB1',
+    attrs: [
+      ['c_radku', String(r.cRadku)],
+      ['dic_dod', r.dicDod],
+      ['c_evid_dd', r.cEvidDd],
+      ['duzp', dateAttr(r.duzp)],
+      ...amountAttrs(r),
+      ['kod_pred_pl', r.kodPredPl],
     ],
   };
 }
@@ -118,6 +148,9 @@ function vetaC(c: KhVetaC): VetaNode | null {
     ['obrat5', dec2Attr(c.obrat5)],
     ['pln23', dec2Attr(c.pln23)],
     ['pln5', dec2Attr(c.pln5)],
+    ['pln_rez_pren', dec2Attr(c.plnRezPren)],
+    ['rez_pren23', dec2Attr(c.rezPren23)],
+    ['rez_pren5', dec2Attr(c.rezPren5)],
     ['celk_zd_a2', dec2Attr(c.celkZdA2)],
   ];
   return allNull(attrs) ? null : { name: 'VetaC', attrs };
@@ -146,12 +179,14 @@ export function serializeKh(c: KhComputation, h: EpoHeader, opts: KhSerializeOpt
       ],
     },
     vetaPOf(h),
+    ...c.a1.map(vetaA1),
     ...c.a2.map(vetaA2),
     ...c.a4.map(vetaA4),
   ];
 
   const a5 = aggregateVeta('VetaA5', c.a5);
   if (a5 !== null) vety.push(a5);
+  vety.push(...c.b1.map(vetaB1));
   vety.push(...c.b2.map(vetaB2));
   const b3 = aggregateVeta('VetaB3', c.b3);
   if (b3 !== null) vety.push(b3);

@@ -122,7 +122,7 @@ const sumKh = (rows: readonly KhAmounts[], key: keyof KhAmounts) =>
   rows.reduce((acc, r) => acc.add(r[key]), ZERO);
 const absLe = (a: Money, b: Money, tol: string) =>
   a.subtract(b).abs().compare(Money.parse(tol, 'CZK')) <= 0;
-const lookup = () => ({ duzp: null, partnerCountry: 'CZ' });
+const lookup = () => ({ duzp: null, partnerCountry: 'CZ', rcCommodityCodes: [] });
 
 describe('KH ↔ DPHDP3 properties (M05 §9, 1 000 runs)', () => {
   it('P1–P5 hold and reconcileKhDp3 agrees on every random payer period', () => {

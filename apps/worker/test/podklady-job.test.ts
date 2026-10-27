@@ -75,6 +75,7 @@ const entry = (
 // The S2 input of the podklady summary test, mapped to the rows 0363 reads.
 function s2Rows(over: Partial<PodkladyRows> = {}): PodkladyRows {
   return {
+    privateUseFxMissing: [],
     profiles: [seg()],
     entries: [
       entry('income_services', 'taxable_income', '1400000.00'),
