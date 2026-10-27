@@ -151,7 +151,7 @@ pg-boss job names are `<domain>.<action>`; events (published as pg-boss topics) 
 
 | Kind | Canonical names (owner) |
 |---|---|
-| Pipeline stage jobs | `doc.split`, `doc.classify`, `doc.link_supporting` (M01) · `doc.extract`, `extract.llm`, `extract.llm_escalated`, `extract.learn_hints` (M02) · `doc.validate`, `validate.registry_retry`, `validate.scope`, `validate.catalog_upgrade` (M03) · `doc.categorize` (M04) |
+| Pipeline stage jobs | `doc.split`, `doc.classify`, `doc.link_supporting` (M01) · `doc.extract`, `extract.llm`, `extract.llm_escalated`, `extract.learn_hints` (M02) · `doc.validate`, `validate.registry_retry`, `validate.scope`, `validate.catalog_upgrade` (M03) · `doc.categorize`, `doc.categorize.catchup` (M04) |
 | Ingestion jobs | `ingest.item.process`, `ingest.expand`, `ingest.bundle.assemble`, `ingest.rescan`, `ingest.cleanup`, `email.received`, `email.render_body`, `expected.sweep`, `import.spreadsheet.parse`, `import.spreadsheet.run` (M01) |
 | Ledger jobs | `ledger.rebuild_document`, `ledger.rebuild_transaction`, `ledger.rebuild_org`, `ledger.verify` (M04; VAT rules from M05) |
 | Other module jobs | `vat.period.evaluate`, `vat.filing.generate`, `vat.workbook.generate`, `vat.amendment.detect` (M05) · `podklady.generate` (M06) · `bank.*` (M07) · `obligations.generate`, `obligations.nightly`, `notifications.evaluate`, `notifications.digest`, `notifications.urgent` (M09) · `package.*` (M10) · `retention.*`, `privacy.*`, `ops.*` (M12) |

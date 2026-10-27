@@ -19,6 +19,7 @@ export const JOB_NAMES = [
   'validate.scope',
   'validate.catalog_upgrade',
   'doc.categorize',
+  'doc.categorize.catchup',
   // Ingestion jobs (M01)
   'ingest.item.process',
   'ingest.expand',
@@ -387,6 +388,14 @@ export const docCategorizeJob = defineTenantJob({
   version: 1,
   entityId: (p) =>
     `${p.documentId}-${p.revision}-${p.trigger}${p.nonce === undefined ? '' : `-${p.nonce}`}`,
+});
+
+/** Every 15 minutes: enqueue doc.categorize for ready/needs_review documents with lines that were never categorized (brief 0622). */
+export const docCategorizeCatchupJob = defineSystemJob({
+  name: 'doc.categorize.catchup',
+  payload: z.strictObject({}),
+  cron: '*/15 * * * *',
+  retry: { retryLimit: 0 },
 });
 
 export const ledgerRebuildDocumentPayload = tenantPayload({
