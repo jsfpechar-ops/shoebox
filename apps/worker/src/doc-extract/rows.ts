@@ -87,6 +87,18 @@ function mapPaymentMethod(method: ProtoPaymentMethod | null): DocumentPatch['pay
   }
 }
 
+/** Paid by the document itself: paid text, card/cash/cash-on-delivery, or a retail receipt. paid_at stays null. */
+function isPaidAtIssue(x: ProtoExtraction, cls: DbDocumentClass): boolean {
+  const m = x.payment.method;
+  return (
+    x.flags.paid_text ||
+    m === 'card' ||
+    m === 'cash' ||
+    m === 'cash_on_delivery' ||
+    cls === 'received_receipt'
+  );
+}
+
 export function documentPatchOf(x: ProtoExtraction): DocumentPatch {
   const cls: DbDocumentClass = x.document_class === 'unreadable' ? 'unknown' : x.document_class;
 
@@ -138,7 +150,7 @@ export function documentPatchOf(x: ProtoExtraction): DocumentPatch {
     totalGross: x.totals.gross,
     paymentMethod: mapPaymentMethod(p.method),
     payToAccount,
-    isPaidPerDocument: x.flags.paid_text ? true : null,
+    isPaidPerDocument: isPaidAtIssue(x, cls) ? true : null,
   };
 }
 

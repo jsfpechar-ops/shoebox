@@ -102,12 +102,13 @@ describe('applyRegisterFilter', () => {
 
 describe('registerSheet', () => {
   it('has a header and one row per document, money as numbers', () => {
-    const sheet = registerSheet([row, manual]);
+    const sheet = registerSheet([row, manual], '2026-10-10');
     expect(sheet).toHaveLength(3);
     expect(sheet[0]?.[0]).toBe('Date');
     expect(sheet[0]).toHaveLength(14);
     expect(sheet[1]?.[6]).toEqual({ num: '8150.00' });
-    expect(sheet[1]?.[12]).toBe('Not paid');
+    expect(sheet[1]?.[12]).toBe('Not paid yet');
+    expect(registerSheet([row], '2026-10-27')[1]?.[12]).toBe('Unknown');
     expect(sheet[2]?.[7]).toBeNull();
     expect(sheet[2]?.[13]).toBe('Typed in');
   });

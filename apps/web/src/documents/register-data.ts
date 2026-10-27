@@ -1,4 +1,9 @@
-import type { DocumentClass, DocumentStatus, LegalDate } from '@shoebox/domain';
+import {
+  type DocumentClass,
+  type DocumentStatus,
+  type LegalDate,
+  pragueToday,
+} from '@shoebox/domain';
 import type { XlsxCell } from '@shoebox/exports';
 import { t } from '@shoebox/i18n';
 import type { createSupabaseServerClient } from '../supabase/server';
@@ -131,8 +136,20 @@ function moneyCell(value: string | null): XlsxCell {
   return value === null ? null : { num: value };
 }
 
+/** Paid, Not paid yet (due in the future or no due date) or Unknown (no payment found). Never asks for action. */
+export function paidLabelOf(row: RegisterRow, today: string): string {
+  if (row.paid === 'paid') return t('register.paid.yes');
+  if (row.paid === 'unpaid') {
+    return row.due !== null && row.due < today ? t('register.paid.unknown') : t('register.paid.no');
+  }
+  return t('register.paid.none');
+}
+
 /** The Excel sheet: a header row, then one row per document. */
-export function registerSheet(rows: readonly RegisterRow[]): XlsxCell[][] {
+export function registerSheet(
+  rows: readonly RegisterRow[],
+  today: string = pragueToday({ now: () => Date.now() }),
+): XlsxCell[][] {
   const header: XlsxCell[] = [
     t('register.col.date'),
     t('register.col.partner'),
@@ -162,11 +179,7 @@ export function registerSheet(rows: readonly RegisterRow[]): XlsxCell[][] {
     row.currency,
     row.due,
     row.duzp,
-    row.paid === 'paid'
-      ? t('register.paid.yes')
-      : row.paid === 'unpaid'
-        ? t('register.paid.no')
-        : t('register.paid.none'),
+    paidLabelOf(row, today),
     row.hasFile ? t('register.file.yes') : t('register.file.manual'),
   ]);
   return [header, ...body];

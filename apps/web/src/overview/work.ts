@@ -15,6 +15,9 @@ export interface WorkRow {
   readonly direction: 'in' | 'out' | null;
   readonly dueDate: LegalDate | null;
   readonly paidAt: string | null;
+  /** Paid by the document itself (card, cash, receipt): never a bill to pay. */
+  readonly paidPerDocument: boolean;
+  readonly paymentMethod: string | null;
   readonly totalGross: string | null;
   readonly currency: string;
   readonly documentNumber: string | null;
@@ -45,6 +48,8 @@ export interface BillsToPay {
   readonly items: readonly BillToPay[];
   readonly count: number;
   readonly totalCzk: string | null;
+  /** Unpaid transfer bills due more than 14 days ago: not listed, only counted. */
+  readonly olderCount: number;
 }
 
 const READING = new Set([
@@ -58,9 +63,11 @@ const READING = new Set([
 const DONE = new Set(['ready', 'finalized']);
 const PAYABLE = new Set(['ready', 'needs_review']);
 const MAX_BILLS = 5;
+const LOOKBACK_DAYS = 14;
+const PAID_METHODS = new Set(['card', 'cash', 'cod']);
 
 export const EMPTY_WORK: WorkSummary = { waiting: 0, reading: 0, done: 0, autoReadPct: null };
-export const EMPTY_BILLS: BillsToPay = { items: [], count: 0, totalCzk: null };
+export const EMPTY_BILLS: BillsToPay = { items: [], count: 0, totalCzk: null, olderCount: 0 };
 
 /** Pure: how many documents wait for the user, are being read, or are done, and how many were read untouched. */
 export function computeWorkSummary(rows: readonly WorkRow[], _asOf: LegalDate): WorkSummary {
@@ -85,13 +92,16 @@ function dayNumber(date: LegalDate): number {
   return Math.round(Date.UTC(year, month - 1, day) / 86_400_000);
 }
 
-/** Pure: unpaid received bills with a due date, oldest due first, at most five, with the true count. */
+/** Pure: unpaid bank-transfer bills due from 14 days ago onward, oldest due first, at most five, with the true count; older ones are only counted. */
 export function computeBillsToPay(rows: readonly WorkRow[], asOf: LegalDate): BillsToPay {
   const bills: BillToPay[] = [];
+  let olderCount = 0;
   for (const row of rows) {
     if (
       row.direction !== 'in' ||
       row.paidAt !== null ||
+      row.paidPerDocument ||
+      (row.paymentMethod !== null && PAID_METHODS.has(row.paymentMethod)) ||
       row.dueDate === null ||
       row.totalGross === null ||
       !PAYABLE.has(row.status)
@@ -99,6 +109,10 @@ export function computeBillsToPay(rows: readonly WorkRow[], asOf: LegalDate): Bi
       continue;
     }
     const daysLeft = dayNumber(row.dueDate) - dayNumber(asOf);
+    if (daysLeft < -LOOKBACK_DAYS) {
+      olderCount += 1;
+      continue;
+    }
     bills.push({
       id: row.id,
       partnerName: row.partnerName,
@@ -119,12 +133,12 @@ export function computeBillsToPay(rows: readonly WorkRow[], asOf: LegalDate): Bi
       'CZK',
     ).toFixed2();
   }
-  return { items: bills.slice(0, MAX_BILLS), count: bills.length, totalCzk };
+  return { items: bills.slice(0, MAX_BILLS), count: bills.length, totalCzk, olderCount };
 }
 
 /** PostgREST select for the work and bills cards (numeric cast to text, ADR-007). */
 export const WORK_SELECT =
-  'id, status, direction, due_date, paid_at, total_gross::text, currency, document_number, partner_snapshot, document_fields(source, is_current)';
+  'id, status, direction, due_date, paid_at, is_paid_per_document, payment_method, total_gross::text, currency, document_number, partner_snapshot, document_fields(source, is_current)';
 
 const workRowSchema = z.object({
   id: z.string(),
@@ -132,6 +146,8 @@ const workRowSchema = z.object({
   direction: z.enum(DIRECTION_VALUES).nullable(),
   due_date: z.string().nullable(),
   paid_at: z.string().nullable(),
+  is_paid_per_document: z.boolean().nullable(),
+  payment_method: z.string().nullable(),
   total_gross: z
     .string()
     .regex(/^-?\d+(\.\d+)?$/)
@@ -166,6 +182,8 @@ export function toWorkRow(row: unknown): WorkRow | null {
     direction: d.direction,
     dueDate,
     paidAt: d.paid_at,
+    paidPerDocument: d.is_paid_per_document === true,
+    paymentMethod: d.payment_method,
     totalGross: d.total_gross,
     currency: d.currency,
     documentNumber: d.document_number,
