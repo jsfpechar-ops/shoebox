@@ -188,4 +188,26 @@ describe.skipIf(DATABASE_URL === undefined)('document reading store', () => {
       await sql`select count(*)::int as n from extraction_runs where document_id = ${DOC} and not ok and error = 'http_529'`;
     expect(runs).toEqual({ n: 2 });
   });
+  it('logs a read and each failed read in pipeline_events', async () => {
+    await db.withTenant(ORG_R, (tx) => saveDocumentReading(tx, write()));
+    await db.withTenant(ORG_R, (tx) =>
+      recordFailedRead(tx, {
+        orgId: ORG_R,
+        documentId: DOC,
+        model: 'claude-haiku-5-5',
+        promptVersion: 'm02-proto-v3',
+        error: 'http_529',
+        attempt: 1,
+        final: false,
+      }),
+    );
+    const rows =
+      await sql`select kind, code, detail, warnings, extraction_run_id is not null as has_run
+      from pipeline_events where document_id = ${DOC} and kind in ('read', 'read_failed') order by id desc limit 2`;
+    expect(rows.map((r) => [r.kind, r.code, r.detail, r.has_run])).toEqual([
+      ['read_failed', 'http_529', 'retry', true],
+      ['read', 'ready', null, true],
+    ]);
+    expect(rows[1]?.warnings).toEqual(['PROTO_DIC_FORMAT']);
+  });
 });

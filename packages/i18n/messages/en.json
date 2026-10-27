@@ -379,6 +379,7 @@
   "shell.theme.system": "System",
   "shell.theme.light": "Light",
   "shell.theme.dark": "Dark",
+  "shell.loading": "Loading…",
   "auth.login.title": "Sign in",
   "auth.field.email": "E-mail",
   "auth.magic.title": "Sign in with a link",

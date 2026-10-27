@@ -25,6 +25,7 @@
     "depcruise": "depcruise --config .dependency-cruiser.cjs apps packages",
     "check:bundle": "echo 'TODO(P0-WEB): check:bundle' && exit 1",
     "check:tenant-sql": "node scripts/check-tenant-sql.ts",
+    "analytics:export": "node packages/db/scripts/analytics-export.ts",
     "check:i18n": "pnpm --filter @shoebox/i18n test"
   },
   "devDependencies": {
