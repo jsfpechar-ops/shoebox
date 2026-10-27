@@ -43,6 +43,7 @@ function document(over: Partial<DocumentForCategorize> = {}): DocumentForCategor
     orgIco: '12345678',
     orgDic: 'CZ12345678',
     orgSettings: {},
+    openBlocking: 0,
     lines: [
       {
         id: L1,
