@@ -40,6 +40,8 @@ export interface ReadingPatch {
   readonly totalNet: string | null;
   readonly totalVat: string | null;
   readonly totalGross: string | null;
+  /** Haléřové vyrovnání, written to `documents.rounding`; omitted means 0. */
+  readonly rounding?: string;
   readonly paymentMethod: 'bank_transfer' | 'card' | 'cash' | 'cod' | 'other' | null;
   readonly payToAccount: Record<string, string | null> | null;
   readonly isPaidPerDocument: boolean | null;
@@ -64,7 +66,7 @@ export interface ReadingWrite {
   readonly validations: readonly {
     ruleId: string;
     ruleVersion: number;
-    severity: 'blocking' | 'warning';
+    severity: 'blocking' | 'warning' | 'info';
     params: Record<string, unknown>;
   }[];
   readonly run: {

@@ -1,6 +1,12 @@
 import type { LegalDate } from '@shoebox/domain';
 import { describe, expect, it } from 'vitest';
-import { exportEntryName, parsePeriod, periodOptions } from '../src/documents/export-period';
+import {
+  defaultPeriodKey,
+  exportEntryName,
+  parsePeriod,
+  periodChoices,
+  periodOptions,
+} from '../src/documents/export-period';
 
 const today = '2026-10-26' as LegalDate;
 
@@ -60,5 +66,41 @@ describe('exportEntryName', () => {
     expect(
       exportEntryName({ date: null, partner: null, number: null }, null, 'image/jpeg', new Set()),
     ).toBe('undated/document.jpg');
+  });
+  it('prefixes a needs-review file', () => {
+    const name = exportEntryName(
+      { date: '2026-09-30' as LegalDate, partner: 'Uklid', number: '1' },
+      'a.pdf',
+      'application/pdf',
+      new Set(),
+      true,
+    );
+    expect(name).toBe('2026-09/NEEDS-REVIEW_2026-09-30 Uklid 1.pdf');
+  });
+});
+
+describe('periodChoices', () => {
+  const dates = ['2025-06-12', '2025-06-30', '2025-07-01'];
+  it('offers a month with documents from 16 months ago, with its count', () => {
+    const choices = periodChoices(today, dates);
+    expect(choices.find((p) => p.key === '2025-06')?.count).toBe(2);
+    expect(choices.find((p) => p.key === '2025-Q2')?.count).toBe(2);
+    expect(choices.find((p) => p.key === '2025')?.count).toBe(3);
+    expect(choices.filter((p) => p.key === '2025-06')).toHaveLength(1);
+  });
+  it('lists months newest first, then quarters, then years', () => {
+    const keys = periodChoices(today, dates).map((p) => p.key);
+    expect(keys.indexOf('2026-10')).toBeLessThan(keys.indexOf('2025-06'));
+    expect(keys.indexOf('2025-06')).toBeLessThan(keys.indexOf('2026-Q4'));
+    expect(keys.indexOf('2026-Q4')).toBeLessThan(keys.indexOf('2026'));
+  });
+});
+
+describe('defaultPeriodKey', () => {
+  it('is the newest month with documents that is not in the future', () => {
+    expect(defaultPeriodKey(today, ['2025-06-12', '2025-07-01', '2027-01-05'])).toBe('2025-07');
+  });
+  it('falls back to last month without documents', () => {
+    expect(defaultPeriodKey(today, [])).toBe('2026-09');
   });
 });

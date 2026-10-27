@@ -5,6 +5,7 @@ import { Button, Input } from '@shoebox/ui';
 import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { EDITABLE, type EditKey, type FixKind } from './correction';
 import { type FixState, fixFieldAction } from './correction-actions';
+import { OPEN_FIX_EVENT } from './issue-questions';
 import { cleanPicked, isPickTarget, PICK_EVENT, requestLocate, setPickTarget } from './pick';
 
 const idle: FixState = { error: null, saved: false, suggestion: null };
@@ -35,6 +36,14 @@ export function FixField({
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(fixFieldAction, idle);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function onOpenFix(event: Event) {
+      if ((event as CustomEvent).detail === editKey) setOpen(true);
+    }
+    window.addEventListener(OPEN_FIX_EVENT, onOpenFix);
+    return () => window.removeEventListener(OPEN_FIX_EVENT, onOpenFix);
+  }, [editKey]);
 
   useEffect(() => {
     if (state.saved) setOpen(false);

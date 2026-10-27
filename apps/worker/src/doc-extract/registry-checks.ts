@@ -1,8 +1,10 @@
 import type { ProtoExtraction } from '@shoebox/extraction';
 import {
+  type AresClient,
   type CrpdphClient,
   type CrpdphPublishedAccount,
   type CrpdphSubject,
+  createAresClient,
   createCrpdphClient,
   createViesClient,
   type ViesClient,
@@ -12,6 +14,8 @@ import { czAccountToIban, ibanValid, type ValidationRow } from '@shoebox/validat
 export interface RegistryDeps {
   readonly crpdph: CrpdphClient;
   readonly vies: ViesClient;
+  /** Name search used to correct a misread supplier IČO; absent = no correction. */
+  readonly ares?: Pick<AresClient, 'searchByName'>;
 }
 
 /** Real registry clients with the 3000 ms timeout of 06 §2.2. */
@@ -19,6 +23,7 @@ export function defaultRegistryDeps(): RegistryDeps {
   return {
     crpdph: createCrpdphClient({ timeoutMs: 3000 }),
     vies: createViesClient({ timeoutMs: 3000 }),
+    ares: createAresClient({ timeoutMs: 3000 }),
   };
 }
 

@@ -19,3 +19,4 @@ supabase/.temp/
 # proto eval exports hold real document values (hard rule 4)
 shoebox-results-*.jsonl
 analytics-out/
+.claude/worktrees/
