@@ -51,6 +51,7 @@ function fakeStore(doc: Partial<DocumentForRead> | null = {}) {
             id: DOC,
             orgId: ORG,
             status: 'received',
+            revision: 1,
             storagePath: `org/${ORG}/files/x`,
             mimeType: 'application/pdf',
             orgIco: null,
@@ -139,6 +140,23 @@ describe('doc.extract handler', () => {
         latencyMs: 900,
       },
     });
+  });
+
+  it('enqueues categorization after a saved reading, with the document revision', async () => {
+    const { store } = fakeStore({ revision: 3 });
+    const categorized: Array<[string, string, number]> = [];
+    await createDocExtractHandler({
+      registries: offline,
+      llm: llmReturning(wire()),
+      blobs,
+      model: 'claude-haiku-5-5',
+      clock,
+      store,
+      enqueueCategorize: async (orgId, documentId, revision) => {
+        categorized.push([orgId, documentId, revision]);
+      },
+    })({ orgId: ORG, documentId: DOC }, ctx());
+    expect(categorized).toEqual([[ORG, DOC, 3]]);
   });
 
   it('sends a document with wrong VAT math to review', async () => {

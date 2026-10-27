@@ -4,6 +4,7 @@ Updated: 2026-10-27.
 
 ## Now
 
+- 0620–0622: lines from the VAT recap at read time, `doc.categorize` after every read, backfill 0065, catch-up job every 15 min. Before this no upload reached the ledgers.
 - 0610–0614 (real-data test): rounding ≤1 Kč = info note; IČO fix from ARES; one-tap review + confirm; ZIP never empty, Status column, README; paid without chores.
 - 0600, 0604–0606: Overview waiting / auto-read % / bills to pay; trust marks; one-tap total; PDF highlight.
 - Accountant review (0601–0603): podklady whole Kč + FX, §75 share, §92a in DPHDP3/KH; [verify] list in known-issues K-C07/K-C08.
@@ -15,8 +16,7 @@ Updated: 2026-10-27.
 - Lane A intake (2026-10-26): duplicates, photos, e-mail inbox (0100–0106, live after `deploy/inbound-email.md`). Bank import 0107–0114: GPC/CAMT.053/MT940 parsers, money tables 0020, `bank.import.statement`, statements dropped in the Inbox upload, Settings bank card. Matching briefs 0115+ next.
 - Lane C done (0301–0367): ledgers, VAT returns, podklady, tax reserve; XSDs vendored (#37).
 
-- Core loop done (0045–0053, #97–#112): upload → worker reads with Haiku 5.5 → checks → Inbox → document page → fix a value, checks re-run, `ready` when nothing blocks. English UI by default (0050). Not yet run end to end against a real Supabase project.
-- Přehled screen done (0070–0074, #98–#106): totals, limit meters, deadlines (holidays + generators seeded in rules), loader, English UI; Czech copy dormant in `packages/i18n/later/`. Not yet seen with real data.
+- Core loop (0045–0053) and Přehled screen (0070–0074) done; English UI (0050), Czech copy dormant in `packages/i18n/later/`.
 - Phase 0 on `phase/0`: P0-PLAT-04, P0-UI-03, P0-DB-03, P0-CI-02, P0-EVAL-02 done. See [gate list](../tasks/phase-0-gate.md).
 
 ## Next
