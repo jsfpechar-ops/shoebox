@@ -578,7 +578,7 @@ describe('doc.extract handler', () => {
       expect(saved?.validations).toContainEqual({
         ruleId: 'PROTO_ICO_REPAIRED',
         ruleVersion: 1,
-        severity: 'warning',
+        severity: 'info',
         params: {
           from: '26465681',
           to: '26450691',

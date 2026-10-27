@@ -1,6 +1,6 @@
 # 0612: One "Looks right, confirm" button; each issue is a question
 
-Status: ready
+Status: review
 Ticket: REAL-DATA (owner test 2026-10-27, Josef) | Depends on: none | Base commit: d5c65a1 | Branch: claude/project-thread-w656wo | PR base: phase/0
 Executor: Sonnet 5.5 | Fits one session: 30 tool calls, 60k tokens
 
