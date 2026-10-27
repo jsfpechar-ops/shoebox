@@ -1,3 +1,4 @@
+import { llmCostUsd } from '@shoebox/domain';
 import { and, eq, isNull } from 'drizzle-orm';
 import {
   documentFields,
@@ -6,6 +7,7 @@ import {
   validationResults,
 } from './schema/document-details';
 import { documents, sourceFiles } from './schema/documents';
+import { pipelineEvents } from './schema/pipeline-events';
 import { organizations } from './schema/tenancy';
 import { markIfSemanticDuplicate } from './semantic-dedupe';
 import type { TenantTx } from './tenant';
@@ -129,10 +131,26 @@ export async function saveDocumentReading(tx: TenantTx, write: ReadingWrite): Pr
       cacheReadTokens: run.cacheReadTokens,
       cacheWriteTokens: run.cacheWriteTokens,
       latencyMs: run.latencyMs,
+      costUsd: llmCostUsd(run.model, run),
     })
     .returning({ id: extractionRuns.id });
   if (!inserted) throw new Error('extraction run insert returned no row');
   const runId = inserted.id;
+  const precheck = write.validations.find((check) => check.ruleId === 'PRECHECK_SKIPPED');
+  await tx.insert(pipelineEvents).values({
+    orgId,
+    documentId,
+    kind: 'read',
+    code: write.status,
+    detail: typeof precheck?.params.reason === 'string' ? precheck.params.reason : null,
+    extractionRunId: runId,
+    method: run.method ?? 'llm',
+    model: run.model,
+    promptVersion: run.promptVersion,
+    attempt: run.attempt,
+    blocking: write.validations.filter((c) => c.severity === 'blocking').map((c) => c.ruleId),
+    warnings: write.validations.filter((c) => c.severity === 'warning').map((c) => c.ruleId),
+  });
 
   await tx
     .update(documents)
@@ -221,16 +239,31 @@ export async function recordFailedRead(
     final: boolean;
   },
 ): Promise<void> {
-  await tx.insert(extractionRuns).values({
+  const [run] = await tx
+    .insert(extractionRuns)
+    .values({
+      orgId: failure.orgId,
+      documentId: failure.documentId,
+      stage: 'extract',
+      method: 'llm',
+      ok: false,
+      model: failure.model,
+      promptVersion: failure.promptVersion,
+      attempt: failure.attempt,
+      error: failure.error,
+    })
+    .returning({ id: extractionRuns.id });
+  await tx.insert(pipelineEvents).values({
     orgId: failure.orgId,
     documentId: failure.documentId,
-    stage: 'extract',
+    kind: 'read_failed',
+    code: failure.error.slice(0, 64),
+    detail: failure.final ? 'final' : 'retry',
+    extractionRunId: run?.id ?? null,
     method: 'llm',
-    ok: false,
     model: failure.model,
     promptVersion: failure.promptVersion,
     attempt: failure.attempt,
-    error: failure.error,
   });
   if (failure.final) {
     await tx

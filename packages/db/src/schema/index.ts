@@ -9,6 +9,7 @@ export * from './imports';
 export * from './ledgers';
 export * from './obligations';
 export * from './partners';
+export * from './pipeline-events';
 export * from './platform';
 export * from './reserve';
 export * from './tenancy';

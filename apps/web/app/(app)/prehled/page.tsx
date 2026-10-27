@@ -27,37 +27,47 @@ export default async function OverviewPage() {
   const asOf = pragueToday({ now: () => Date.now() });
   const ctx = await getOrgContext();
   const orgId = ctx?.active?.orgId;
-  const view =
-    orgId === undefined
-      ? buildOverviewView({ profile: null, documents: [], asOf, rules: createCzRules() })
-      : await loadOverview(orgId, asOf);
-  let views: VatCardView[] = [];
-  if (orgId !== undefined) {
+  const role = ctx?.active?.role;
+  const lastYear = Number(asOf.slice(0, 4)) - 1;
+
+  // The four loads are independent: run them at the same time. Each one handles its own failure.
+  async function loadVatViews(org: string): Promise<VatCardView[]> {
     try {
       const supabase = await createSupabaseServerClient();
-      const inputs = await loadPeriodCardInputs(supabase, orgId, Number(asOf.slice(0, 4)), asOf);
-      views = inputs === null ? [] : groupCards(buildPeriodCards(inputs)).map(vatCardView);
+      const inputs = await loadPeriodCardInputs(supabase, org, Number(asOf.slice(0, 4)), asOf);
+      return inputs === null ? [] : groupCards(buildPeriodCards(inputs)).map(vatCardView);
     } catch {
-      views = [];
+      return [];
     }
   }
-  const role = ctx?.active?.role;
+  async function loadPreviewOrNull(org: string, r: NonNullable<typeof role>) {
+    try {
+      return await loadPodkladyPreview(org, lastYear, r);
+    } catch {
+      return null;
+    }
+  }
+  async function loadReserveOrNull(org: string): Promise<{ main: string; badge: string } | null> {
+    try {
+      return reserveText(await loadTaxReserve(org));
+    } catch {
+      return null;
+    }
+  }
+
+  const [view, views, preview, reserve] = await Promise.all([
+    orgId === undefined
+      ? buildOverviewView({ profile: null, documents: [], asOf, rules: createCzRules() })
+      : loadOverview(orgId, asOf),
+    orgId === undefined ? Promise.resolve<VatCardView[]>([]) : loadVatViews(orgId),
+    orgId === undefined || role === undefined
+      ? Promise.resolve<PodkladyPreviewView | null>(null)
+      : loadPreviewOrNull(orgId, role),
+    orgId === undefined || role === undefined
+      ? Promise.resolve<{ main: string; badge: string } | null>(null)
+      : loadReserveOrNull(orgId),
+  ]);
   const canWrite = role !== undefined && FILING_WRITE_ROLES.includes(role);
-  const lastYear = Number(asOf.slice(0, 4)) - 1;
-  let preview: PodkladyPreviewView | null = null;
-  let reserve: { main: string; badge: string } | null = null;
-  if (orgId !== undefined && role !== undefined) {
-    try {
-      preview = await loadPodkladyPreview(orgId, lastYear, role);
-    } catch {
-      preview = null;
-    }
-    try {
-      reserve = reserveText(await loadTaxReserve(orgId));
-    } catch {
-      reserve = null;
-    }
-  }
   const showCard = preview !== null && shouldShowPodkladyCard(asOf, lastYear, !preview.empty).show;
   const canWritePodklady = role !== undefined && PODKLADY_WRITE_ROLES.includes(role);
   const tax = (

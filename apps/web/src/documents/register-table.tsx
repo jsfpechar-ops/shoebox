@@ -44,7 +44,7 @@ export function RegisterTable({ rows }: { rows: readonly RegisterRow[] }) {
             <TableRow key={row.id}>
               <TableCell>{row.date ? <LegalDateText date={row.date} /> : DASH}</TableCell>
               <TableCell>
-                <Link href={`/inbox/${row.id}`} className="underline">
+                <Link prefetch={false} href={`/inbox/${row.id}`} className="underline">
                   {row.partner ?? t('inbox.row.unknown_supplier')}
                 </Link>
               </TableCell>
