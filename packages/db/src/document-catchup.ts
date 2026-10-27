@@ -30,9 +30,7 @@ export async function listDocumentsToCategorize(
           tx
             .select({ one: sql`1` })
             .from(documentLines)
-            .where(
-              and(eq(documentLines.orgId, orgId), eq(documentLines.documentId, documents.id)),
-            ),
+            .where(and(eq(documentLines.orgId, orgId), eq(documentLines.documentId, documents.id))),
         ),
       ),
     )

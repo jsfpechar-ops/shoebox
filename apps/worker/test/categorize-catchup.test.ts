@@ -19,7 +19,11 @@ describe('doc.categorize.catchup', () => {
         enqueued.push({ name: def.name, payload });
         return enqueued.length === 2 ? null : `job-${enqueued.length}`;
       },
-      logger: { info: (obj) => logs.push(obj) },
+      logger: {
+        info: (obj: unknown) => {
+          logs.push(obj);
+        },
+      },
       now: () => 1_700_000_000_000,
       list: async (_tx, orgId) =>
         orgId === ORG_A
@@ -33,11 +37,23 @@ describe('doc.categorize.catchup', () => {
     expect(enqueued).toEqual([
       {
         name: 'doc.categorize',
-        payload: { orgId: ORG_A, documentId: D1, revision: 1, trigger: 'pipeline', nonce: 1_700_000_000_000 },
+        payload: {
+          orgId: ORG_A,
+          documentId: D1,
+          revision: 1,
+          trigger: 'pipeline',
+          nonce: 1_700_000_000_000,
+        },
       },
       {
         name: 'doc.categorize',
-        payload: { orgId: ORG_A, documentId: D2, revision: 2, trigger: 'pipeline', nonce: 1_700_000_000_000 },
+        payload: {
+          orgId: ORG_A,
+          documentId: D2,
+          revision: 2,
+          trigger: 'pipeline',
+          nonce: 1_700_000_000_000,
+        },
       },
     ]);
     expect(logs).toEqual([{ event: 'doc.categorize.catchup.done', orgs: 2, enqueued: 1 }]);
