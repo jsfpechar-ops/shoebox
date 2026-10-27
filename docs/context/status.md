@@ -4,14 +4,14 @@ Updated: 2026-10-27.
 
 ## Now
 
-- 0610–0614 (owner real-data test): rounding ≤1 Kč is an info note + `documents.rounding`; misread IČO fixed from ARES by name; no-buyer not flagged; review page = questions + "Looks right, confirm"; accountant ZIP never empty, Status column, NEEDS-REVIEW_ prefix, README; paid without chores.
+- 0610–0614 (real-data test): rounding ≤1 Kč = info note; IČO fix from ARES; one-tap review + confirm; ZIP never empty, Status column, README; paid without chores.
 - 0600, 0604–0606: Overview waiting / auto-read % / bills to pay; trust marks; one-tap total; PDF highlight.
 - Accountant review (0601–0603): podklady whole Kč + FX, §75 share, §92a in DPHDP3/KH; [verify] list in known-issues K-C07/K-C08.
 - 0520–0522 failure analytics: `pipeline_events` log, `analytics` views + CSV export, AI cost per call.
 - 0514–0516: free pre-check before AI; bad answers fail at once. Epic CLS not built.
 - Lane B (0075–0077, 0201–0211, #3, #14, #16): ISDOC read without AI, QR/PDF text before AI, ID checks, math gate, supplier memory, registry warnings, ISDOC export, import core.
-- Page sorting (0500–0513, PR #11): each upload drop goes to `doc.split`; Haiku maps pages, rules join/split, unsure = Yes/No question (pages card + review deck); Read again, separate pages, Add a missing page, late page within 7 days asks. Not yet run on real stacks.
-- Lane D screens done (0400–0411, PRs #12–#19): Sysel name + app icon, register + Excel, trash, add by hand, review questions, accountant ZIP, settings, PDF click-to-fill, audit_log on fixes, nightly encrypted backup (owner adds 4 secrets). Not yet seen in a browser with real data.
+- Page sorting (0500–0513, #11): Haiku maps pages, rules join/split, unsure = Yes/No question; not yet run on real stacks.
+- Lane D screens done (0400–0411, #12–#19): register, trash, add by hand, review deck, accountant ZIP, settings, PDF click-to-fill, audit, nightly backup.
 - Lane A intake (2026-10-26): duplicates, photos, e-mail inbox (0100–0106, live after `deploy/inbound-email.md`). Bank import 0107–0114: GPC/CAMT.053/MT940 parsers, money tables 0020, `bank.import.statement`, statements dropped in the Inbox upload, Settings bank card. Matching briefs 0115+ next.
 - Lane C done (0301–0367): ledgers, VAT returns, podklady, tax reserve; XSDs vendored (#37).
 
