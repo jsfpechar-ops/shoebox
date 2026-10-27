@@ -51,6 +51,7 @@ function fakeStore(doc: Partial<DocumentForRead>) {
       id: DOC,
       orgId: ORG,
       status: 'received',
+      revision: 1,
       storagePath: `org/${ORG}/files/x`,
       mimeType: 'application/pdf',
       orgIco: null,
