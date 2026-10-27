@@ -1,7 +1,9 @@
-import { llmCostUsd } from '@shoebox/domain';
+import { llmCostUsd, Money } from '@shoebox/domain';
 import { and, eq, isNull } from 'drizzle-orm';
+import { linesOfReading } from './document-lines-of-reading';
 import {
   documentFields,
+  documentLines,
   documentVatSummary,
   extractionRuns,
   validationResults,
@@ -168,6 +170,70 @@ export async function saveDocumentReading(tx: TenantTx, write: ReadingWrite): Pr
     await tx
       .insert(documentVatSummary)
       .values(write.vatSummary.map((row) => ({ orgId, documentId, ...row })));
+  }
+
+  // Lines (M02 §6 step 5): replace, carrying what the user classified by hand where (position, gross) match.
+  const [stored] = await tx
+    .select({ rounding: documents.rounding })
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.orgId, orgId)))
+    .limit(1);
+  const currency = write.patch.currency;
+  const nextLines = linesOfReading({
+    currency,
+    vatSummary: write.vatSummary,
+    totalNet: write.patch.totalNet,
+    totalVat: write.patch.totalVat,
+    totalGross: write.patch.totalGross,
+    rounding: stored?.rounding ?? '0',
+  });
+  const oldLines = await tx
+    .select({
+      position: documentLines.position,
+      gross: documentLines.gross,
+      categoryCode: documentLines.categoryCode,
+      vatTreatment: documentLines.vatTreatment,
+      businessSharePct: documentLines.businessSharePct,
+      deductibility: documentLines.deductibility,
+      classificationSource: documentLines.classificationSource,
+    })
+    .from(documentLines)
+    .where(and(eq(documentLines.orgId, orgId), eq(documentLines.documentId, documentId)));
+  await tx
+    .delete(documentLines)
+    .where(and(eq(documentLines.orgId, orgId), eq(documentLines.documentId, documentId)));
+  if (nextLines.length > 0) {
+    await tx.insert(documentLines).values(
+      nextLines.map((line) => {
+        const kept = oldLines.find(
+          (old) =>
+            old.position === line.position &&
+            old.classificationSource === 'user' &&
+            old.gross !== null &&
+            Money.parse(old.gross, currency).compare(Money.parse(line.gross, currency)) === 0,
+        );
+        return {
+          orgId,
+          documentId,
+          position: line.position,
+          lineType: line.lineType,
+          net: line.net,
+          vat: line.vat,
+          gross: line.gross,
+          vatRateType: line.vatRateType,
+          vatRatePct: line.vatRatePct,
+          ...(kept === undefined
+            ? {}
+            : {
+                categoryCode: kept.categoryCode,
+                vatTreatment: kept.vatTreatment,
+                businessSharePct: kept.businessSharePct,
+                deductibility: kept.deductibility,
+                classificationSource: kept.classificationSource,
+              }),
+        };
+      }),
+    );
   }
 
   await tx
