@@ -1,5 +1,5 @@
 import { isValidIco } from './ico';
-import type { AresAddress, AresClient, AresSubject, RegistryResult } from './types';
+import type { AresAddress, AresClient, AresNameHit, AresSubject, RegistryResult } from './types';
 
 export const ARES_BASE_URL = 'https://ares.gov.cz/ekonomicke-subjekty-v-be/rest';
 
@@ -71,6 +71,40 @@ export function createAresClient(options: AresClientOptions = {}): AresClient {
   const now = options.now ?? (() => new Date());
 
   return {
+    async searchByName(name: string): Promise<RegistryResult<readonly AresNameHit[]>> {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetchFn(`${baseUrl}/ekonomicke-subjekty/vyhledat`, {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ obchodniJmeno: name, pocet: 10 }),
+          signal: controller.signal,
+        });
+        if (!response.ok) return { status: 'unavailable', reason: 'http_error' };
+        const body: unknown = await response.json();
+        const list = (body as { ekonomickeSubjekty?: unknown } | null)?.ekonomickeSubjekty;
+        if (!Array.isArray(list)) return { status: 'unavailable', reason: 'http_error' };
+        const hits: AresNameHit[] = [];
+        for (const item of list) {
+          if (isRawSubject(item)) {
+            const dic = (item as { dic?: unknown }).dic;
+            hits.push({
+              ico: item.ico,
+              name: item.obchodniJmeno.trim().replace(/ +/g, ' '),
+              dic: typeof dic === 'string' ? dic : null,
+            });
+          }
+        }
+        return { status: 'ok', data: hits, fetchedAt: now().toISOString() };
+      } catch {
+        if (controller.signal.aborted) return { status: 'unavailable', reason: 'timeout' };
+        return { status: 'unavailable', reason: 'http_error' };
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+
     async subject(ico: string): Promise<RegistryResult<AresSubject>> {
       if (!isValidIco(ico)) return { status: 'not_found', fetchedAt: now().toISOString() };
 

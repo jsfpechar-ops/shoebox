@@ -103,6 +103,9 @@ export function createFakeRegistries(
         const subject = recordings.ares?.[ico];
         return subject ? ok(subject) : notFound();
       },
+      searchByName() {
+        return ok([]);
+      },
     },
     crpdph: {
       status(dics: readonly string[]) {

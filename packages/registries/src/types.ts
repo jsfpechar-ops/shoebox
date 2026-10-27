@@ -64,6 +64,14 @@ export interface AresSubject {
 export interface AresClient {
   /** HTTP 404 → `not_found`. */
   subject(ico: string): Promise<RegistryResult<AresSubject>>;
+  /** Name search (POST /vyhledat, up to 10 hits); ico, name and DIČ only. */
+  searchByName(name: string): Promise<RegistryResult<readonly AresNameHit[]>>;
+}
+
+export interface AresNameHit {
+  readonly ico: string;
+  readonly name: string;
+  readonly dic: string | null;
 }
 
 // CRPDPH (SOAP, `getStatusNespolehlivySubjektRozsirenyV2`)

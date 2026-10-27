@@ -31,6 +31,15 @@ function byId(
   return results.filter((result) => result.id === id);
 }
 
+describe('icoChecksumValid (real cases)', () => {
+  it('accepts Makro and rejects its misread', () => {
+    expect(icoChecksumValid('26450691')).toBe(true);
+    expect(icoChecksumValid('26465681')).toBe(false);
+    expect(icoChecksumValid('62904965')).toBe(true);
+    expect(icoChecksumValid('24771902')).toBe(true);
+  });
+});
+
 describe('icoChecksumValid', () => {
   it('accepts valid check digits, including the remainder 0 and 1 cases', () => {
     expect(icoChecksumValid('25596641')).toBe(true);
@@ -65,9 +74,9 @@ describe('runProtoChecks', () => {
     });
   });
 
-  it('warns within the 1.00 rounding tolerance and fails beyond it', () => {
+  it('notes rounding within the 1.00 tolerance and fails beyond it', () => {
     const warn = runProtoChecks(input({ totals: { gross: '12961.00' } }), { today: TODAY });
-    expect(byId(warn, 'vat_sum')[0]).toMatchObject({ severity: 'warn', params: { diff: '0.16' } });
+    expect(byId(warn, 'vat_sum')[0]).toMatchObject({ severity: 'info', params: { diff: '0.16' } });
     const fail = runProtoChecks(input({ totals: { gross: '13000.00' } }), { today: TODAY });
     expect(byId(fail, 'vat_sum')[0]).toMatchObject({ severity: 'fail', params: { diff: '39.16' } });
   });

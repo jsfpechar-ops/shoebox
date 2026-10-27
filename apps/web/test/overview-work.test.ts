@@ -11,6 +11,8 @@ function row(over: Partial<WorkRow>): WorkRow {
     direction: 'in',
     dueDate: parseLegalDate('2026-11-01'),
     paidAt: null,
+    paidPerDocument: false,
+    paymentMethod: null,
     totalGross: '100.00',
     currency: 'CZK',
     documentNumber: null,
@@ -55,8 +57,27 @@ describe('computeWorkSummary', () => {
 });
 
 describe('computeBillsToPay', () => {
+  it('counts but does not list bills due more than 14 days ago, and skips card or per-document paid', () => {
+    const r = computeBillsToPay(
+      [
+        row({ id: 'old', dueDate: parseLegalDate('2026-10-01') }),
+        row({ id: 'edge', dueDate: parseLegalDate('2026-10-12') }),
+        row({ id: 'card', paymentMethod: 'card' }),
+        row({ id: 'recv', paidPerDocument: true }),
+      ],
+      asOf,
+    );
+    expect(r.items.map((i) => i.id)).toEqual(['edge']);
+    expect(r.olderCount).toBe(1);
+  });
+
   it('is empty for no rows', () => {
-    expect(computeBillsToPay([], asOf)).toEqual({ items: [], count: 0, totalCzk: null });
+    expect(computeBillsToPay([], asOf)).toEqual({
+      items: [],
+      count: 0,
+      totalCzk: null,
+      olderCount: 0,
+    });
   });
 
   it('keeps only unpaid received bills with a due date in ready or needs_review', () => {

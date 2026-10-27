@@ -123,6 +123,51 @@ function repairSupplierIco(
   };
 }
 
+function normName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[,.]+$/, '')
+    .trim();
+}
+
+/** A supplier IČO failing its check digit, replaced by the one ARES subject whose name equals the read name. Never throws. */
+async function repairIcoFromAres(
+  x: ProtoExtraction,
+  registries: RegistryDeps,
+): Promise<IcoRepair | null> {
+  const ico = x.supplier.ico;
+  const name = x.supplier.name;
+  if (!ico || icoChecksumValid(ico) || !name || registries.ares === undefined) {
+    return null;
+  }
+  try {
+    const found = await registries.ares.searchByName(name);
+    if (found.status !== 'ok') {
+      return null;
+    }
+    const wanted = normName(name);
+    const hits = found.data.filter((h) => normName(h.name) === wanted);
+    const to = hits[0]?.ico;
+    if (hits.length !== 1 || to === undefined || !icoChecksumValid(to)) {
+      return null;
+    }
+    const dicDerived = x.supplier.dic === `CZ${ico}`;
+    return {
+      extraction: {
+        ...x,
+        supplier: { ...x.supplier, ico: to, ...(dicDerived ? { dic: `CZ${to}` } : {}) },
+      },
+      from: ico,
+      to,
+      fieldKeys: dicDerived ? ['supplier.ico', 'supplier.dic'] : ['supplier.ico'],
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Media types stored for .isdoc/.xml and .isdocx uploads: only their ISDOC data can be read. */
 const ISDOC_ONLY_TYPES: readonly string[] = ['application/xml', 'application/x-isdocx'];
 
@@ -236,19 +281,24 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
     }
 
     const read: { extraction: ProtoExtraction | null } = { extraction: null };
-    const toWrite = (
+    const toWrite = async (
       reading: ProtoExtraction,
       source: 'llm' | 'isdoc',
       runRow: ReadingWrite['run'],
-    ): ReadingWrite => {
+    ): Promise<ReadingWrite> => {
       const exact = applyExactData(
         reading,
         scan,
         { ico: doc.orgIco, dic: doc.orgDic },
         { keepIdentifiers: source === 'isdoc' },
       );
-      const repair =
+      const memoryRepair =
         source === 'isdoc' ? null : repairSupplierIco(exact.extraction, known, doc.orgIco);
+      const aresRepair =
+        source === 'isdoc' || memoryRepair !== null
+          ? null
+          : await repairIcoFromAres(exact.extraction, deps.registries ?? defaultRegistryDeps());
+      const repair = memoryRepair ?? aresRepair;
       const extraction = repair?.extraction ?? exact.extraction;
       const rates = ratesFor(
         extraction.dates.duzp ?? extraction.dates.issue_date ?? null,
@@ -271,11 +321,14 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
               {
                 ruleId: 'PROTO_ICO_REPAIRED',
                 ruleVersion: 1,
-                severity: 'warning' as const,
+                severity: aresRepair === null ? ('warning' as const) : ('info' as const),
                 params: {
                   from: repair.from,
                   to: repair.to,
-                  messageKey: 'proto.check.ico_repaired.warn',
+                  messageKey:
+                    aresRepair === null
+                      ? 'proto.check.ico_repaired.warn'
+                      : 'proto.check.ico_repaired_ares.info',
                 },
               },
             ]),
@@ -309,7 +362,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
       parts === null && (mediaType === 'application/pdf' || isdocOnly) ? isdocOf(bytes) : null;
     if (isdoc !== null) {
       try {
-        write = toWrite(isdoc.extraction, 'isdoc', {
+        write = await toWrite(isdoc.extraction, 'isdoc', {
           method: 'isdoc',
           model: null,
           promptVersion: ISDOC_READER_VERSION,
@@ -368,7 +421,7 @@ export function createDocExtractHandler(deps: DocExtractDeps): TenantHandler<Doc
         return;
       }
       try {
-        write = toWrite(parseProtoExtraction(response.json), 'llm', {
+        write = await toWrite(parseProtoExtraction(response.json), 'llm', {
           model: response.model,
           promptVersion: PROTO_PROMPT_VERSION,
           attempt: ctx.attempt,

@@ -530,4 +530,81 @@ describe('doc.extract handler', () => {
     expect(llm.requests).toHaveLength(1);
     expect(saved[0]?.run.method).not.toBe('rule');
   });
+
+  describe('supplier IČO correction from ARES', () => {
+    const makro = (name = 'Makro Cash & Carry ČR s.r.o.') =>
+      wire({
+        supplier: { name, ico: '26465681', dic: 'CZ26465681', vat_id: '', country: 'CZ' },
+      });
+    const aresWith = (
+      hits: { ico: string; name: string; dic: string | null }[],
+      calls: string[] = [],
+    ): RegistryDeps => ({
+      ...offline,
+      ares: {
+        searchByName: async (n) => {
+          calls.push(n);
+          return { status: 'ok', data: hits, fetchedAt: '2026-10-27T00:00:00.000Z' };
+        },
+      },
+    });
+    const run = async (registries: RegistryDeps, reading: Record<string, unknown>) => {
+      const { store, saved } = fakeStore();
+      await createDocExtractHandler({
+        registries,
+        llm: llmReturning(reading),
+        blobs,
+        model: 'm',
+        clock,
+        store,
+      })({ orgId: ORG, documentId: DOC }, ctx());
+      return saved[0];
+    };
+
+    it('replaces a misread IČO (and its derived DIČ) when exactly one name matches', async () => {
+      const calls: string[] = [];
+      const saved = await run(
+        aresWith(
+          [
+            { ico: '26450691', name: 'MAKRO  Cash & Carry ČR s.r.o.', dic: 'CZ26450691' },
+            { ico: '11111111', name: 'Makro Cash & Carry ČR a.s.', dic: null },
+          ],
+          calls,
+        ),
+        makro('Makro Cash & Carry ČR s.r.o.,'),
+      );
+      expect(calls).toHaveLength(1);
+      expect(saved?.patch).toMatchObject({ partnerSnapshot: { ico: '26450691' } });
+      expect(saved?.validations).toContainEqual({
+        ruleId: 'PROTO_ICO_REPAIRED',
+        ruleVersion: 1,
+        severity: 'info',
+        params: {
+          from: '26465681',
+          to: '26450691',
+          messageKey: 'proto.check.ico_repaired_ares.info',
+        },
+      });
+    });
+
+    it('keeps the read IČO when two names match, the hit is invalid, or ARES is down', async () => {
+      const dup = [
+        { ico: '26450691', name: 'Makro Cash & Carry ČR s.r.o.', dic: null },
+        { ico: '62904965', name: 'makro cash & carry čr s.r.o.', dic: null },
+      ];
+      for (const registries of [
+        aresWith(dup),
+        aresWith([{ ico: '26465682', name: 'Makro Cash & Carry ČR s.r.o.', dic: null }]),
+        offline,
+      ]) {
+        const saved = await run(registries, makro());
+        expect(saved?.patch).toMatchObject({ partnerSnapshot: { ico: '26465681' } });
+        expect(
+          saved?.validations.some(
+            (v) => v.params.messageKey === 'proto.check.ico_repaired_ares.info',
+          ),
+        ).toBe(false);
+      }
+    });
+  });
 });

@@ -1,3 +1,4 @@
+import { pragueToday } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
 import {
   LegalDateText,
@@ -10,17 +11,12 @@ import {
   TableRow,
 } from '@shoebox/ui';
 import Link from 'next/link';
-import type { RegisterRow } from './register-data';
+import { paidLabelOf, type RegisterRow } from './register-data';
 
 const DASH = '—';
 
-function paidLabel(row: RegisterRow): string {
-  if (row.paid === 'paid') return t('register.paid.yes');
-  if (row.paid === 'unpaid') return t('register.paid.no');
-  return t('register.paid.none');
-}
-
 export function RegisterTable({ rows }: { rows: readonly RegisterRow[] }) {
+  const today = pragueToday({ now: () => Date.now() });
   return (
     <div className="overflow-x-auto rounded-control border border-border bg-card">
       <Table aria-label={t('register.table.label')}>
@@ -60,7 +56,7 @@ export function RegisterTable({ rows }: { rows: readonly RegisterRow[] }) {
                 {row.vat !== null ? <MoneyText value={row.vat} currency={row.currency} /> : DASH}
               </TableCell>
               <TableCell>
-                {paidLabel(row)}
+                {paidLabelOf(row, today)}
                 {row.paidAt ? (
                   <>
                     {' · '}

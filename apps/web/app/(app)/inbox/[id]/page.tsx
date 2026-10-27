@@ -11,6 +11,8 @@ import { supabaseDuplicateStore } from '../../../../src/documents/duplicate';
 import { DuplicateNotice } from '../../../../src/documents/duplicate-notice';
 import { FixField } from '../../../../src/documents/fix-field';
 import { PROCESSING_STATUSES } from '../../../../src/documents/inbox-data';
+import { splitChecks } from '../../../../src/documents/issue-questions';
+import { IssuesCard } from '../../../../src/documents/issues-card';
 import { PagesCard } from '../../../../src/documents/pages-card';
 import { loadJoinCandidates, loadPagesView } from '../../../../src/documents/pages-data';
 import { loadPaymentView, supabasePaymentStore } from '../../../../src/documents/payment';
@@ -79,6 +81,9 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
       ? await loadPaymentView(supabasePaymentStore(supabase, auth.orgId), detail.id)
       : null;
   const canAct = auth.ok && (auth.role === 'owner' || auth.role === 'member');
+  const asking = canAct && detail.status === 'needs_review';
+  const { questions, notes } = splitChecks(detail.checks);
+  const shownChecks = (asking ? notes : detail.checks).filter((check) => check.severity !== 'info');
 
   return (
     <div className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start">
@@ -166,11 +171,28 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             </dl>
           </Card>
 
-          {detail.checks.length > 0 ? (
+          {asking ? <IssuesCard documentId={detail.id} questions={questions} /> : null}
+          {detail.checks.some((check) => check.severity === 'info') ? (
+            <ul className="flex flex-col gap-1">
+              {detail.checks
+                .filter((check) => check.severity === 'info')
+                .map((check) => (
+                  <li
+                    key={`${check.key}-${JSON.stringify(check.params)}`}
+                    className="text-meta text-muted-foreground"
+                  >
+                    {t(check.key, check.params)}
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+          {shownChecks.length > 0 ? (
             <Card className="flex flex-col gap-4 p-6">
-              <h2 className="text-card-title">{t('doc.detail.attention_title')}</h2>
+              <h2 className="text-card-title">
+                {t(asking ? 'doc.issue.warnings_title' : 'doc.detail.attention_title')}
+              </h2>
               <ul className="flex flex-col gap-3">
-                {detail.checks.map((check) => (
+                {shownChecks.map((check) => (
                   <li
                     key={`${check.key}-${JSON.stringify(check.params)}`}
                     className="flex flex-wrap items-center gap-2 text-body"
@@ -183,7 +205,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
                 ))}
               </ul>
             </Card>
-          ) : (
+          ) : asking ? null : (
             <p className="text-body">{t('doc.detail.all_good')}</p>
           )}
           {auth.ok && (auth.role === 'owner' || auth.role === 'member') ? (

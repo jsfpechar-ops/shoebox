@@ -89,6 +89,46 @@ export function periodOptions(today: LegalDate): ExportPeriod[] {
   return [...months, ...quarters, yearPeriod(year), yearPeriod(year - 1)];
 }
 
+export interface PeriodChoice extends ExportPeriod {
+  readonly count: number;
+}
+
+function inPeriod(date: string, period: ExportPeriod): boolean {
+  return date >= period.from && date <= period.to;
+}
+
+/** Every standard option plus every month, quarter and year holding a document; months first, then quarters, then years, newest first, each with its document count. */
+export function periodChoices(today: LegalDate, dates: readonly string[]): PeriodChoice[] {
+  const byKey = new Map<string, ExportPeriod>();
+  for (const option of periodOptions(today)) byKey.set(option.key, option);
+  for (const date of dates) {
+    const year = Number(date.slice(0, 4));
+    const month = Number(date.slice(5, 7));
+    if (!(year >= 1900 && year <= 2200 && month >= 1 && month <= 12)) continue;
+    for (const p of [
+      monthPeriod(year, month),
+      quarterPeriod(year, Math.floor((month - 1) / 3) + 1),
+      yearPeriod(year),
+    ]) {
+      byKey.set(p.key, p);
+    }
+  }
+  const rank = (key: string): number => (key.includes('Q') ? 1 : key.length === 4 ? 2 : 0);
+  return [...byKey.values()]
+    .map((p) => ({ ...p, count: dates.filter((d) => inPeriod(d, p)).length }))
+    .sort((a, b) => rank(a.key) - rank(b.key) || (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
+}
+
+/** The newest month that has a document and is not in the future; else the month before today. */
+export function defaultPeriodKey(today: LegalDate, dates: readonly string[]): string {
+  const current = today.slice(0, 7);
+  const months = dates
+    .map((d) => d.slice(0, 7))
+    .filter((m) => /^\d{4}-\d{2}$/.test(m) && m <= current)
+    .sort();
+  return months.length > 0 ? (months[months.length - 1] as string) : parsePeriod(null, today).key;
+}
+
 function cleanPart(value: string | null): string {
   return [...(value ?? '').trim()]
     .map((ch) => (UNSAFE_CHARS.includes(ch) || ch.charCodeAt(0) < 32 ? '_' : ch))
@@ -109,12 +149,14 @@ export function exportEntryName(
   fileName: string | null,
   mime: string,
   used: Set<string>,
+  needsReview = false,
 ): string {
   const folder = row.date === null ? 'undated' : row.date.slice(0, 7);
-  const base =
+  const label =
     [row.date ?? '', cleanPart(row.partner), cleanPart(row.number)]
       .filter((part) => part !== '')
       .join(' ') || 'document';
+  const base = (needsReview ? 'NEEDS-REVIEW_' : '') + label;
   const ext = extensionOf(fileName, mime);
   let name = `${folder}/${base}.${ext}`;
   for (let n = 2; used.has(name); n++) {

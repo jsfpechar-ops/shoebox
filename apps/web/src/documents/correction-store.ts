@@ -117,9 +117,12 @@ export async function applyCorrection(
           },
         }
       : { [spec.column]: input.value };
+    const documentPatch = spec.column.startsWith('partner_snapshot.')
+      ? patch
+      : { ...patch, rounding: plan.rounding };
     const w4 = await supabase
       .from('documents')
-      .update(patch)
+      .update(documentPatch)
       .eq('id', input.documentId)
       .eq('org_id', input.orgId);
     if (w4.error) return { ok: false, error: SAVE_ERROR };

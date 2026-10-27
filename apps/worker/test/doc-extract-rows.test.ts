@@ -52,6 +52,20 @@ function check(id: string, severity: 'pass' | 'warn' | 'fail'): ProtoCheckResult
 }
 
 describe('documentPatchOf', () => {
+  it('stores the rounding within 1 Kč and 0.00 beyond it', () => {
+    const totals = (net: string, vat: string, gross: string) => ({
+      ...reading().totals,
+      net,
+      vat,
+      gross,
+    });
+    expect(
+      documentPatchOf(reading({ totals: totals('13654.88', '2867.52', '16522.00') })).rounding,
+    ).toBe('-0.40');
+    expect(
+      documentPatchOf(reading({ totals: totals('1000.00', '210.00', '1212.00') })).rounding,
+    ).toBe('0.00');
+  });
   it('maps a full invoice', () => {
     const patch = documentPatchOf(reading());
     expect(patch).toEqual({
@@ -76,10 +90,30 @@ describe('documentPatchOf', () => {
       totalNet: '1000',
       totalVat: '210',
       totalGross: '1210',
+      rounding: '0.00',
       paymentMethod: 'bank_transfer',
       payToAccount: { account: '123456789', bank_code: '0100', iban: null },
       isPaidPerDocument: null,
     });
+  });
+
+  it('marks card, cash and receipts as paid per document, transfers not', () => {
+    const pay = (method: 'card' | 'cash' | 'bank_transfer') => ({
+      account_number: null,
+      bank_code: null,
+      iban: null,
+      method,
+    });
+    expect(documentPatchOf(reading({ payment: pay('card') })).isPaidPerDocument).toBe(true);
+    expect(documentPatchOf(reading({ payment: pay('cash') })).isPaidPerDocument).toBe(true);
+    expect(
+      documentPatchOf(reading({ payment: pay('bank_transfer') })).isPaidPerDocument,
+    ).toBeNull();
+    expect(
+      documentPatchOf(
+        reading({ document_class: 'received_receipt', payment: pay('bank_transfer') }),
+      ).isPaidPerDocument,
+    ).toBe(true);
   });
 
   it('maps unreadable to unknown, cash on delivery to cod, defaults the currency', () => {
