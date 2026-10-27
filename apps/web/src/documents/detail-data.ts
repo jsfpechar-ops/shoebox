@@ -12,6 +12,10 @@ export interface DetailField {
   readonly trust: Trust;
 }
 export interface DetailCheck {
+  /** The `validation_results` row id; null when the row came without one. */
+  readonly id: string | null;
+  /** The raw `field` param of the check (before it is translated), if any. */
+  readonly fieldName: string | null;
   readonly severity: 'blocking' | 'warning';
   readonly key: MessageKey;
   readonly params: Record<string, string | number>;
@@ -151,10 +155,13 @@ export function detailOf(
       if (typeof value === 'string' || typeof value === 'number') params[name] = value;
     }
     const field = params.field;
+    const fieldName = typeof field === 'string' ? field : null;
     if (typeof field === 'string' && isKey(`proto.field.${field}`)) {
       params.field = t(`proto.field.${field}` as MessageKey);
     }
     detailChecks.push({
+      id: text(row.id),
+      fieldName,
       severity: row.severity === 'blocking' ? 'blocking' : 'warning',
       key: messageKey,
       params,
@@ -214,7 +221,7 @@ export async function loadDocumentDetail(
         .order('vat_rate_pct', { ascending: false }),
       supabase
         .from('validation_results')
-        .select('rule_id, severity, params')
+        .select('id, rule_id, severity, params')
         .eq('document_id', id)
         .eq('state', 'open'),
       supabase
