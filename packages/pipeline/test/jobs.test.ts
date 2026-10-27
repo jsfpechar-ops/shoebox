@@ -37,8 +37,8 @@ const ORG = 'aaaaaaaa-0000-4000-8000-000000000001';
 const DOC = 'bbbbbbbb-0000-4000-8000-000000000002';
 
 describe('job names (03 §3.1)', () => {
-  it('lists the 40 concrete job names, unique and `<domain>.<action>`', () => {
-    expect(JOB_NAMES).toHaveLength(40);
+  it('lists the 41 concrete job names, unique and `<domain>.<action>`', () => {
+    expect(JOB_NAMES).toHaveLength(41);
     expect(new Set(JOB_NAMES).size).toBe(JOB_NAMES.length);
     for (const name of JOB_NAMES) {
       expect(name).toMatch(/^[a-z]+(\.[a-z_]+)+$/);

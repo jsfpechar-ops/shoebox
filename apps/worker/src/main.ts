@@ -3,6 +3,7 @@ import { logger } from '@shoebox/platform';
 import { registerBankImport } from './bank-import/register';
 import { registerBankMatch } from './bank-match/register';
 import { registerBankRadar } from './bank-radar/register';
+import { registerCategorizeCatchup } from './categorize/catchup';
 import { registerDocCategorize } from './categorize/register';
 import { registerDocExtract } from './doc-extract/register';
 import { registerDocSplit } from './doc-split/register';
@@ -29,6 +30,7 @@ const worker = await startWorker(loadWorkerConfig(process.env), {
     registerTrashPurge(registry, db, process.env, logger);
     registerDriftMonitors(registry, process.env, logger);
     registerLedgerJobs(registry, db, logger);
+    registerCategorizeCatchup(registry, db, logger);
     registerPodkladyJobs(registry, db, process.env, logger);
     registerVatJobs(registry, process.env, logger);
   },
