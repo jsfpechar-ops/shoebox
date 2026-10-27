@@ -74,7 +74,11 @@ export interface DocExtractDeps {
   readonly clock: Clock;
   readonly store?: ReadingStore; // default dbReadingStore
   readonly enqueueMatch?: (orgId: string, documentId: string, trigger: string) => Promise<unknown>; // bank.match.document on ready (M07 §4.6.1)
-  readonly enqueueCategorize?: (orgId: string, documentId: string, revision: number) => Promise<unknown>; // doc.categorize after every saved reading (M04 §4.6)
+  readonly enqueueCategorize?: (
+    orgId: string,
+    documentId: string,
+    revision: number,
+  ) => Promise<unknown>; // doc.categorize after every saved reading (M04 §4.6)
   readonly scan?: (bytes: Uint8Array, mediaType: string) => Promise<DocumentScan>; // default scanDocument
   readonly countPages?: (bytes: Uint8Array) => Promise<number>; // default pdfPageCount
   readonly registries?: RegistryDeps; // default defaultRegistryDeps()
