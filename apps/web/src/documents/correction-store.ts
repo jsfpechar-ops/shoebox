@@ -15,7 +15,7 @@ export interface CorrectionInput {
 }
 
 export type CorrectionResult =
-  | { ok: true; status: 'ready' | 'needs_review' }
+  | { ok: true; status: 'ready' | 'needs_review'; fields: Readonly<Record<string, string>> }
   | { ok: false; error: MessageKey };
 
 const SAVE_ERROR: MessageKey = 'doc.fix.error.save';
@@ -163,7 +163,7 @@ export async function applyCorrection(
       .eq('id', input.documentId)
       .eq('org_id', input.orgId);
     if (w7.error) return { ok: false, error: SAVE_ERROR };
-    return { ok: true, status: plan.status };
+    return { ok: true, status: plan.status, fields: plan.fields };
   } catch {
     return { ok: false, error: SAVE_ERROR };
   }

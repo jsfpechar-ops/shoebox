@@ -13,6 +13,15 @@ import {
   upcomingDeadlines,
 } from '@shoebox/domain';
 import type { OverviewProfile } from './rows';
+import {
+  type BillsToPay,
+  computeBillsToPay,
+  computeWorkSummary,
+  EMPTY_BILLS,
+  EMPTY_WORK,
+  type WorkRow,
+  type WorkSummary,
+} from './work';
 
 /** Everything the Přehled screen shows, computed from the profile and this year's documents. */
 export interface OverviewView {
@@ -23,6 +32,8 @@ export interface OverviewView {
   readonly deadlines: readonly Deadline[];
   readonly nextPayment: Deadline | null;
   readonly pausal: boolean;
+  readonly work: WorkSummary;
+  readonly bills: BillsToPay;
 }
 
 /** Pure: the profile, the documents and the date in, the view out. */
@@ -30,6 +41,7 @@ export function buildOverviewView(input: {
   readonly profile: OverviewProfile | null;
   readonly documents: readonly OverviewDocument[];
   readonly ledgerEntries?: readonly LedgerTotalsEntry[];
+  readonly workRows?: readonly WorkRow[];
   readonly asOf: LegalDate;
   readonly rules: ReturnType<typeof createCzRules>;
 }): OverviewView {
@@ -54,5 +66,8 @@ export function buildOverviewView(input: {
   const pausal =
     profile !== null &&
     (profile.taxRegime === 'pausalni_vydaje' || profile.taxRegime === 'pausalni_dan');
-  return { asOf, profile, totals, meters, deadlines, nextPayment, pausal };
+  const work = input.workRows === undefined ? EMPTY_WORK : computeWorkSummary(input.workRows, asOf);
+  const bills =
+    input.workRows === undefined ? EMPTY_BILLS : computeBillsToPay(input.workRows, asOf);
+  return { asOf, profile, totals, meters, deadlines, nextPayment, pausal, work, bills };
 }

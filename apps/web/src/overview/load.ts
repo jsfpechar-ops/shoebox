@@ -14,14 +14,16 @@ import {
   toOverviewProfile,
 } from './rows';
 import { buildOverviewView, type OverviewView } from './view';
+import { toWorkRow, WORK_SELECT, type WorkRow } from './work';
 
 interface LoadedRows {
   readonly profile: OverviewProfile | null;
   readonly documents: readonly OverviewDocument[];
   readonly ledgerEntries: readonly LedgerTotalsEntry[];
+  readonly workRows: readonly WorkRow[];
 }
 
-const NO_DATA: LoadedRows = { profile: null, documents: [], ledgerEntries: [] };
+const NO_DATA: LoadedRows = { profile: null, documents: [], ledgerEntries: [], workRows: [] };
 
 /**
  * The Přehled data of one org for `asOf` (server only). Every query is org-scoped and runs under the
@@ -35,34 +37,41 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
     const supabase = await createSupabaseServerClient();
     const year = asOf.slice(0, 4);
 
-    // The four queries do not depend on each other: start them together.
-    const [profileResult, settingsResult, documentsResult, ledgerResult] = await Promise.all([
-      supabase
-        .from('taxpayer_profiles')
-        .select(PROFILE_SELECT)
-        .eq('org_id', orgId)
-        .lte('valid_from', asOf)
-        .or(`valid_to.is.null,valid_to.gte.${asOf}`)
-        .order('valid_from', { ascending: false })
-        .limit(1),
-      supabase.from('organizations').select('settings').eq('id', orgId).maybeSingle(),
-      supabase
-        .from('documents')
-        .select(DOCUMENTS_SELECT)
-        .eq('org_id', orgId)
-        .is('deleted_at', null)
-        .or(
-          `duzp.gte.${year}-01-01,issue_date.gte.${year}-01-01,received_date.gte.${year}-01-01,service_period_to.gte.${year}-01-01,and(duzp.is.null,issue_date.is.null,received_date.is.null)`,
-        )
-        .limit(5000),
-      supabase
-        .from('tax_ledger_entries')
-        .select(LEDGER_SELECT)
-        .eq('org_id', orgId)
-        .gte('entry_date', `${year}-01-01`)
-        .lte('entry_date', asOf)
-        .limit(20000),
-    ]);
+    // The five queries do not depend on each other: start them together.
+    const [profileResult, settingsResult, documentsResult, ledgerResult, workResult] =
+      await Promise.all([
+        supabase
+          .from('taxpayer_profiles')
+          .select(PROFILE_SELECT)
+          .eq('org_id', orgId)
+          .lte('valid_from', asOf)
+          .or(`valid_to.is.null,valid_to.gte.${asOf}`)
+          .order('valid_from', { ascending: false })
+          .limit(1),
+        supabase.from('organizations').select('settings').eq('id', orgId).maybeSingle(),
+        supabase
+          .from('documents')
+          .select(DOCUMENTS_SELECT)
+          .eq('org_id', orgId)
+          .is('deleted_at', null)
+          .or(
+            `duzp.gte.${year}-01-01,issue_date.gte.${year}-01-01,received_date.gte.${year}-01-01,service_period_to.gte.${year}-01-01,and(duzp.is.null,issue_date.is.null,received_date.is.null)`,
+          )
+          .limit(5000),
+        supabase
+          .from('tax_ledger_entries')
+          .select(LEDGER_SELECT)
+          .eq('org_id', orgId)
+          .gte('entry_date', `${year}-01-01`)
+          .lte('entry_date', asOf)
+          .limit(20000),
+        supabase
+          .from('documents')
+          .select(WORK_SELECT)
+          .eq('org_id', orgId)
+          .is('deleted_at', null)
+          .limit(5000),
+      ]);
 
     if (settingsResult.error === null) {
       const settings = settingsResult.data?.settings as { insurance_reminders?: unknown } | null;
@@ -92,7 +101,15 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
       }
     }
 
-    rows = { profile, documents, ledgerEntries };
+    const workRows: WorkRow[] = [];
+    if (workResult.error === null && Array.isArray(workResult.data)) {
+      for (const row of workResult.data) {
+        const workRow = toWorkRow(row);
+        if (workRow !== null) workRows.push(workRow);
+      }
+    }
+
+    rows = { profile, documents, ledgerEntries, workRows };
   } catch {
     // Any throw (no session, no PostgREST, network) is no data: the screen shows its empty state.
     rows = NO_DATA;
@@ -102,6 +119,7 @@ export async function loadOverview(orgId: string, asOf: LegalDate): Promise<Over
     profile: rows.profile,
     documents: rows.documents,
     ledgerEntries: rows.ledgerEntries,
+    workRows: rows.workRows,
     asOf,
     rules: createCzRules(),
   });

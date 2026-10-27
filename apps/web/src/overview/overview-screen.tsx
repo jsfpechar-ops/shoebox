@@ -3,9 +3,10 @@ import { t } from '@shoebox/i18n';
 import { focusRing } from '@shoebox/ui';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { formatCzkWhole, formatDue, periodLabel } from './format';
+import { formatCzkWhole, formatDue, formatMoneyText, periodLabel } from './format';
 import { HelpTip } from './help-tip';
 import { LimitMeterBar } from './limit-meter';
+import { MarkPaidButton } from './mark-paid-button';
 import type { OverviewView } from './view';
 
 const WINDOW_DAYS = 60;
@@ -164,6 +165,96 @@ function Deadlines({ view, upcoming }: { view: OverviewView; upcoming: readonly 
   );
 }
 
+function WorkCard({ view }: { view: OverviewView }) {
+  const { work } = view;
+  return (
+    <section aria-labelledby="work-title" className={card}>
+      <div className="flex items-center justify-between gap-2">
+        <h2 id="work-title" className="text-card-title">
+          {t('overview.work.title')}
+        </h2>
+        <HelpTip term={t('overview.work.title')} text={t('overview.help.work')} />
+      </div>
+      <p className="num text-kpi">{work.waiting}</p>
+      <p className="text-body">{t('overview.work.reading', { n: work.reading })}</p>
+      {work.autoReadPct === null ? null : (
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-body">{t('overview.work.auto_read', { pct: work.autoReadPct })}</p>
+          <HelpTip
+            term={t('overview.work.auto_read', { pct: work.autoReadPct })}
+            text={t('overview.help.auto_read')}
+          />
+        </div>
+      )}
+      {work.waiting > 0 ? (
+        <p>
+          <Link href="/inbox?tab=review" className={textLink}>
+            {t('overview.work.review')}
+          </Link>
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function BillsCard({ view }: { view: OverviewView }) {
+  const { bills } = view;
+  const more = bills.count - bills.items.length;
+  return (
+    <section aria-labelledby="bills-title" className={card}>
+      <div className="flex items-center justify-between gap-2">
+        <h2 id="bills-title" className="text-card-title">
+          {t('overview.bills.title')}
+        </h2>
+        <HelpTip term={t('overview.bills.title')} text={t('overview.help.bills')} />
+      </div>
+      {bills.items.length === 0 ? (
+        <p className="text-body">{t('overview.bills.none')}</p>
+      ) : (
+        <ul className="grid gap-3">
+          {bills.items.map((bill) => {
+            const name = bill.partnerName ?? bill.number ?? '';
+            return (
+              <li
+                key={bill.id}
+                className="flex flex-wrap items-start justify-between gap-2 border-t border-border pt-3 first:border-t-0 first:pt-0"
+              >
+                <div className="grid gap-1 text-body">
+                  <p className="font-semibold">
+                    {bill.partnerName ?? bill.number ?? t('overview.bills.title')}
+                  </p>
+                  {bill.partnerName !== null && bill.number !== null ? <p>{bill.number}</p> : null}
+                  <p className="num">{formatMoneyText(bill.amount, bill.currency)}</p>
+                  <p>{formatDue(bill.due, view.asOf)}</p>
+                  {bill.overdue ? (
+                    <p className="font-semibold text-warning">{t('overview.bills.overdue')}</p>
+                  ) : null}
+                </div>
+                <MarkPaidButton
+                  documentId={bill.id}
+                  label={`${t('overview.bills.mark_paid')}: ${name}`}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {bills.totalCzk === null ? null : (
+        <p className="num text-body">
+          {t('overview.bills.total', { amount: formatMoneyText(bills.totalCzk, 'CZK') })}
+        </p>
+      )}
+      {more > 0 ? (
+        <p>
+          <Link href="/inbox?tab=all&paid=unpaid" className={textLink}>
+            {t('overview.bills.more', { n: more })}
+          </Link>
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 /** Přehled (M11 §5.2): next payment, limit meters, totals, deadlines and one way to the accountant. */
 export function OverviewScreen({
   view,
@@ -182,6 +273,10 @@ export function OverviewScreen({
   return (
     <div className="grid gap-6">
       <h1 className="text-title">{t('overview.title')}</h1>
+      <div className="grid items-start gap-6 md:grid-cols-2">
+        <WorkCard view={view} />
+        <BillsCard view={view} />
+      </div>
       <NextPayment view={view} upcoming={upcoming} />
       {vat}
       {tax}

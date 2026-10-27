@@ -3,11 +3,19 @@
 import { type MessageKey, t } from '@shoebox/i18n';
 import { Button, Input } from '@shoebox/ui';
 import { useActionState, useEffect, useId, useRef, useState } from 'react';
-import type { EditKey, FixKind } from './correction';
+import { EDITABLE, type EditKey, type FixKind } from './correction';
 import { type FixState, fixFieldAction } from './correction-actions';
-import { cleanPicked, isPickTarget, PICK_EVENT, setPickTarget } from './pick';
+import { cleanPicked, isPickTarget, PICK_EVENT, requestLocate, setPickTarget } from './pick';
 
-const idle: FixState = { error: null, saved: false };
+const idle: FixState = { error: null, saved: false, suggestion: null };
+
+// The same cs-CZ currency pattern as the VAT preview, with cents: a total is never shown rounded.
+const CZK2 = new Intl.NumberFormat('cs-CZ', {
+  style: 'currency',
+  currency: 'CZK',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 /** A closed "Fix" link opens one input with Save and Cancel. Errors are announced with role="alert". */
 export function FixField({
@@ -35,6 +43,7 @@ export function FixField({
   useEffect(() => {
     if (!open) return;
     setPickTarget(id);
+    requestLocate(kind, current);
     function onPick(event: Event) {
       if (!isPickTarget(id) || !inputRef.current) return;
       const value = cleanPicked(kind, String((event as CustomEvent).detail ?? ''));
@@ -44,7 +53,7 @@ export function FixField({
     }
     window.addEventListener(PICK_EVENT, onPick);
     return () => window.removeEventListener(PICK_EVENT, onPick);
-  }, [open, id, kind]);
+  }, [open, id, kind, current]);
 
   if (!open) {
     return (
@@ -61,6 +70,20 @@ export function FixField({
           <p role="status" className="text-body">
             {t('doc.fix.saved')}
           </p>
+        ) : null}
+        {state.saved && state.suggestion ? (
+          <form action={action} className="flex flex-col gap-1">
+            <input type="hidden" name="id" value={documentId} />
+            <input type="hidden" name="key" value={state.suggestion.editKey} />
+            <input type="hidden" name="value" value={state.suggestion.value} />
+            <Button type="submit" variant="secondary" disabled={pending} aria-busy={pending}>
+              {t('doc.fix.suggest', {
+                field: t(EDITABLE[state.suggestion.editKey].label),
+                amount: CZK2.format(state.suggestion.value as unknown as number),
+              })}
+            </Button>
+            <p className="text-body text-muted-foreground">{t('doc.fix.suggest_help')}</p>
+          </form>
         ) : null}
       </div>
     );

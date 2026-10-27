@@ -1,6 +1,7 @@
 import type { LegalDate } from '@shoebox/domain';
 import { t } from '@shoebox/i18n';
 import { Badge, Button, Card, LegalDateText, MoneyText, StatusBadge } from '@shoebox/ui';
+import { Check, CheckCheck, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { requireActiveRole } from '../../../../src/auth/org-context';
 import { AutoRefresh } from '../../../../src/documents/auto-refresh';
@@ -17,7 +18,26 @@ import { PaymentCard } from '../../../../src/documents/payment-card';
 import { PdfViewer } from '../../../../src/documents/pdf-viewer';
 import { readAgainAction } from '../../../../src/documents/read-again-actions';
 import { moveToTrashAction } from '../../../../src/documents/trash-actions';
+import type { Trust } from '../../../../src/documents/trust';
+import { HelpTip } from '../../../../src/overview/help-tip';
 import { createSupabaseServerClient } from '../../../../src/supabase/server';
+
+/** One short word with an icon: how sure we are about a value (exact, checked or please check). */
+function TrustMark({ trust }: { trust: Trust }) {
+  const Icon = trust === 'exact' ? CheckCheck : trust === 'checked' ? Check : TriangleAlert;
+  const tone =
+    trust === 'exact'
+      ? 'text-success'
+      : trust === 'check'
+        ? 'text-warning'
+        : 'text-muted-foreground';
+  return (
+    <span className={`inline-flex items-center gap-1 text-body ${tone}`}>
+      <Icon aria-hidden="true" className="size-4 shrink-0" />
+      {t(`doc.trust.${trust}`)}
+    </span>
+  );
+}
 
 export default async function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -103,7 +123,10 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             <PaymentCard documentId={detail.id} view={paymentView} canAct={canAct} />
           ) : null}
           <Card className="flex flex-col gap-4 p-6">
-            <h2 className="text-card-title">{t('doc.detail.read_title')}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-card-title">{t('doc.detail.read_title')}</h2>
+              <HelpTip term={t('doc.detail.read_title')} text={t('doc.trust.help')} />
+            </div>
             {detail.readBy === 'isdoc' ? (
               <p className="text-meta text-muted-foreground">{t('doc.detail.read_by_isdoc')}</p>
             ) : null}
@@ -113,7 +136,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
                 return (
                   <div key={field.label} className="flex flex-wrap justify-between gap-2">
                     <dt className="text-body text-foreground">{t(field.label)}</dt>
-                    <dd className="text-body">
+                    <dd className="flex flex-wrap items-center gap-2 text-body">
                       {field.kind === 'money' ? (
                         <MoneyText value={field.value} currency={detail.currency} />
                       ) : field.kind === 'date' ? (
@@ -121,6 +144,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
                       ) : (
                         field.value
                       )}
+                      <TrustMark trust={field.trust} />
                     </dd>
                     {editKey ? (
                       <FixField

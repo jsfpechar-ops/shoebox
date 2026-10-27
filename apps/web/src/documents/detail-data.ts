@@ -2,11 +2,14 @@ import type { DocumentClass, DocumentStatus } from '@shoebox/domain';
 import type { MessageKey } from '@shoebox/i18n';
 import { catalogs, t } from '@shoebox/i18n';
 import type { createSupabaseServerClient } from '../supabase/server';
+import { fieldsFlagged, type Trust, trustOf } from './trust';
 
 export interface DetailField {
   readonly label: MessageKey;
   readonly value: string;
   readonly kind: 'text' | 'date' | 'money';
+  /** How sure we are about this value: exact, checked or check. */
+  readonly trust: Trust;
 }
 export interface DetailCheck {
   readonly severity: 'blocking' | 'warning';
@@ -61,6 +64,7 @@ export function detailOf(
   vat: unknown,
   checks: unknown,
   runs: unknown = [],
+  fieldRows: unknown = [],
 ): DocumentDetail | null {
   if (!isRow(doc)) return null;
   const id = text(doc.id);
@@ -74,26 +78,57 @@ export function detailOf(
   const partner: Row = isRow(doc.partner_snapshot) ? doc.partner_snapshot : {};
   const pay: Row = isRow(doc.pay_to_account) ? doc.pay_to_account : {};
 
+  // Where each current value came from (document_fields.source) and which values a check flagged.
+  const sources = new Map<string, string>();
+  for (const row of Array.isArray(fieldRows) ? fieldRows : []) {
+    if (!isRow(row)) continue;
+    const fieldKey = text(row.field_key);
+    const source = text(row.source);
+    if (fieldKey !== null && source !== null) sources.set(fieldKey, source);
+  }
+  const flagged = fieldsFlagged(
+    (Array.isArray(checks) ? checks : []).flatMap((row) =>
+      isRow(row) && text(row.rule_id) !== null ? [{ rule_id: row.rule_id as string }] : [],
+    ),
+  );
+
   const fields: DetailField[] = [];
-  const add = (label: MessageKey, value: string | null, kind: DetailField['kind']) => {
-    if (value !== null) fields.push({ label, value, kind });
+  const add = (
+    label: MessageKey,
+    fieldKey: string,
+    value: string | null,
+    kind: DetailField['kind'],
+  ) => {
+    if (value === null) return;
+    const trust = trustOf({
+      source: sources.get(fieldKey) ?? null,
+      value,
+      failedOrWarnedFields: flagged,
+      fieldKey,
+    });
+    fields.push({ label, value, kind, trust });
   };
-  add('proto.field.supplier_name', text(partner.name), 'text');
-  add('proto.field.supplier_ico', text(partner.ico), 'text');
-  add('proto.field.supplier_dic', text(partner.dic), 'text');
-  add('proto.field.document_number', text(doc.document_number), 'text');
-  add('proto.field.variable_symbol', text(doc.variable_symbol), 'text');
-  add('proto.field.issue_date', scalar(doc.issue_date), 'date');
-  add('doc.field.duzp', scalar(doc.duzp), 'date');
-  add('proto.field.due_date', scalar(doc.due_date), 'date');
-  add('proto.field.total_net', scalar(doc.total_net), 'money');
-  add('proto.field.total_vat', scalar(doc.total_vat), 'money');
-  add('proto.field.total_gross', scalar(doc.total_gross), 'money');
+  add('proto.field.supplier_name', 'supplier.name', text(partner.name), 'text');
+  add('proto.field.supplier_ico', 'supplier.ico', text(partner.ico), 'text');
+  add('proto.field.supplier_dic', 'supplier.dic', text(partner.dic), 'text');
+  add('proto.field.document_number', 'document.number', text(doc.document_number), 'text');
+  add('proto.field.variable_symbol', 'document.variable_symbol', text(doc.variable_symbol), 'text');
+  add('proto.field.issue_date', 'dates.issue_date', scalar(doc.issue_date), 'date');
+  add('doc.field.duzp', 'dates.duzp', scalar(doc.duzp), 'date');
+  add('proto.field.due_date', 'dates.due_date', scalar(doc.due_date), 'date');
+  add('proto.field.total_net', 'totals.net', scalar(doc.total_net), 'money');
+  add('proto.field.total_vat', 'totals.vat', scalar(doc.total_vat), 'money');
+  add('proto.field.total_gross', 'totals.gross', scalar(doc.total_gross), 'money');
   const account = text(pay.account);
   const bankCode = text(pay.bank_code);
   if (account !== null)
-    add('proto.field.account', bankCode !== null ? `${account}/${bankCode}` : account, 'text');
-  add('proto.field.iban', text(pay.iban), 'text');
+    add(
+      'proto.field.account',
+      'payment.account_number',
+      bankCode !== null ? `${account}/${bankCode}` : account,
+      'text',
+    );
+  add('proto.field.iban', 'payment.iban', text(pay.iban), 'text');
 
   const vatLines = (Array.isArray(vat) ? vat : []).flatMap((row) => {
     if (!isRow(row)) return [];
@@ -164,7 +199,7 @@ export async function loadDocumentDetail(
   id: string,
 ): Promise<DocumentDetail | null> {
   try {
-    const [docResult, vatResult, checkResult, runResult] = await Promise.all([
+    const [docResult, vatResult, checkResult, runResult, fieldResult] = await Promise.all([
       supabase
         .from('documents')
         .select(DOCUMENT_COLUMNS)
@@ -190,11 +225,18 @@ export async function loadDocumentDetail(
         .eq('ok', true)
         .order('created_at', { ascending: false })
         .limit(1),
+      supabase
+        .from('document_fields')
+        .select('field_key, source')
+        .eq('document_id', id)
+        .eq('org_id', orgId)
+        .eq('is_current', true),
     ]);
     if (docResult.error || vatResult.error || checkResult.error) return null;
-    // The read method is a hint only: an error there never hides the document.
+    // The read method and the value sources are hints only: an error there never hides the document.
     const runs = runResult.error ? [] : runResult.data;
-    return detailOf(docResult.data, vatResult.data, checkResult.data, runs);
+    const fieldRows = fieldResult.error ? [] : fieldResult.data;
+    return detailOf(docResult.data, vatResult.data, checkResult.data, runs, fieldRows);
   } catch {
     return null;
   }
