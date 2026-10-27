@@ -151,6 +151,19 @@ describe.skipIf(DATABASE_URL === undefined)('document reading store', () => {
     const vat =
       await sql`select vat_rate_type, base, vat from document_vat_summary where document_id = ${DOC}`;
     expect(vat).toEqual([{ vat_rate_type: 'standard', base: '1000.00', vat: '210.00' }]);
+    const lines =
+      await sql`select position, line_type, net, vat, gross, vat_rate_type, vat_rate_pct from document_lines where document_id = ${DOC} order by position`;
+    expect(lines).toEqual([
+      {
+        position: 1,
+        line_type: 'item',
+        net: '1000.00',
+        vat: '210.00',
+        gross: '1210.00',
+        vat_rate_type: 'standard',
+        vat_rate_pct: '21.00',
+      },
+    ]);
     const [fields] =
       await sql`select count(*) filter (where is_current)::int as current, count(*)::int as total
       from document_fields where document_id = ${DOC}`;
@@ -164,6 +177,28 @@ describe.skipIf(DATABASE_URL === undefined)('document reading store', () => {
     const [runs] =
       await sql`select count(*)::int as n from extraction_runs where document_id = ${DOC} and ok`;
     expect(runs).toEqual({ n: 2 });
+  });
+  it('a re-read keeps the category the user set on a line with the same position and gross', async () => {
+    await db.withTenant(ORG_R, (tx) => saveDocumentReading(tx, write()));
+    await sql`update document_lines set category_code = (select code from categories limit 1), classification_source = 'user'
+      where document_id = ${DOC} and position = 1`;
+    await db.withTenant(ORG_R, (tx) =>
+      saveDocumentReading(
+        tx,
+        write({
+          vatSummary: [
+            { vatRateType: 'standard', vatRatePct: '21', base: '1000', vat: '210' },
+            { vatRateType: 'reduced', vatRatePct: '12', base: '100', vat: '12' },
+          ],
+        }),
+      ),
+    );
+    const lines =
+      await sql`select position, gross, classification_source, category_code is not null as has_category from document_lines where document_id = ${DOC} order by position`;
+    expect(lines).toEqual([
+      { position: 1, gross: '1210.00', classification_source: 'user', has_category: true },
+      { position: 2, gross: '112.00', classification_source: null, has_category: false },
+    ]);
   });
 
   it('records a failed read and fails the document on the last attempt', async () => {
