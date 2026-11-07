@@ -97,9 +97,25 @@ function errorStatus(error: unknown): { httpStatus?: number; errorReason?: strin
   };
 }
 
+/** Queues on the upload-to-ready path, where a user waits; the rest are batch or cron work. */
+const FAST_POLL_QUEUES: ReadonlySet<string> = new Set([
+  'doc.split',
+  'doc.extract',
+  'doc.categorize',
+  'email.received',
+  'bank.import.statement',
+  'import.spreadsheet.run',
+]);
+const FAST_POLL_SECONDS = 5;
+const SLOW_POLL_SECONDS = 30;
+
 export function createJobRegistry(options: RegistryOptions): JobRegistry {
   const { boss, db, logger } = options;
-  const pollingIntervalSeconds = options.pollingIntervalSeconds ?? 2;
+  // An explicit interval (tests) applies to every queue. Otherwise only the queues a user is
+  // waiting on poll fast; the rest poll slowly, because every idle poll is egress on Supabase.
+  const pollingFor = (name: string): number =>
+    options.pollingIntervalSeconds ??
+    (FAST_POLL_QUEUES.has(name) ? FAST_POLL_SECONDS : SLOW_POLL_SECONDS);
   const definitions = new Map<JobName, AnyDefinition>();
   const handlers = new Map<JobName, (job: Job<unknown>) => Promise<void>>();
   const queues = new Map<string, Promise<void>>();
@@ -202,7 +218,7 @@ export function createJobRegistry(options: RegistryOptions): JobRegistry {
         if (handle === undefined) continue;
         await boss.work<unknown>(
           def.name,
-          { pollingIntervalSeconds, batchSize: 1 },
+          { pollingIntervalSeconds: pollingFor(def.name), batchSize: 1 },
           async (jobs) => {
             for (const job of jobs) {
               await handle(job);

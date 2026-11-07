@@ -258,7 +258,7 @@ describe('start and handlers', () => {
     await registry.start();
     expect(boss.work).toHaveBeenCalledWith(
       'ops.rate_limit_gc',
-      { pollingIntervalSeconds: 2, batchSize: 1 },
+      { pollingIntervalSeconds: 30, batchSize: 1 },
       expect.any(Function),
     );
     expect(boss.schedule).not.toHaveBeenCalled();
