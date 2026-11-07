@@ -56,13 +56,28 @@ export interface RunningWorker {
   stop(): Promise<void>;
 }
 
+const BACKGROUND_INTERVALS = {
+  superviseIntervalSeconds: 600,
+  monitorIntervalSeconds: 600,
+  queueCacheIntervalSeconds: 600,
+  maintenanceIntervalSeconds: 600,
+  bamIntervalSeconds: 600,
+  flowIntervalSeconds: 600,
+} as const;
+
 export async function startWorker(
   config: WorkerConfig,
   options: StartOptions,
 ): Promise<RunningWorker> {
   const { logger } = options;
   const db = configureDb({ workerUrl: config.workerUrl, serviceUrl: config.serviceUrl });
-  const boss = new PgBoss({ connectionString: config.serviceUrl, schema: config.bossSchema });
+  const boss = new PgBoss({
+    connectionString: config.serviceUrl,
+    schema: config.bossSchema,
+    // pg-boss background loops default to every 30-60 s and cost about 1.7 KB/s of Supabase egress
+    // when idle; ten minutes is plenty for stats, maintenance and flow bookkeeping.
+    ...BACKGROUND_INTERVALS,
+  });
   boss.on('error', (error) => logger.error({ errorCode: error.name }, 'pg-boss error'));
   await boss.start();
 
